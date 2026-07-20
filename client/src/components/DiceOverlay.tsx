@@ -167,7 +167,13 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
       try {
         const results = await b.roll(notation);
         console.log('[DiceOverlay] roll results:', JSON.stringify(results));
-        if (b.diceList) console.log('[DiceOverlay] dice in scene:', b.diceList.length, 'scene children:', b.scene?.children?.length);
+        if (b.diceList) {
+          console.log('[DiceOverlay] dice in scene:', b.diceList.length, 'scene children:', b.scene?.children?.length);
+          for (let i = 0; i < b.diceList.length; i++) {
+            const d = b.diceList[i];
+            if (d) console.log(`[dice ${i}] pos:`, d.position.x.toFixed(0), d.position.y.toFixed(0), d.position.z.toFixed(0));
+          }
+        }
         const values: number[] = [];
         for (const set of results.sets || []) {
           for (const roll of set.rolls || []) {
