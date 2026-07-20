@@ -110,13 +110,13 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {
       id="dice-overlay"
       ref={containerRef}
       style={{
-        position: 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
         width: '100%',
         height: '100%',
-        pointerEvents: pointerMode.current as any,
-        zIndex: 1,
+        pointerEvents: 'none',
+        zIndex: 999,
       }}
     />
   );
