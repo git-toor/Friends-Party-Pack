@@ -119,17 +119,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         onRollComplete: () => {},
       });
       await diceBox.initialize();
-      // TEST: add visible sphere to confirm 3D rendering
-      try {
-        const THREEmod = await import('three');
-        const sg = new THREEmod.SphereGeometry(80, 16, 16);
-        const sm = new THREEmod.MeshBasicMaterial({ color: 0x00ff00 });
-        const sp = new THREEmod.Mesh(sg, sm);
-        sp.position.set(0, 0, 100);
-        diceBox.scene.add(sp);
-        diceBox.renderer.render(diceBox.scene, diceBox.camera);
-        console.log('[DiceOverlay] Test sphere added at (0,0,100)');
-      } catch(e) { console.error('[DiceOverlay] Test sphere failed:', e); }
       if (!cancelled) box.current = diceBox;
     })();
     return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
@@ -166,28 +155,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
       const notation = combo.map(e => `${e.count}${e.dieType}`).join('+');
       try {
         const results = await b.roll(notation);
-        console.log('[DiceOverlay] roll results:', JSON.stringify(results));
-        if (b.diceList) {
-          console.log('[DiceOverlay] dice in scene:', b.diceList.length, 'scene children:', b.scene?.children?.length);
-          for (let i = 0; i < b.diceList.length; i++) {
-            const d = b.diceList[i];
-            if (d) {
-              console.log(`[dice ${i}] pos:`, d.position.x.toFixed(0), d.position.y.toFixed(0), d.position.z.toFixed(0));
-              // Add visible markers at each die position
-              if (!d._mrk) {
-                const THREEmod = await import('three');
-                const sg = new THREEmod.SphereGeometry(15, 8, 8);
-                const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
-                const sm = new THREEmod.MeshBasicMaterial({ color: cols[i % 6] });
-                d._mrk = new THREEmod.Mesh(sg, sm);
-                d._mrk.position.copy(d.position);
-                d._mrk.position.z += 40;
-                b.scene.add(d._mrk);
-              }
-            }
-          }
-          b.renderer.render(b.scene, b.camera);
-        }
         const values: number[] = [];
         for (const set of results.sets || []) {
           for (const roll of set.rolls || []) {
