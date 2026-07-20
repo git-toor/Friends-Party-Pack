@@ -30,8 +30,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-app.get('/api/lan-ip', (_req, res) => {
-  const os = require('os');
+app.get('/api/lan-ip', async (_req, res) => {
+  const os = await import('node:os');
   const nets = os.networkInterfaces();
   let ip = 'localhost';
   for (const name of Object.keys(nets)) {
@@ -48,7 +48,11 @@ app.get('/api/lan-ip', (_req, res) => {
 
 // ─── Static Files (Production) ────────────────────────────
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
-app.use(express.static(clientDist));
+const fs = await import('node:fs');
+const hasDist = fs.existsSync(path.join(clientDist, 'index.html'));
+if (hasDist) {
+  app.use(express.static(clientDist));
+}
 
 // ─── Lobby REST Routes ────────────────────────────────────
 app.post('/api/lobby/create', (req, res) => {
@@ -109,9 +113,11 @@ app.use('/api/chat', chatRouter);
 setWsServer(wsServer);
 
 // ─── SPA Fallback (Production) ────────────────────────────
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(clientDist, 'index.html'));
-});
+if (hasDist) {
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 // ─── Start ───────────────────────────────────────────────
 server.listen(config.port, () => {
