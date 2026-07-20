@@ -644,18 +644,22 @@ class DiceBox {
 				this.beforeSpawnDie(vectordata.type, vectordata, this.DiceFactory);
 			}
 
-			// Use the actual DiceFactory to create dice
-			dicemesh = this.DiceFactory.create(vectordata.type, this.colorData);
-			if(!dicemesh) return;
+			// COMPLETELY bypass DiceFactory — use a simple BoxGeometry with solid color
+			const size = this.baseScale * 0.8;
+			const geo = new THREE.BoxGeometry(size, size, size);
+			const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
+			const mat = new THREE.MeshStandardMaterial({ color: cols[this.diceList.length % 5], roughness: 0.5 });
+			dicemesh = new THREE.Mesh(geo, mat);
+			dicemesh.shape = 'd6';
+			dicemesh.mass = 300;
 			dicemesh.notation = vectordata;
 			dicemesh.result = [];
 			dicemesh.stopped = 0;
-			dicemesh.castShadow = this.shadows;
+			dicemesh.geometry.cannon_shape = new CANNON.Box(new CANNON.Vec3(size/2, size/2, size/2));
 			this.scene.add(dicemesh);
 			this.diceList.push(dicemesh);
 		} else {
 			dicemesh = reset
-			// dicemesh.result = [];
 			dicemesh.stopped = 0;
 			this.world.removeBody(dicemesh.body);
 		}
