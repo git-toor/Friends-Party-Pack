@@ -24,7 +24,7 @@ export interface PerDieConfig {
   texture?: string;
 }
 
-export type DiceAppearanceConfig = Partial<Record<DieType, PerDieConfig>>;
+
 
 export interface DiceOverlayHandle {
   roll: (dieType: DieType, count?: number, suffix?: string) => Promise<number[]>;
@@ -34,34 +34,6 @@ export interface DiceOverlayHandle {
   setDieKept: (index: number, kept: boolean) => void;
   setDieSelected: (index: number, selected: boolean) => void;
   resetDieVisuals: () => void;
-}
-
-function resolveTheme(config: DiceAppearanceConfig): {
-  colorset: string; customColorset: any; texture: string; material: string;
-} {
-  const firstKey = (Object.keys(config)[0] || 'd20') as DieType;
-  const c = config[firstKey] || {} as PerDieConfig;
-  let colorset = c.colorset || 'white';
-  let texture = c.texture || '';
-  let material = c.material || 'none';
-
-  let customColorset = null;
-  if (c.colorset && COLORSETS[c.colorset]) {
-    const cs = COLORSETS[c.colorset] as any;
-    customColorset = {
-      name: c.colorset,
-      background: c.faceColor || cs.background || '#ffffff',
-      foreground: c.textColor || cs.foreground || '#000000',
-      outline: c.outline || cs.outline || 'none',
-      edge: c.edgeColor || cs.edge || '#888888',
-      texture: { name: 'none', texture: null, bump: null, composite: 'source-over', material: 'none' },
-    };
-    if (texture && texture !== 'none') {
-      colorset = 'white';
-    }
-  }
-
-  return { colorset, customColorset, texture, material };
 }
 
 export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: number) => void }>(function DiceOverlay({ onDieTap: onDieTapProp }, ref) {

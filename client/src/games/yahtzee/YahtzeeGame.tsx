@@ -97,51 +97,32 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL'}}) });
       const data = await res.json();
       if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
-      // Force local state update for the turn phase immediately
       if (data.diceValues) {
         const suffix = '@' + data.diceValues.join(',');
-        setGs(p => ({
-          ...p, turn: {
-            ...p.turn,
-            dice: data.diceValues,
-            phase: 'WAITING_FOR_KEEP' as YahtzeeTurn['phase'],
-            rollPhase: (p.turn.rollPhase + 1) as 1|2|3
-          }
-        }));
+        setGs(p => ({...p, turn:{...p.turn, dice:data.diceValues, phase:'WAITING_FOR_KEEP' as YahtzeeTurn['phase'], rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
         await diceRef.current?.roll('d6', 5, suffix);
       }
     } else {
       await diceRef.current?.roll('d6', 5);
-      setGs(p => ({
-        ...p, turn: {
-          ...p.turn,
-          dice: [0,0,0,0,0], // dice values come from physics animation
-          phase: 'WAITING_FOR_KEEP' as YahtzeeTurn['phase'],
-          rollPhase: (p.turn.rollPhase + 1) as 1|2|3
-        }
-      }));
+      setGs(p => ({...p, turn:{...p.turn, dice:[0,0,0,0,0], phase:'WAITING_FOR_KEEP' as YahtzeeTurn['phase'], rollPhase:(p.turn.rollPhase+1) as 1|2|3}}));
     }
     setRolling(false);
   }, [canRoll, sessionId, playerIndex]);
 
   const handleDieTap = useCallback((index: number) => {
-    console.log('[YahtzeeGame] die tap', index, 'phase:', turn.phase, 'rolling:', rolling, 'kept:', turn.kept[index]);
     if (turn.phase !== 'WAITING_FOR_KEEP' || rolling || turn.kept[index]) return;
     setSelected(p => {
       const n = [...p];
       n[index] = !n[index];
-      console.log('[YahtzeeGame] setSelected', index, '->', n[index]);
       diceRef.current?.setDieSelected(index, n[index]);
       return n;
     });
-    // Also toggle the canvas-interactive effect is not needed now
   }, [turn.phase, rolling, turn.kept]);
 
   const handleKeep = useCallback(async () => {
     if (!canKeep) return;
     const indices: number[] = [];
     selected.forEach((s,i) => { if(s) indices.push(i); });
-    // Mark dice as kept visually
     for (const i of indices) {
       diceRef.current?.setDieKept(i, true);
       diceRef.current?.setDieSelected(i, false);
@@ -192,7 +173,6 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     if (gs.winners.length > 0) setTimeout(() => alert(`Winner: Player ${gs.winners[0]+1}`), 500);
   }, [gs.winners]);
 
-  // Sync kept visuals after roll completes
   useEffect(() => {
     if (turn.kept.some(k => k)) {
       for (let i = 0; i < 5; i++) {
@@ -201,12 +181,6 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     }
   }, [turn.kept]);
 
-  // Debug phase changes
-  useEffect(() => {
-    console.log('[YahtzeeGame] PHASE CHANGED:', turn.phase, 'rollPhase:', turn.rollPhase, 'rolling:', rolling, 'isMe:', isMe);
-  }, [turn.phase, turn.rollPhase, rolling, isMe]);
-
-  // Clear selections when leaving WAITING_FOR_KEEP
   useEffect(() => {
     if (turn.phase !== 'WAITING_FOR_KEEP' || rolling) {
       setSelected([false,false,false,false,false]);
@@ -227,7 +201,6 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
             })()}
           </span>
         </div>
-
         <div style={{ flex:1, minHeight:0 }} />
         <div style={bottomBarStyle}>
           {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase}/3)</Button>}

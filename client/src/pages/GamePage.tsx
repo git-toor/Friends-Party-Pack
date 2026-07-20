@@ -43,7 +43,6 @@ export default function GamePage() {
 
     // Wire DICE_ROLL — animate dice with same result on all clients except the roller
     const unsubDice = ws.on('DICE_ROLL', (msg) => {
-      console.log('[DICE_ROLL] received: roller', msg.payload?.playerIndex, 'vs me', playerIndex, 'values:', msg.payload?.values);
       if (msg.payload.playerIndex !== playerIndex) {
         setRemoteVectors(msg.payload);
         setRollTrigger(n => n + 1);

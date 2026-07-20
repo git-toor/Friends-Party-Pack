@@ -50,7 +50,6 @@ yahtzeeRouter.post('/action', (req, res) => {
       // Broadcast DICE_ROLL with dice values so all players show the same result
       if ((action as any).type === 'ROLL') {
         const diceValues = result.diceValues || null;
-        console.log('[YahtzeeRouter] DICE_ROLL broadcast, playerIndex:', playerIndex, 'values:', diceValues);
         broadcast({ type: 'DICE_ROLL', payload: { playerIndex, values: diceValues } });
       }
     }

@@ -901,6 +901,11 @@ class DiceBox {
 
 	clearDice() {
 		this.running = false;
+		// Remove window click handler
+		if (this._clickHandler) {
+			window.removeEventListener('click', this._clickHandler);
+			this._clickHandler = null;
+		}
 		let dice;
 		while (dice = this.diceList.pop()) {
 			this.scene.remove(dice);
