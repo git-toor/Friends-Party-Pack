@@ -206,14 +206,12 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     console.log('[YahtzeeGame] PHASE CHANGED:', turn.phase, 'rollPhase:', turn.rollPhase, 'rolling:', rolling, 'isMe:', isMe);
   }, [turn.phase, turn.rollPhase, rolling, isMe]);
 
-  // Enable/disable die interaction based on phase
+  // Clear selections when leaving WAITING_FOR_KEEP
   useEffect(() => {
-    const interactive = turn.phase === 'WAITING_FOR_KEEP' && !rolling && isMe;
-    diceRef.current?.setInteractive(interactive);
-    if (!interactive) {
+    if (turn.phase !== 'WAITING_FOR_KEEP' || rolling) {
       setSelected([false,false,false,false,false]);
     }
-  }, [turn.phase, rolling, isMe]);
+  }, [turn.phase, rolling]);
 
   return (
     <div style={{ width:'100%', height:'100%', position:'relative' }}>

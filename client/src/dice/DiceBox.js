@@ -1153,25 +1153,26 @@ class DiceBox {
 	setupDieTap(canvas) {
 		const raycaster = new THREE.Raycaster();
 		const mouse = new THREE.Vector2();
-		canvas.addEventListener('click', (event) => {
-			console.log('[DiceBox] canvas click at', event.clientX, event.clientY, 'pointerEvents:', canvas.style.pointerEvents);
+		// Use window click handler so dice taps work without blocking HTML UI
+		const handler = (event) => {
+			if (typeof this.onDieTap !== 'function') return;
+			if (this.diceList.length === 0) return;
 			const rect = canvas.getBoundingClientRect();
 			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 			raycaster.setFromCamera(mouse, this.camera);
 			const meshes = this.diceList.filter(d => d && !d._kept);
-			console.log('[DiceBox] meshes for raycast:', meshes.length, 'diceList:', this.diceList.length);
+			if (meshes.length === 0) return;
 			const intersects = raycaster.intersectObjects(meshes);
-			console.log('[DiceBox] intersects:', intersects.length);
 			if (intersects.length > 0) {
 				const hit = intersects[0].object;
 				const idx = this.diceList.indexOf(hit);
-				console.log('[DiceBox] hit', idx, 'onDieTap:', typeof this.onDieTap);
-				if (idx !== -1 && typeof this.onDieTap === 'function') {
-					this.onDieTap(idx);
-				}
+				if (idx !== -1) this.onDieTap(idx);
 			}
-		});
+		};
+		window.addEventListener('click', handler);
+		// Store cleanup
+		this._clickHandler = handler;
 	}
 
 	setDieKept(index, kept) {

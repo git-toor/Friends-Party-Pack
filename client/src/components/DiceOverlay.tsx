@@ -34,7 +34,6 @@ export interface DiceOverlayHandle {
   setDieKept: (index: number, kept: boolean) => void;
   setDieSelected: (index: number, selected: boolean) => void;
   resetDieVisuals: () => void;
-  setInteractive: (on: boolean) => void;
 }
 
 function resolveTheme(config: DiceAppearanceConfig): {
@@ -135,7 +134,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
       });
       await diceBox.initialize();
       if (diceBox.renderer) {
-        diceBox.renderer.domElement.style.pointerEvents = 'none';
         diceBox.setupDieTap(diceBox.renderer.domElement);
       }
       if (!cancelled) box.current = diceBox;
@@ -209,11 +207,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
     },
     resetDieVisuals: () => {
       box.current?.resetDieVisuals();
-    },
-    setInteractive: (on: boolean) => {
-      if (box.current?.renderer) {
-        box.current.renderer.domElement.style.pointerEvents = on ? 'auto' : 'none';
-      }
     },
   }), []);
 
