@@ -129,7 +129,9 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     }
     setSelected([false,false,false,false,false]);
     if (sessionId) {
-      await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'KEEP',payload:{indices}}}) });
+      const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'KEEP',payload:{indices}}}) });
+      const data = await res.json();
+      if (data.state) setGs(data.state);
     } else {
       setGs(p => {
         const kept=[...p.turn.kept]; for(const i of indices) kept[i]=true;
