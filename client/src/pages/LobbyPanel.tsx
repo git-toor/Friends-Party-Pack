@@ -114,17 +114,17 @@ export default function LobbyPanel() {
         ))}
       </div>
 
-      {/* Ready toggle for everyone, including host */}
-      <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
-        {isReady ? 'Not Ready' : 'Ready'}
-      </Button>
-
-      {/* Start button only for host */}
-      {isHost && (
-        <Button size="lg" disabled={players.length < 2 || !players.every(p => p.ready)} onClick={handleStart}>
-          Start Game
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 360, alignItems: 'stretch' }}>
+        <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
+          {isReady ? 'Not Ready' : 'Ready'}
         </Button>
-      )}
+
+        {isHost && (
+          <Button size="lg" disabled={players.length < 2 || !players.every(p => p.ready)} onClick={handleStart}>
+            Start Game
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

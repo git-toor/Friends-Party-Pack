@@ -72,20 +72,21 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
     setSelectedDice(new Set());
 
     if (sessionId) {
-      // Server mode
       const res = await fetch('/api/games/yahtzee/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, playerIndex, action: { type: 'ROLL' } }),
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        console.error('Roll failed:', data.error);
+        setRolling(false);
+        return;
+      }
       if (data.state) setGameState(data.state);
       if (data.diceValues) {
-        const values = data.diceValues;
         diceRef.current?.resetKept();
         await diceRef.current?.roll(5);
-        // Note: dice overlay animates, server values are authoritative
-        setGameState(prev => ({ ...prev, turn: { ...prev.turn, dice: values, phase: 'WAITING_FOR_KEEP', rollPhase: prev.turn.rollPhase + 1 as 1|2|3 } }));
       }
     } else {
       // Local mode
@@ -121,6 +122,9 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
         body: JSON.stringify({ sessionId, playerIndex, action: { type: 'KEEP', payload: { indices } } }),
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        console.error('Keep failed:', data.error);
+      }
       if (data.state) setGameState(data.state);
     }
 
@@ -149,6 +153,10 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
         body: JSON.stringify({ sessionId, playerIndex, action: { type: 'SCORE', payload: { category } } }),
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        console.error('Score failed:', data.error);
+        return;
+      }
       if (data.state) setGameState(data.state);
       diceRef.current?.resetKept();
     } else {

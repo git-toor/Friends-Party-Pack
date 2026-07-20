@@ -9,7 +9,7 @@ export default function GamePage() {
   const state = location.state as any;
   const [ready, setReady] = useState(false);
 
-  const sessionId = sessionIdParam || state?.sessionId;
+  const sessionId = state?.sessionId || sessionIdParam;
   const playerCount = state?.players?.length || 2;
   const playerIndex = state?.playerIndex || 0;
   const players = state?.players || [];
