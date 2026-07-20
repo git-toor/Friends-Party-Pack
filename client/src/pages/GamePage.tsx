@@ -20,6 +20,7 @@ export default function GamePage() {
   const diceAppearance = (() => { try { return JSON.parse(localStorage.getItem('fpp_dice_appearance') || '{}'); } catch { return {}; } })();
   const [rollTrigger, setRollTrigger] = useState(0);
   const [remoteVectors, setRemoteVectors] = useState<any>(null);
+  const [gameStatePush, setGameStatePush] = useState<any>(null);
 
   useEffect(() => {
     if (!sessionId) {
@@ -32,6 +33,7 @@ export default function GamePage() {
 
     const unsub = ws.on('GAME_STATE', (msg) => {
       console.log('Game state update:', msg.payload);
+      setGameStatePush(msg.payload);
     });
 
     // Wire CHAT_MESSAGE events from WS to the ChatBox
@@ -66,6 +68,7 @@ export default function GamePage() {
         diceAppearance={diceAppearance}
         remoteRoll={rollTrigger}
         remoteVectors={remoteVectors}
+        gameStatePush={gameStatePush}
       />
       {sessionId && (
         <ChatBox
