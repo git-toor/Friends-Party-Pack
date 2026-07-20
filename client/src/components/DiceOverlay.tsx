@@ -5,6 +5,7 @@ import { DiceBox } from '../dice/DiceBox.js';
 import { COLORSETS } from '../dice/colorsets.js';
 // @ts-ignore
 import { TEXTURELIST } from '../dice/texturelist.js';
+import { loadTexture, type DiceTextureObject } from '../dice/DiceTextureLoader.js';
 
 export type DieType = 'd4' | 'd6' | 'd8' | 'd10' | 'd12' | 'd20';
 
@@ -60,11 +61,11 @@ function resolveTheme(config: DiceAppearanceConfig): {
   return { colorset, customColorset, texture, material };
 }
 
-export const DiceOverlay = forwardRef<DiceOverlayHandle, { onSettle?: (values: number[]) => void }>(function DiceOverlay({ onSettle }, ref) {
+export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverlay(_p, ref) {
   const cr = useRef<HTMLDivElement>(null);
   const box = useRef<InstanceType<typeof DiceBox> | null>(null);
   const configRef = useRef<DiceAppearanceConfig>({});
-  const texCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  const texCache = useRef<Map<string, DiceTextureObject>>(new Map());
 
   useEffect(() => {
     const el = cr.current;
@@ -101,13 +102,13 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onSettle?: (values: n
           }
           const texObj = cache.get(type);
           const userMaterial = c.material && c.material !== 'none' ? c.material : null;
-          if (texObj) {
+          if (texObj && texObj.texture) {
             factory.dice_texture = {
-              name: type,
-              texture: texObj,
-              bump: null,
-              composite: 'source-over',
-              material: userMaterial || 'none',
+              name: texObj.name,
+              texture: texObj.texture,
+              bump: texObj.bump,
+              composite: texObj.composite,
+              material: userMaterial || texObj.material || 'none',
             };
           } else {
             factory.dice_texture = { name: 'none', texture: null, bump: null, composite: 'source-over', material: userMaterial || 'none' };
@@ -118,7 +119,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onSettle?: (values: n
         onRollComplete: () => {},
       });
       await diceBox.initialize();
-      console.log('[DiceOverlay] inited, canvas:', diceBox.renderer?.domElement?.width, 'x', diceBox.renderer?.domElement?.height, 'container:', el.clientWidth, 'x', el.clientHeight, 'scene children:', diceBox.scene?.children?.length);
       if (!cancelled) box.current = diceBox;
     })();
     return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
@@ -170,12 +170,11 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onSettle?: (values: n
       const loads: Promise<void>[] = [];
       for (const [dieType, perDieCfg] of Object.entries(config)) {
         if (perDieCfg?.texture && perDieCfg.texture !== 'none') {
-          const img = new Image();
-          loads.push(new Promise<void>(resolve => {
-            img.onload = () => { texCache.current.set(dieType, img); resolve(); };
-            img.onerror = () => resolve();
-            img.src = perDieCfg.texture!;
-          }));
+          loads.push(
+            loadTexture(perDieCfg.texture).then(texObj => {
+              texCache.current.set(dieType, texObj);
+            })
+          );
         }
       }
       await Promise.all(loads);

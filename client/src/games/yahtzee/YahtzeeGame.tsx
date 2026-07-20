@@ -94,7 +94,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
 
   return (
     <div style={{ width:'100%', height:'100%', position:'relative' }}>
-      <DiceOverlay ref={diceRef} onSettle={v => console.log('settled:', v)} />
+      <DiceOverlay ref={diceRef} />
       <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column' }}>
         <div style={{ padding:12, textAlign:'center', background:'rgba(26,26,46,0.85)' }}>
           <span style={{ fontSize:13, color:'#999' }}>
