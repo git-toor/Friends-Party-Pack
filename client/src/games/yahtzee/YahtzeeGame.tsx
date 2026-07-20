@@ -42,8 +42,13 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
 
   // Remote roll trigger — animate dice with same vectors when another player rolls
   useEffect(() => {
-    if (remoteRoll && remoteRoll > 0 && remoteVectors) {
-      diceRef.current?.rollWithVectors(remoteVectors);
+    if (remoteRoll && remoteRoll > 0) {
+      if (remoteVectors) {
+        console.log('[YahtzeeGame] remote roll with vectors, dice:', remoteVectors.vectors?.length);
+        diceRef.current?.rollWithVectors(remoteVectors);
+      } else {
+        console.log('[YahtzeeGame] remote roll but no vectors');
+      }
     }
   }, [remoteRoll, remoteVectors]);
 
@@ -69,6 +74,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     setRolling(true);
     // Pre-generate vectors for consistent animation across all players
     const nv = diceRef.current?.generateVectors('5d6');
+    console.log('[YahtzeeGame] generated vectors:', nv ? 'yes (' + nv.vectors?.length + ' dice)' : 'no');
     if (sessionId) {
       const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL',vectors:nv}}) });
       const data = await res.json();

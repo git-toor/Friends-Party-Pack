@@ -48,8 +48,9 @@ yahtzeeRouter.post('/action', (req, res) => {
         broadcast({ type: 'GAME_STATE', payload: sanitizeState(result.state, i) });
       }
       // Broadcast DICE_ROLL with vectors so other players see the same animation
-      if (action.type === 'ROLL') {
-        const vectors = (action as any).payload?.vectors || null;
+      if ((action as any).type === 'ROLL') {
+        const vectors = (action as any).vectors || null;
+        console.log('[YahtzeeRouter] DICE_ROLL broadcast, playerIndex:', playerIndex, 'has vectors:', !!vectors);
         broadcast({ type: 'DICE_ROLL', payload: { playerIndex, vectors } });
       }
     }
