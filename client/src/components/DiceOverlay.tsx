@@ -110,7 +110,16 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
       }
       if (!cancelled) box.current = diceBox;
     })();
-    return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
+    return () => {
+      cancelled = true;
+      if (box.current) {
+        if (box.current._clickHandler) {
+          window.removeEventListener('click', box.current._clickHandler);
+        }
+        box.current.clearDice();
+        box.current = null;
+      }
+    };
   }, []);
 
   useImperativeHandle(ref, () => ({

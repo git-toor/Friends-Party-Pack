@@ -187,9 +187,6 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     }
   }, [turn.phase, rolling]);
 
-  // TEMP DEBUG
-  useEffect(() => { console.log('[PHASE]', turn.phase, 'rollPhase:', turn.rollPhase, 'rolling:', rolling, 'canKeep:', canKeep, 'selected:', selected.some(s=>s)); }, [turn.phase, turn.rollPhase, rolling, canKeep, selected]);
-
   return (
     <div style={{ width:'100%', height:'100%', position:'relative' }}>
       <DiceOverlay ref={diceRef} onDieTap={handleDieTap} />

@@ -901,11 +901,6 @@ class DiceBox {
 
 	clearDice() {
 		this.running = false;
-		// Remove window click handler
-		if (this._clickHandler) {
-			window.removeEventListener('click', this._clickHandler);
-			this._clickHandler = null;
-		}
 		let dice;
 		while (dice = this.diceList.pop()) {
 			this.scene.remove(dice);
@@ -1162,6 +1157,7 @@ class DiceBox {
 		const handler = (event) => {
 			if (typeof this.onDieTap !== 'function') return;
 			if (this.diceList.length === 0) return;
+
 			const rect = canvas.getBoundingClientRect();
 			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
