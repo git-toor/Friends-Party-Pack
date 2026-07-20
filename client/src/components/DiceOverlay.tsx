@@ -130,7 +130,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
         await new Promise(r => setTimeout(r, 200));
         b = box.current;
       }
-      if (!b || !b.initialized) return [];
+      if (!b || !b.initialized) { console.error('[DiceOverlay] roll failed: DiceBox not initialized after 10s'); return []; }
       try {
         const results = await b.roll(`${count}${type}${suffix}`);
         const values: number[] = [];
@@ -140,7 +140,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
           }
         }
         return values;
-      } catch { return []; }
+      } catch(e) { console.error('[DiceOverlay] roll exception:', e); return []; }
     },
     rollBatch: async (combo: DiceComboEntry[]) => {
       const b = box.current;

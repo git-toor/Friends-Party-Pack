@@ -65,7 +65,9 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     if (remoteRoll && remoteRoll > 0 && remoteVectors) {
       const values = remoteVectors?.values || null;
       if (values && values.length > 0) {
-        diceRef.current?.roll('d6', values.length, `@${values.join(',')}`)?.catch(() => {});
+        const p = diceRef.current?.roll('d6', values.length, `@${values.join(',')}`);
+        if (!p) console.warn('[YahtzeeGame] remote roll: diceRef not ready');
+        p?.then(v => { if (v.length === 0) console.warn('[YahtzeeGame] remote roll returned empty'); }).catch(e => console.error('[YahtzeeGame] remote roll error:', e));
       }
     }
   }, [remoteRoll, remoteVectors]);
