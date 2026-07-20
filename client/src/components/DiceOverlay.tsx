@@ -83,6 +83,8 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         light_intensity: 0.7,
         color_spotlight: 0xefdfd5,
         theme_surface: 'green-felt',
+        sounds: true,
+        volume: 100,
         strength: 1,
         iterationLimit: 1000,
         beforeSpawnDie: (type: string, _vec: any, factory: any) => {
