@@ -182,6 +182,15 @@ class DiceBox {
 			.catch(e=>{throw new Error("Unable to load sounds")})
 		}
 
+		// Test: before any roll, add a box where dice would be (same position as die 0)
+		if (!this._testCube) {
+			const bg = new THREE.BoxGeometry(60, 60, 60);
+			const bm = new THREE.MeshStandardMaterial({ color: 0x00ffff, roughness: 0.5, metalness: 0.1 });
+			this._testCube = new THREE.Mesh(bg, bm);
+			this._testCube.position.set(131, 383, 47); // same as die 0's position
+			this.scene.add(this._testCube);
+			console.log('[DiceBox] Added test cube at (131, 383, 47)');
+		}
 		// Test: add spheres at various positions to verify rendering & coordinate system
 		if (!this._testMarkers) {
 			this._testMarkers = [];
