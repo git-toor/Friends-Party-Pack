@@ -32,8 +32,8 @@ interface YahtzeeGameProps {
 }
 
 const uiLayerStyle: React.CSSProperties = {
-  position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-  zIndex: 998, display: 'flex', flexDirection: 'column',
+  width: '100%', height: '100%',
+  display: 'flex', flexDirection: 'column',
 };
 
 const bottomBarStyle: React.CSSProperties = {
@@ -196,7 +196,7 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
   }, [gameState.winners]);
 
   return (
-    <>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <DiceOverlay
         ref={diceRef}
         onSettle={(values) => console.log('Dice settled:', values)}
@@ -262,7 +262,7 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
