@@ -30,22 +30,6 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-app.get('/api/lan-ip', async (_req, res) => {
-  const os = await import('node:os');
-  const nets = os.networkInterfaces();
-  let ip = 'localhost';
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name] || []) {
-      if (net.family === 'IPv4' && !net.internal) {
-        ip = net.address;
-        break;
-      }
-    }
-    if (ip !== 'localhost') break;
-  }
-  res.json({ ip });
-});
-
 // ─── Static Files (Production) ────────────────────────────
 const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
 const fs = await import('node:fs');
