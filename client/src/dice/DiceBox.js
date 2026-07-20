@@ -1176,9 +1176,7 @@ class DiceBox {
 		this.running = Date.now();
 		this.last_time = 0;
 		this.animateThrow(this.running, callback);
-
 	}
-}
 
 	// Return the last notationVectors (for multiplayer sync)
 	getLastNotation() {
@@ -1192,5 +1190,6 @@ class DiceBox {
 			error: false,
 		} : null;
 	}
+}
 
-	export { DiceBox }
+export { DiceBox }
