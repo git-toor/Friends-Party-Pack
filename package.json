@@ -1,0 +1,19 @@
+{
+  "name": "friends-party-pack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["server", "client"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w shared && npm run build -w client && npm run build -w server",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w client && npm run typecheck -w server",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.3.3"
+  }
+}
