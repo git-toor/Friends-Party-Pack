@@ -25,8 +25,7 @@ export default function GameSettingsPage() {
     if (!playerName.trim() || !gameId) return;
     const result = await create(gameId, playerName.trim(), maxPlayers);
     if (result) {
-      const playerId = result.playerId;
-      navigate(`/lobby/${result.lobby.code}?playerId=${playerId}&name=${encodeURIComponent(playerName.trim())}`);
+      navigate(`/lobby/${result.lobby.code}?playerId=${result.playerId}&lobbyId=${result.lobby.id}&name=${encodeURIComponent(playerName.trim())}`);
     }
   };
 

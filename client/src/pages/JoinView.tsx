@@ -19,7 +19,7 @@ export default function JoinView() {
     if (!code.trim() || !name.trim()) return;
     const result = await join(code.trim().toUpperCase(), name.trim());
     if (result) {
-      navigate(`/lobby/${result.lobby.code}?playerId=${result.playerId}&name=${encodeURIComponent(name.trim())}`);
+      navigate(`/lobby/${result.lobby.code}?playerId=${result.playerId}&lobbyId=${result.lobbyId}&name=${encodeURIComponent(name.trim())}`);
     }
   };
 

@@ -21,6 +21,7 @@ export default function LobbyPanel() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const playerId = searchParams.get('playerId') || '';
+  const lobbyId = searchParams.get('lobbyId') || '';
   const playerName = searchParams.get('name') || '';
   const [lobby, setLobby] = useState<any>(null);
   const [players, setPlayers] = useState<any[]>([]);
@@ -28,10 +29,10 @@ export default function LobbyPanel() {
   const [joinUrl, setJoinUrl] = useState('');
 
   useEffect(() => {
-    if (!code) return;
+    if (!code || !lobbyId) return;
     setJoinUrl(`${location.origin}/join/${code}`);
     loadState();
-  }, [code]);
+  }, [code, lobbyId]);
 
   useWebSocket({
     LOBBY_UPDATED: (payload: any) => {
@@ -39,14 +40,13 @@ export default function LobbyPanel() {
       if (payload.players) setPlayers(payload.players);
     },
     GAME_STARTED: (payload: any) => {
-      // Navigate to game — session ID will be in payload later
-      navigate(`/game/session`, { state: { lobby: payload.lobby, players: payload.players, playerId, playerName } });
+      navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: payload.players?.findIndex((p: any) => p.id === playerId), playerName, lobby: payload.lobby } });
     },
   });
 
   const loadState = async () => {
-    if (!code) return;
-    const result = await api.getLobbyState(sessionStorage.getItem('lobbyId') || '');
+    if (!lobbyId) return;
+    const result = await api.getLobbyState(lobbyId);
     if (result && result.lobby) {
       setLobby(result.lobby);
       setPlayers(result.players);
@@ -57,18 +57,16 @@ export default function LobbyPanel() {
     const newReady = !isReady;
     setIsReady(newReady);
     try {
-      // Find lobby ID from current state
-      const state = lobby;
-      if (state) {
-        await api.setReady(state.id, playerId, newReady);
+      if (lobbyId) {
+        await api.setReady(lobbyId, playerId, newReady);
       }
     } catch {}
   };
 
   const handleStart = async () => {
-    if (!lobby) return;
+    if (!lobbyId) return;
     try {
-      await api.startGame(lobby.id, playerId);
+      await api.startGame(lobbyId, playerId);
     } catch {}
   };
 
