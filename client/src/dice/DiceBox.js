@@ -1180,4 +1180,17 @@ class DiceBox {
 	}
 }
 
-export { DiceBox }
+	// Return the last notationVectors (for multiplayer sync)
+	getLastNotation() {
+		return this.notationVectors ? {
+			vectors: this.notationVectors.vectors,
+			set: this.notationVectors.set,
+			constant: this.notationVectors.constant,
+			op: this.notationVectors.op,
+			notation: this.notationVectors.notation,
+			result: this.notationVectors.result || [],
+			error: false,
+		} : null;
+	}
+
+	export { DiceBox }

@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { DiceOverlay, type DiceOverlayHandle, type DieType, type PerDieConfig } from '../../components/DiceOverlay.js';
 import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
-import { mulberry32 } from './seed.js';
 import { loadDiceAppearance } from '../../components/DiceAppearance.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
 
@@ -42,27 +41,19 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     return () => clearInterval(t);
   }, [diceAppearance]);
 
-  // Remote roll trigger — dice animation with same seed + appearance as roller
+  // Remote roll — replay exact same vectors from the rolling player
   useEffect(() => {
     if (remoteRoll && remoteRoll > 0 && remoteVectors) {
-      // Apply roller's appearance before the roll
-      const rollerCfg = remoteVectors?.appearance || null;
-      if (rollerCfg) {
-        diceRef.current?.setConfig(rollerCfg);
+      const vectors = remoteVectors?.vectors || remoteVectors;
+      const appearance = remoteVectors?.appearance || null;
+      if (appearance) diceRef.current?.setConfig(appearance);
+      if (vectors && vectors.length > 0) {
+        const nv = { vectors, set: [], constant: 0, op: '', notation: '', result: [], error: false };
+        diceRef.current?.rollWithVectors(nv)?.then(async () => {
+          const localCfg = loadDiceAppearance();
+          if (Object.keys(localCfg).length > 0) diceRef.current?.configure(localCfg);
+        }).catch(() => {});
       }
-      const seed = remoteVectors?.seed || remoteVectors;
-      const prng = mulberry32(seed);
-      const origRandom = Math.random;
-      Math.random = prng;
-      const rollPromise = diceRef.current?.roll('d6', 5);
-      Math.random = origRandom;
-      rollPromise?.then(async () => {
-        // After animation, re-apply local appearance
-        const localCfg = loadDiceAppearance();
-        if (Object.keys(localCfg).length > 0) {
-          diceRef.current?.configure(localCfg);
-        }
-      }).catch(() => {});
     }
   }, [remoteRoll, remoteVectors]);
 
@@ -87,29 +78,25 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     if (!canRoll) return;
     setRolling(true);
 
-    // Replace Math.random with a seeded PRNG for deterministic dice throws
-    const seed = (Math.random() * 2147483647) | 0;
-    const prng = mulberry32(seed);
-    const origRandom = Math.random;
-    Math.random = prng;
-
     try {
-      // roll() synchronously calls startClickThrow which uses Math.random — all seeded
-      const rollPromise = diceRef.current?.roll('d6', 5);
-      Math.random = origRandom; // restore immediately after synchronous generation
+      // Roll first — this generates vectors internally via startClickThrow
+      await diceRef.current?.roll('d6', 5);
+      
+      // Get the exact vectors that were just used
+      const nv = diceRef.current?.getLastNotation();
+      console.log('[YahtzeeGame] roll complete, got vectors:', nv ? nv.vectors?.length + ' dice' : 'NO');
 
       if (sessionId) {
         const diceCfg = loadDiceAppearance();
-        const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL',seed,appearance:diceCfg}}) });
+        const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL',vectors:nv,appearance:diceCfg}}) });
         const data = await res.json();
-        if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); Math.random = origRandom; return; }
+        if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
         if (data.state) setGs(data.state);
+      } else {
+        setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
       }
-      await rollPromise; // wait for animation to complete
-      if (!sessionId) setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
     } catch(e) {
       console.error('Roll error:', e);
-      Math.random = origRandom;
     }
     setRolling(false);
   }, [canRoll, sessionId, playerIndex]);

@@ -31,7 +31,7 @@ export interface DiceOverlayHandle {
   rollBatch: (combo: DiceComboEntry[]) => Promise<number[]>;
   configure: (config: Record<string, PerDieConfig>) => Promise<void>;
   clear: () => void;
-  generateVectors: (notation: string) => any;
+  getLastNotation: () => any;
   rollWithVectors: (nv: any) => Promise<number[]>;
   setConfig: (config: Record<string, PerDieConfig>) => void;
 }
@@ -194,8 +194,8 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
       configRef.current = config;
       texCache.current.clear();
     },
-    generateVectors: (notation: string) => {
-      return box.current?.generateVectors(notation) || null;
+    getLastNotation: () => {
+      return box.current?.getLastNotation() || null;
     },
     rollWithVectors: async (nv: any) => {
       const b = box.current;

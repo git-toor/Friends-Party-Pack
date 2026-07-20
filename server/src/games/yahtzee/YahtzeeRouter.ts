@@ -47,12 +47,12 @@ yahtzeeRouter.post('/action', (req, res) => {
       for (let i = 0; i < result.state.players.length; i++) {
         broadcast({ type: 'GAME_STATE', payload: sanitizeState(result.state, i) });
       }
-      // Broadcast DICE_ROLL with seed so other players see the same animation
+      // Broadcast DICE_ROLL with vectors so other players see the same animation
       if ((action as any).type === 'ROLL') {
-        const seed = (action as any).seed || null;
+        const vectors = (action as any).vectors || null;
         const appearance = (action as any).appearance || null;
-        console.log('[YahtzeeRouter] DICE_ROLL broadcast, playerIndex:', playerIndex, 'seed:', seed);
-        broadcast({ type: 'DICE_ROLL', payload: { playerIndex, seed, appearance } });
+        console.log('[YahtzeeRouter] DICE_ROLL broadcast, playerIndex:', playerIndex, 'vectors:', vectors ? vectors.vectors?.length + ' dice' : 'NO');
+        broadcast({ type: 'DICE_ROLL', payload: { playerIndex, vectors, appearance } });
       }
     }
 
