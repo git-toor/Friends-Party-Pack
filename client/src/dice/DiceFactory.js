@@ -567,6 +567,9 @@ class DiceFactory {
 			this.dice_color_rand = this.dice_color[colorindex];
 		} else {
 			this.dice_color_rand = this.dice_color;
+			this.label_color_rand = this.label_color || '';
+			this.label_outline_rand = this.label_outline || '';
+			this.edge_color_rand = this.edge_color || '';
 		}
 
 		// set edge color if not set
