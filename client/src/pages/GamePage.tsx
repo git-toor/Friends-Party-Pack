@@ -20,6 +20,7 @@ export default function GamePage() {
   const playerId = state?.playerId || players[playerIndex]?.id || '';
   const diceAppearance = loadDiceAppearance();
   const [rollTrigger, setRollTrigger] = useState(0);
+  const [remoteVectors, setRemoteVectors] = useState<any>(null);
 
   useEffect(() => {
     if (!sessionId) {
@@ -42,6 +43,7 @@ export default function GamePage() {
     // Wire DICE_ROLL — trigger dice animation on all clients except the roller
     const unsubDice = ws.on('DICE_ROLL', (msg) => {
       if (msg.payload.playerIndex !== playerIndex) {
+        setRemoteVectors(msg.payload.vectors);
         setRollTrigger(n => n + 1);
       }
     });
@@ -63,6 +65,7 @@ export default function GamePage() {
         playerId={playerId}
         diceAppearance={diceAppearance}
         remoteRoll={rollTrigger}
+        remoteVectors={remoteVectors}
       />
       {sessionId && (
         <ChatBox

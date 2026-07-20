@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { DiceOverlay, type DiceOverlayHandle, type DieType, type DiceAppearanceConfig } from '../../components/DiceOverlay.js';
+import { DiceOverlay, type DiceOverlayHandle, type DieType, type PerDieConfig } from '../../components/DiceOverlay.js';
 import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
@@ -15,13 +15,14 @@ function createInitialState(playerCount: number): YahtzeeGameState {
 interface YahtzeeGameProps {
   playerCount?: number; playerIndex?: number; playerName?: string; sessionId?: string;
   players?: { name: string; index: number; id?: string }[]; playerId?: string;
-  diceAppearance?: DiceAppearanceConfig;
+  diceAppearance?: Record<string, PerDieConfig>;
   remoteRoll?: number;
+  remoteVectors?: any;
 }
 
 const bottomBarStyle: React.CSSProperties = { padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, marginTop:'auto' };
 
-export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance, remoteRoll }: YahtzeeGameProps) {
+export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance, remoteRoll, remoteVectors }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gs, setGs] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [rolling, setRolling] = useState(false);
@@ -39,12 +40,12 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     return () => clearInterval(t);
   }, [diceAppearance]);
 
-  // Remote roll trigger — animate dice when another player rolls
+  // Remote roll trigger — animate dice with same vectors when another player rolls
   useEffect(() => {
-    if (remoteRoll && remoteRoll > 0) {
-      diceRef.current?.roll('d6', 5);
+    if (remoteRoll && remoteRoll > 0 && remoteVectors) {
+      diceRef.current?.rollWithVectors(remoteVectors);
     }
-  }, [remoteRoll]);
+  }, [remoteRoll, remoteVectors]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -66,14 +67,16 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   const handleRoll = useCallback(async () => {
     if (!canRoll) return;
     setRolling(true);
+    // Pre-generate vectors for consistent animation across all players
+    const nv = diceRef.current?.generateVectors('5d6');
     if (sessionId) {
-      const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL'}}) });
+      const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL',vectors:nv}}) });
       const data = await res.json();
       if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
       if (data.state) setGs(data.state);
-      await diceRef.current?.roll('d6', 5);
+      if (nv) await diceRef.current?.rollWithVectors(nv);
     } else {
-      await diceRef.current?.roll('d6', 5);
+      if (nv) await diceRef.current?.rollWithVectors(nv);
       setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
     }
     setRolling(false);

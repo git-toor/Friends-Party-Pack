@@ -41,17 +41,18 @@ yahtzeeRouter.post('/action', (req, res) => {
   sessions.set(sessionId, result.state);
   const sanitized = sanitizeState(result.state, playerIndex);
 
-  // Broadcast to all players via WS
-  const broadcast = wsBroadcasts.get(sessionId);
-  if (broadcast) {
-    for (let i = 0; i < result.state.players.length; i++) {
-      broadcast({ type: 'GAME_STATE', payload: sanitizeState(result.state, i) });
+    // Broadcast to all players via WS
+    const broadcast = wsBroadcasts.get(sessionId);
+    if (broadcast) {
+      for (let i = 0; i < result.state.players.length; i++) {
+        broadcast({ type: 'GAME_STATE', payload: sanitizeState(result.state, i) });
+      }
+      // Broadcast DICE_ROLL with vectors so other players see the same animation
+      if (action.type === 'ROLL') {
+        const vectors = (action as any).payload?.vectors || null;
+        broadcast({ type: 'DICE_ROLL', payload: { playerIndex, vectors } });
+      }
     }
-    // Broadcast DICE_ROLL so other players see the animation
-    if (action.type === 'ROLL') {
-      broadcast({ type: 'DICE_ROLL', payload: { playerIndex } });
-    }
-  }
 
   res.json({ valid: true, state: sanitized, diceValues: result.diceValues });
 });

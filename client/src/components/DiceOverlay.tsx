@@ -29,8 +29,10 @@ export type DiceAppearanceConfig = Partial<Record<DieType, PerDieConfig>>;
 export interface DiceOverlayHandle {
   roll: (dieType: DieType, count?: number) => Promise<number[]>;
   rollBatch: (combo: DiceComboEntry[]) => Promise<number[]>;
-  configure: (config: DiceAppearanceConfig) => Promise<void>;
+  configure: (config: Record<string, PerDieConfig>) => Promise<void>;
   clear: () => void;
+  generateVectors: (notation: string) => any;
+  rollWithVectors: (nv: any) => Promise<number[]>;
 }
 
 function resolveTheme(config: DiceAppearanceConfig): {
@@ -171,7 +173,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         return values;
       } catch { return []; }
     },
-    configure: async (config: DiceAppearanceConfig) => {
+    configure: async (config: Record<string, PerDieConfig>) => {
       configRef.current = config;
       texCache.current.clear();
       const loads: Promise<void>[] = [];
@@ -185,6 +187,28 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         }
       }
       await Promise.all(loads);
+    },
+    generateVectors: (notation: string) => {
+      return box.current?.generateVectors(notation) || null;
+    },
+    rollWithVectors: async (nv: any) => {
+      const b = box.current;
+      if (!b) return [];
+      for (let attempt = 0; attempt < 20; attempt++) {
+        if (b.initialized) break;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      if (!b.initialized) return [];
+      try {
+        const results = await b.rollWithVectors(nv);
+        const values: number[] = [];
+        for (const set of results.sets || []) {
+          for (const roll of set.rolls || []) {
+            values.push(roll.value);
+          }
+        }
+        return values;
+      } catch { return []; }
     },
     clear: () => {
       box.current?.clearDice();
