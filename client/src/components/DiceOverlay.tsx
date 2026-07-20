@@ -77,6 +77,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
     let cancelled = false;
     (async () => {
       const diceBox = new DiceBox(`#${el.id}`, {
+        assetPath: '/',
         theme_colorset: 'white',
         theme_texture: '',
         theme_material: 'none',
