@@ -64,8 +64,10 @@ function resolveTheme(config: DiceAppearanceConfig): {
 export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverlay(_p, ref) {
   const cr = useRef<HTMLDivElement>(null);
   const box = useRef<InstanceType<typeof DiceBox> | null>(null);
-  const configRef = useRef<DiceAppearanceConfig>({});
+  const configRef = useRef<Record<string, PerDieConfig>>({});
   const texCache = useRef<Map<string, DiceTextureObject>>(new Map());
+
+  const spawnCount = useRef(0);
 
   useEffect(() => {
     const el = cr.current;
@@ -86,7 +88,10 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         beforeSpawnDie: (type: string, _vec: any, factory: any) => {
           const cache = texCache.current;
           const config = configRef.current;
-          const c = config[type as DieType] || {} as PerDieConfig;
+          // Cycle through dice_0..dice_4 configs based on spawn counter
+          const idx = spawnCount.current % 5;
+          spawnCount.current = spawnCount.current + 1;
+          const c = (config[`dice_${idx}`] || config[type as DieType] || {}) as PerDieConfig;
           if (c.colorset && COLORSETS[c.colorset]) {
             const cs = COLORSETS[c.colorset] as any;
             const face = c.faceColor || cs.background || '#ffffff';
