@@ -1,5 +1,7 @@
 import express from 'express';
 import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { v4 as uuid } from 'uuid';
 import { config } from './config.js';
 import { getDb, closeDb } from './db/index.js';
@@ -8,6 +10,8 @@ import { WsServer } from './ws/WsServer.js';
 import { setupWsHandlers } from './ws/handlers.js';
 import { yahtzeeRouter, createYahtzeeSession } from './games/yahtzee/YahtzeeRouter.js';
 import type { CreateLobbyRequest } from './lobby/LobbyManager.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 app.use(express.json());
@@ -24,6 +28,10 @@ setupWsHandlers(wsServer, lobbyManager);
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
+
+// ─── Static Files (Production) ────────────────────────────
+const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
+app.use(express.static(clientDist));
 
 // ─── Lobby REST Routes ────────────────────────────────────
 app.post('/api/lobby/create', (req, res) => {
@@ -60,13 +68,14 @@ app.post('/api/lobby/start', (req, res) => {
   } else {
     const playerCount = result.players.length;
     const sessionId = uuid();
-    const players = result.players.map((p, i) => ({ id: p.id, name: p.name, index: i }));
     createYahtzeeSession(sessionId, playerCount);
-    wsServer.broadcast(`lobby:${req.body.lobbyId}`, {
-      type: 'GAME_STARTED',
-      payload: { sessionId, players, ...result },
-    });
-    res.json({ sessionId, players, ...result });
+    const payload = {
+      ...result,
+      sessionId,
+      players: result.players.map((p: any, i: number) => ({ id: p.id, name: p.name, index: i })),
+    };
+    wsServer.broadcast(`lobby:${req.body.lobbyId}`, { type: 'GAME_STARTED', payload });
+    res.json(payload);
   }
 });
 
@@ -77,6 +86,11 @@ app.post('/api/lobby/state', (req, res) => {
 
 // ─── Game Routes ──────────────────────────────────────────
 app.use('/api/games/yahtzee', yahtzeeRouter);
+
+// ─── SPA Fallback (Production) ────────────────────────────
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
 
 // ─── Start ───────────────────────────────────────────────
 server.listen(config.port, () => {
