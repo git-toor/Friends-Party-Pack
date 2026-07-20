@@ -41,12 +41,14 @@ yahtzeeRouter.post('/action', (req, res) => {
   sessions.set(sessionId, result.state);
   const sanitized = sanitizeState(result.state, playerIndex);
 
-    // Broadcast to all players via WS
+      // Broadcast to all players via WS
     const broadcast = wsBroadcasts.get(sessionId);
     if (broadcast) {
       for (let i = 0; i < result.state.players.length; i++) {
         broadcast({ type: 'GAME_STATE', payload: sanitizeState(result.state, i) });
       }
+      // Broadcast action source so clients can skip echo
+      broadcast({ type: 'ACTION_SOURCE', payload: { playerIndex } });
       // Broadcast DICE_ROLL with dice values so all players show the same result
       if ((action as any).type === 'ROLL') {
         const diceValues = result.diceValues || null;

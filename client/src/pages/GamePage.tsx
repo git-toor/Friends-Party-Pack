@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import YahtzeeGame from '../games/yahtzee/YahtzeeGame.js';
 import ChatBox, { dispatchChatMessage } from '../components/ChatBox.js';
@@ -21,6 +21,7 @@ export default function GamePage() {
   const [rollTrigger, setRollTrigger] = useState(0);
   const [remoteVectors, setRemoteVectors] = useState<any>(null);
   const [gameStatePush, setGameStatePush] = useState<any>(null);
+  const lastActionPlayer = useRef(-1);
 
   useEffect(() => {
     if (!sessionId) {
@@ -31,8 +32,13 @@ export default function GamePage() {
     ws.connect();
     ws.send('JOIN_GAME', { sessionId, playerIndex });
 
+    const unsubAction = ws.on('ACTION_SOURCE', (msg) => {
+      lastActionPlayer.current = msg.payload?.playerIndex ?? -1;
+    });
+
     const unsub = ws.on('GAME_STATE', (msg) => {
-      console.log('Game state update:', msg.payload);
+      // Skip if this state update is from the local player's own action
+      if (lastActionPlayer.current === playerIndex) return;
       setGameStatePush(msg.payload);
     });
 
@@ -51,7 +57,7 @@ export default function GamePage() {
     });
 
     setReady(true);
-    return () => { unsub(); unsubChat(); unsubDice(); };
+    return () => { unsubAction(); unsub(); unsubChat(); unsubDice(); };
   }, [sessionId, playerIndex]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
