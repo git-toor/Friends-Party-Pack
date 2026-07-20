@@ -20,6 +20,9 @@ export default function DiceTest() {
   return (
     <div style={{ width: '100%', height: '100%', background: '#0f0f1a' }}>
       <DiceOverlay ref={diceRef} />
+      <div style={{ position: 'fixed', top: 10, left: 10, color: '#fff', zIndex: 1001, fontSize: 18 }}>
+        🎲 DICE TEST — select dice below and press Roll
+      </div>
       <DiceRollPanel
         diceMode="ANIMATED"
         rerollsRemaining={0}
