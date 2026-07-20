@@ -65,11 +65,13 @@ function resolveTheme(config: DiceAppearanceConfig): {
   return { colorset, customColorset, texture, material };
 }
 
-export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: number) => void }>(function DiceOverlay({ onDieTap }, ref) {
+export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: number) => void }>(function DiceOverlay({ onDieTap: onDieTapProp }, ref) {
   const cr = useRef<HTMLDivElement>(null);
   const box = useRef<InstanceType<typeof DiceBox> | null>(null);
   const configRef = useRef<Record<string, PerDieConfig>>({});
   const texCache = useRef<Map<string, DiceTextureObject>>(new Map());
+  const onDieTapRef = useRef(onDieTapProp);
+  onDieTapRef.current = onDieTapProp; // always keep ref updated
 
   const spawnCount = useRef(0);
 
@@ -92,7 +94,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
         volume: 100,
         strength: 1,
         iterationLimit: 1000,
-        onDieTap: (index: number) => { if (!cancelled && onDieTap) onDieTap(index); },
+        onDieTap: (index: number) => { if (!cancelled && onDieTapRef.current) onDieTapRef.current(index); },
         beforeSpawnDie: (type: string, _vec: any, factory: any) => {
           const cache = texCache.current;
           const config = configRef.current;
