@@ -166,6 +166,8 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
       const notation = combo.map(e => `${e.count}${e.dieType}`).join('+');
       try {
         const results = await b.roll(notation);
+        console.log('[DiceOverlay] roll results:', JSON.stringify(results));
+        if (b.diceList) console.log('[DiceOverlay] dice in scene:', b.diceList.length, 'scene children:', b.scene?.children?.length);
         const values: number[] = [];
         for (const set of results.sets || []) {
           for (const roll of set.rolls || []) {
