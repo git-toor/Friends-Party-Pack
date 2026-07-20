@@ -1,5 +1,4 @@
 import { forwardRef, useRef, useEffect, useImperativeHandle } from 'react';
-import * as THREE from 'three';
 // @ts-ignore
 import { DiceBox } from '../dice/DiceBox.js';
 
@@ -41,21 +40,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {
         onRollComplete: (results: any) => {
           const values = getValuesFromResults(results);
           if (!cancelled && onSettle) onSettle(values);
-          // Debug: add visible spheres at dice positions
-          if (diceBox.diceList) {
-            for (let i = 0; i < diceBox.diceList.length; i++) {
-              const mesh = diceBox.diceList[i];
-              if (!mesh) continue;
-              const sp = new THREE.SphereGeometry(15, 8, 8);
-              const sm = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-              const sphere = new THREE.Mesh(sp, sm);
-              sphere.position.copy(mesh.position);
-              sphere.position.z += 30;
-              diceBox.scene.add(sphere);
-              console.log(`[dice ${i}] pos:`, mesh.position.x.toFixed(0), mesh.position.y.toFixed(0), mesh.position.z.toFixed(0), 'body:', mesh.body?.position.x.toFixed(0), mesh.body?.position.y.toFixed(0), mesh.body?.position.z.toFixed(0));
-            }
-            diceBox.renderer.render(diceBox.scene, diceBox.camera);
-          }
         },
         onKeepComplete: (count: number) => {
           if (!cancelled && onKeepComplete) onKeepComplete(count);

@@ -30,7 +30,12 @@ export default function LobbyPanel() {
 
   useEffect(() => {
     if (!code || !lobbyId) return;
-    setJoinUrl(`${location.origin}/join/${code}`);
+    const url = `${location.origin}/join/${code}`;
+    setJoinUrl(url);
+    // Show LAN IP for mobile access
+    fetch('/api/lan-ip').then(r => r.json()).then(d => {
+      if (d.ip) setJoinUrl(`${location.protocol}//${d.ip}:${location.port}/join/${code}`);
+    }).catch(() => {});
     loadState();
   }, [code, lobbyId]);
 

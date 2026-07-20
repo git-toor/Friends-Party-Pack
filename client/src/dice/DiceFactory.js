@@ -66,7 +66,6 @@ class DiceFactory {
 
 		let dicemesh = new THREE.Mesh(geom, this.createMaterials(diceobj, this.baseScale / 2, 1.0));
 		dicemesh.result = [];
-		console.log('[DiceFactory] created', type, 'mesh, verts:', geom.attributes.position?.count, 'materials:', dicemesh.material?.length);
 		dicemesh.shape = diceobj.shape;
 		dicemesh.rerolls = 0;
 		dicemesh.resultReason = 'natural';
