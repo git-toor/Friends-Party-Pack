@@ -42,14 +42,21 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
 
   useEffect(() => {
     if (gameStatePush && gameStatePush.turn) {
-      setGs(gameStatePush);
-      // Sync kept dice visuals when game state updates
-      const turn = gameStatePush.turn;
-      if (turn) {
-        for (let i = 0; i < 5; i++) {
-          diceRef.current?.setDieKept(i, turn.kept?.[i] || false);
-          diceRef.current?.setDieSelected(i, false);
+      const pushTurn = gameStatePush.turn as any;
+      setGs((prev: YahtzeeGameState) => {
+        if (prev.turn.rollPhase === pushTurn.rollPhase &&
+            JSON.stringify(prev.turn.kept) === JSON.stringify(pushTurn.kept) &&
+            JSON.stringify(prev.turn.dice) === JSON.stringify(pushTurn.dice) &&
+            prev.turn.phase === pushTurn.phase &&
+            prev.currentPlayerIndex === gameStatePush.currentPlayerIndex &&
+            prev.round === gameStatePush.round) {
+          return prev;
         }
+        return gameStatePush as YahtzeeGameState;
+      });
+      for (let i = 0; i < 5; i++) {
+        diceRef.current?.setDieKept(i, pushTurn.kept?.[i] || false);
+        diceRef.current?.setDieSelected(i, false);
       }
     }
   }, [gameStatePush]);
@@ -101,7 +108,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     } else {
       await diceRef.current?.roll('d6', 5);
       setGs(p => {
-        const n = {...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}};
+        const n = {...p, turn:{...p.turn, phase: 'WAITING_FOR_KEEP' as YahtzeeTurn['phase'], rollPhase: (p.turn.rollPhase+1) as 1|2|3}};
         console.log('[YahtzeeGame] setGs after roll, phase:', n.turn.phase, 'rollPhase:', n.turn.rollPhase);
         return n;
       });
