@@ -118,6 +118,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onSettle?: (values: n
         onRollComplete: () => {},
       });
       await diceBox.initialize();
+      console.log('[DiceOverlay] inited, canvas:', diceBox.renderer?.domElement?.width, 'x', diceBox.renderer?.domElement?.height, 'container:', el.clientWidth, 'x', el.clientHeight, 'scene children:', diceBox.scene?.children?.length);
       if (!cancelled) box.current = diceBox;
     })();
     return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
