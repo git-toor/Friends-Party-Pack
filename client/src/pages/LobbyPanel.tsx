@@ -44,6 +44,12 @@ export default function LobbyPanel() {
     },
   });
 
+  // Sync isReady from the player list
+  useEffect(() => {
+    const me = players.find(p => p.id === playerId);
+    if (me) setIsReady(me.ready);
+  }, [players, playerId]);
+
   // Join the WS room for this lobby
   useEffect(() => {
     if (!code) return;
@@ -108,13 +114,15 @@ export default function LobbyPanel() {
         ))}
       </div>
 
-      {isHost ? (
+      {/* Ready toggle for everyone, including host */}
+      <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
+        {isReady ? 'Not Ready' : 'Ready'}
+      </Button>
+
+      {/* Start button only for host */}
+      {isHost && (
         <Button size="lg" disabled={players.length < 2 || !players.every(p => p.ready)} onClick={handleStart}>
           Start Game
-        </Button>
-      ) : (
-        <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
-          {isReady ? 'Not Ready' : 'Ready!'}
         </Button>
       )}
     </div>
