@@ -31,6 +31,9 @@ export interface DiceOverlayHandle {
   rollBatch: (combo: DiceComboEntry[]) => Promise<number[]>;
   configure: (config: Record<string, PerDieConfig>) => Promise<void>;
   clear: () => void;
+  setDieKept: (index: number, kept: boolean) => void;
+  setDieSelected: (index: number, selected: boolean) => void;
+  resetDieVisuals: () => void;
 }
 
 function resolveTheme(config: DiceAppearanceConfig): {
@@ -61,7 +64,7 @@ function resolveTheme(config: DiceAppearanceConfig): {
   return { colorset, customColorset, texture, material };
 }
 
-export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverlay(_p, ref) {
+export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: number) => void }>(function DiceOverlay({ onDieTap }, ref) {
   const cr = useRef<HTMLDivElement>(null);
   const box = useRef<InstanceType<typeof DiceBox> | null>(null);
   const configRef = useRef<Record<string, PerDieConfig>>({});
@@ -88,6 +91,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         volume: 100,
         strength: 1,
         iterationLimit: 1000,
+        onDieTap: (index: number) => { if (!cancelled && onDieTap) onDieTap(index); },
         beforeSpawnDie: (type: string, _vec: any, factory: any) => {
           const cache = texCache.current;
           const config = configRef.current;
@@ -127,6 +131,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         onRollComplete: () => {},
       });
       await diceBox.initialize();
+      if (diceBox.renderer) diceBox.setupDieTap(diceBox.renderer.domElement);
       if (!cancelled) box.current = diceBox;
     })();
     return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
@@ -189,6 +194,15 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
     },
     clear: () => {
       box.current?.clearDice();
+    },
+    setDieKept: (index: number, kept: boolean) => {
+      box.current?.setDieKept(index, kept);
+    },
+    setDieSelected: (index: number, selected: boolean) => {
+      box.current?.setDieSelected(index, selected);
+    },
+    resetDieVisuals: () => {
+      box.current?.resetDieVisuals();
     },
   }), []);
 

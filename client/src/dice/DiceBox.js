@@ -32,6 +32,7 @@ const defaultConfig = {
 	onRerollComplete: () => {},
 	onAddDiceComplete: () => {},
 	onRemoveDiceComplete: () => {},
+	onDieTap: null,
 }
 
 class DiceBox {
@@ -1149,6 +1150,82 @@ class DiceBox {
 		this.animateThrow(this.running, callback);
 	}
 
+	setupDieTap(canvas) {
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+		canvas.addEventListener('click', (event) => {
+			const rect = canvas.getBoundingClientRect();
+			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+			raycaster.setFromCamera(mouse, this.camera);
+			const meshes = this.diceList.filter(d => d && !d._kept);
+			const intersects = raycaster.intersectObjects(meshes);
+			if (intersects.length > 0) {
+				const hit = intersects[0].object;
+				const idx = this.diceList.indexOf(hit);
+				if (idx !== -1 && typeof this.onDieTap === 'function') {
+					this.onDieTap(idx);
+				}
+			}
+		});
+	}
+
+	setDieKept(index, kept) {
+		const mesh = this.diceList[index];
+		if (!mesh) return;
+		mesh._kept = kept;
+		// Visually dim kept dice
+		if (Array.isArray(mesh.material)) {
+			for (const m of mesh.material) {
+				if (kept) { m.opacity = 0.5; m.transparent = true; }
+				else { m.opacity = 1; m.transparent = false; }
+				m.needsUpdate = true;
+			}
+		} else if (mesh.material) {
+			if (kept) { mesh.material.opacity = 0.5; mesh.material.transparent = true; }
+			else { mesh.material.opacity = 1; mesh.material.transparent = false; }
+			mesh.material.needsUpdate = true;
+		}
+	}
+
+	setDieSelected(index, selected) {
+		const mesh = this.diceList[index];
+		if (!mesh) return;
+		// Highlight selected dice with emissive glow
+		if (Array.isArray(mesh.material)) {
+			for (const m of mesh.material) {
+				m.emissive = selected ? new THREE.Color(0xff6600) : new THREE.Color(0x000000);
+				if (selected) { m.emissiveIntensity = 0.5; } else { m.emissiveIntensity = 0; }
+				m.needsUpdate = true;
+			}
+		} else if (mesh.material) {
+			mesh.material.emissive = selected ? new THREE.Color(0xff6600) : new THREE.Color(0x000000);
+			mesh.material.emissiveIntensity = selected ? 0.5 : 0;
+			mesh.material.needsUpdate = true;
+		}
+	}
+
+	resetDieVisuals() {
+		for (const mesh of this.diceList) {
+			if (!mesh) continue;
+			if (Array.isArray(mesh.material)) {
+				for (const m of mesh.material) {
+					m.emissive = new THREE.Color(0x000000);
+					m.emissiveIntensity = 0;
+					m.opacity = 1;
+					m.transparent = false;
+					m.needsUpdate = true;
+				}
+			} else if (mesh.material) {
+				mesh.material.emissive = new THREE.Color(0x000000);
+				mesh.material.emissiveIntensity = 0;
+				mesh.material.opacity = 1;
+				mesh.material.transparent = false;
+				mesh.material.needsUpdate = true;
+			}
+			mesh._kept = false;
+		}
+	}
 }
 
 export { DiceBox }

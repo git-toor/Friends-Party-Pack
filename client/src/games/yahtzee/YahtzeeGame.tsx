@@ -4,7 +4,6 @@ import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
 
-const CATEGORIES: YahtzeeCategory[] = ['ones','twos','threes','fours','fives','sixes','three_of_a_kind','four_of_a_kind','full_house','small_straight','large_straight','yahtzee','chance'];
 const EMPTY_TURN: YahtzeeTurn = { dice: [0, 0, 0, 0, 0], kept: [false, false, false, false, false], rollPhase: 1, phase: 'WAITING_FOR_ROLL' };
 const EMPTY_PLAYER = (): YahtzeePlayerState => ({ scores: {}, yahtzeeBonusCount: 0, isCurrentPlayer: false, totalScore: 0, availableCategories: [] });
 
@@ -22,21 +21,6 @@ interface YahtzeeGameProps {
 }
 
 const bottomBarStyle: React.CSSProperties = { padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, marginTop:'auto' };
-
-function DiceBox({ val, kept, selected, phase, rolling, onClick }: {
-  val: number; kept: boolean; selected: boolean; phase: string; rolling: boolean; onClick: () => void;
-}) {
-  const clickable = phase === 'WAITING_FOR_KEEP' && !rolling && !kept;
-  return (
-    <div onClick={clickable ? onClick : undefined} style={{
-      width: 48, height: 48, borderRadius: 8, display:'flex', alignItems:'center', justifyContent:'center',
-      fontSize: 20, fontWeight: 700, cursor: clickable ? 'pointer' : 'default', userSelect:'none',
-      background: selected ? '#e94560' : (kept ? '#0f3460' : '#1a1a3e'),
-      border: selected ? '2px solid #fff' : (kept ? '1px solid #4ecca3' : '1px solid #444'),
-      color: '#fff', opacity: kept ? 0.6 : 1,
-    }}>{val || '?'}</div>
-  );
-}
 
 export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance, remoteRoll, remoteVectors, gameStatePush }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
@@ -56,14 +40,20 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     return () => clearInterval(t);
   }, [diceAppearance]);
 
-  // Process game state pushes from WS (other players' actions)
   useEffect(() => {
     if (gameStatePush && gameStatePush.turn) {
       setGs(gameStatePush);
+      // Sync kept dice visuals when game state updates
+      const turn = gameStatePush.turn;
+      if (turn) {
+        for (let i = 0; i < 5; i++) {
+          diceRef.current?.setDieKept(i, turn.kept?.[i] || false);
+          diceRef.current?.setDieSelected(i, false);
+        }
+      }
     }
   }, [gameStatePush]);
 
-  // Remote roll
   useEffect(() => {
     if (remoteRoll && remoteRoll > 0 && remoteVectors) {
       const values = remoteVectors?.values || null;
@@ -95,6 +85,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     if (!canRoll) return;
     setRolling(true);
     setSelected([false,false,false,false,false]);
+    diceRef.current?.resetDieVisuals();
     if (sessionId) {
       const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL'}}) });
       const data = await res.json();
@@ -111,19 +102,28 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     setRolling(false);
   }, [canRoll, sessionId, playerIndex]);
 
-  const toggleSel = useCallback((i: number) => {
-    if (turn.phase !== 'WAITING_FOR_KEEP' || rolling || turn.kept[i]) return;
-    setSelected(p => { const n=[...p]; n[i]=!n[i]; return n; });
+  const handleDieTap = useCallback((index: number) => {
+    if (turn.phase !== 'WAITING_FOR_KEEP' || rolling || turn.kept[index]) return;
+    setSelected(p => {
+      const n = [...p];
+      n[index] = !n[index];
+      diceRef.current?.setDieSelected(index, n[index]);
+      return n;
+    });
   }, [turn.phase, rolling, turn.kept]);
 
   const handleKeep = useCallback(async () => {
     if (!canKeep) return;
     const indices: number[] = [];
     selected.forEach((s,i) => { if(s) indices.push(i); });
+    // Mark dice as kept visually
+    for (const i of indices) {
+      diceRef.current?.setDieKept(i, true);
+      diceRef.current?.setDieSelected(i, false);
+    }
     setSelected([false,false,false,false,false]);
     if (sessionId) {
       await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'KEEP',payload:{indices}}}) });
-      // State will update via GAME_STATE broadcast
     } else {
       setGs(p => {
         const kept=[...p.turn.kept]; for(const i of indices) kept[i]=true;
@@ -141,6 +141,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       if (!res.ok || data.error) { console.error('Score:', data.error); return; }
       if (data.state) setGs(data.state);
     } else {
+      const cats: YahtzeeCategory[] = ['ones','twos','threes','fours','fives','sixes','three_of_a_kind','four_of_a_kind','full_house','small_straight','large_straight','yahtzee','chance'];
       const c=[0,0,0,0,0,0,0]; for(const d of turn.dice) c[d]++;
       const s=turn.dice.reduce((a,b)=>a+b,0), sorted=[...turn.dice].sort((a,b)=>a-b);
       const calc = (cat: YahtzeeCategory): number => {
@@ -152,7 +153,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       const score = calc(cat);
       setGs(p => {
         const ps=[...p.players]; const pl={...ps[p.currentPlayerIndex]}; pl.scores={...pl.scores,[cat]:score};
-        let u=0,l=0; for(const c of CATEGORIES.slice(0,6)) u+=pl.scores[c as YahtzeeCategory]||0; for(const c of CATEGORIES.slice(6)) l+=pl.scores[c as YahtzeeCategory]||0;
+        let u=0,l=0; for(const c of cats.slice(0,6)) u+=pl.scores[c as YahtzeeCategory]||0; for(const c of cats.slice(6)) l+=pl.scores[c as YahtzeeCategory]||0;
         pl.totalScore=u+(u>=63?35:0)+l;
         ps[p.currentPlayerIndex]=pl;
         const filled=Object.keys(pl.scores).length; let np=p.currentPlayerIndex, nr=p.round;
@@ -166,9 +167,18 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     if (gs.winners.length > 0) setTimeout(() => alert(`Winner: Player ${gs.winners[0]+1}`), 500);
   }, [gs.winners]);
 
+  // Sync kept visuals after roll completes
+  useEffect(() => {
+    if (turn.kept.some(k => k)) {
+      for (let i = 0; i < 5; i++) {
+        if (turn.kept[i]) diceRef.current?.setDieKept(i, true);
+      }
+    }
+  }, [turn.kept]);
+
   return (
     <div style={{ width:'100%', height:'100%', position:'relative' }}>
-      <DiceOverlay ref={diceRef} />
+      <DiceOverlay ref={diceRef} onDieTap={handleDieTap} />
       <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column' }}>
         <div style={{ padding:12, textAlign:'center', background:'rgba(26,26,46,0.85)' }}>
           <span style={{ fontSize:13, color:'#999' }}>
@@ -181,20 +191,11 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
           </span>
         </div>
 
-        {/* 2D dice display */}
-        {(turn.dice.some(v=>v>0) || turn.phase!=='WAITING_FOR_ROLL') && (
-          <div style={{ display:'flex', justifyContent:'center', gap:10, padding:'12px 0' }}>
-            {turn.dice.map((val,i) => (
-              <DiceBox key={i} val={val} kept={turn.kept[i]} selected={selected[i]}
-                phase={turn.phase} rolling={rolling} onClick={() => toggleSel(i)} />
-            ))}
-          </div>
-        )}
-
         <div style={{ flex:1, minHeight:0 }} />
         <div style={bottomBarStyle}>
           {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase}/3)</Button>}
           {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>🔒 Hold ({selected.filter(Boolean).length})</Button>}
+          {turn.phase === 'WAITING_FOR_CATEGORY' && canScore && <span style={{color:'#fbbf24',fontSize:12}}>Select a category to score</span>}
           {!canRoll && !canKeep && !canScore && sessionId && <span style={{color:'#999',fontSize:14}}>Waiting...</span>}
           <div style={{ alignSelf:'stretch', maxHeight:'45vh', overflowY:'auto' }}>
             <div style={{ display:'flex', gap:4, marginBottom:6 }}>
