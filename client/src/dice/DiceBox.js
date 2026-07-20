@@ -1178,7 +1178,6 @@ class DiceBox {
 		const mesh = this.diceList[index];
 		if (!mesh) return;
 		mesh._kept = kept;
-		// Visually dim kept dice
 		if (Array.isArray(mesh.material)) {
 			for (const m of mesh.material) {
 				if (kept) { m.opacity = 0.5; m.transparent = true; }
@@ -1190,16 +1189,16 @@ class DiceBox {
 			else { mesh.material.opacity = 1; mesh.material.transparent = false; }
 			mesh.material.needsUpdate = true;
 		}
+		if (this.renderer && this.camera) this.renderer.render(this.scene, this.camera);
 	}
 
 	setDieSelected(index, selected) {
 		const mesh = this.diceList[index];
 		if (!mesh) return;
-		// Highlight selected dice with emissive glow
 		if (Array.isArray(mesh.material)) {
 			for (const m of mesh.material) {
 				m.emissive = selected ? new THREE.Color(0xff6600) : new THREE.Color(0x000000);
-				if (selected) { m.emissiveIntensity = 0.5; } else { m.emissiveIntensity = 0; }
+				m.emissiveIntensity = selected ? 0.5 : 0;
 				m.needsUpdate = true;
 			}
 		} else if (mesh.material) {
@@ -1207,6 +1206,7 @@ class DiceBox {
 			mesh.material.emissiveIntensity = selected ? 0.5 : 0;
 			mesh.material.needsUpdate = true;
 		}
+		if (this.renderer && this.camera) this.renderer.render(this.scene, this.camera);
 	}
 
 	resetDieVisuals() {
@@ -1229,6 +1229,7 @@ class DiceBox {
 			}
 			mesh._kept = false;
 		}
+		if (this.renderer && this.camera) this.renderer.render(this.scene, this.camera);
 	}
 }
 

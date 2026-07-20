@@ -103,13 +103,16 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   }, [canRoll, sessionId, playerIndex]);
 
   const handleDieTap = useCallback((index: number) => {
+    console.log('[YahtzeeGame] die tap', index, 'phase:', turn.phase, 'rolling:', rolling, 'kept:', turn.kept[index]);
     if (turn.phase !== 'WAITING_FOR_KEEP' || rolling || turn.kept[index]) return;
     setSelected(p => {
       const n = [...p];
       n[index] = !n[index];
+      console.log('[YahtzeeGame] setSelected', index, '->', n[index]);
       diceRef.current?.setDieSelected(index, n[index]);
       return n;
     });
+    // Also toggle the canvas-interactive effect is not needed now
   }, [turn.phase, rolling, turn.kept]);
 
   const handleKeep = useCallback(async () => {
