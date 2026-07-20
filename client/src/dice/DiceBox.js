@@ -182,9 +182,19 @@ class DiceBox {
 			.catch(e=>{throw new Error("Unable to load sounds")})
 		}
 
+		// Debug: red cube to verify 3D rendering is working
+		if (!this._debugCube) {
+			const geo = new THREE.BoxGeometry(80, 80, 80);
+			const mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+			this._debugCube = new THREE.Mesh(geo, mat);
+			this._debugCube.position.set(0, 0, 100);
+			this.scene.add(this._debugCube);
+		}
+
 		this.initialized = true
 
 		this.renderer.render(this.scene, this.camera);
+		console.log('[DiceBox] initialized, canvas size:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
 	}
 
 	makeWorldBox(){

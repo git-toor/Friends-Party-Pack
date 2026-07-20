@@ -9,6 +9,7 @@ import { LobbyManager } from './lobby/LobbyManager.js';
 import { WsServer } from './ws/WsServer.js';
 import { setupWsHandlers } from './ws/handlers.js';
 import { yahtzeeRouter, createYahtzeeSession } from './games/yahtzee/YahtzeeRouter.js';
+import { chatRouter, setWsServer } from './api/chatRouter.js';
 import type { CreateLobbyRequest } from './lobby/LobbyManager.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -88,6 +89,8 @@ app.post('/api/lobby/state', (req, res) => {
 
 // ─── Game Routes ──────────────────────────────────────────
 app.use('/api/games/yahtzee', yahtzeeRouter);
+app.use('/api/chat', chatRouter);
+setWsServer(wsServer);
 
 // ─── SPA Fallback (Production) ────────────────────────────
 app.get('*', (_req, res) => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import YahtzeeGame from '../games/yahtzee/YahtzeeGame.js';
+import ChatBox, { dispatchChatMessage } from '../components/ChatBox.js';
 import { getWs } from '../api/ws.js';
 
 export default function GamePage() {
@@ -15,36 +16,49 @@ export default function GamePage() {
   const players = state?.players || [];
   const myPlayer = players[playerIndex] || { name: 'You' };
   const playerName = myPlayer.name || state?.playerName || 'You';
+  const playerId = state?.playerId || players[playerIndex]?.id || '';
 
   useEffect(() => {
     if (!sessionId) {
       setReady(true);
       return;
     }
-    // Join game room via WS
     const ws = getWs();
     ws.connect();
     ws.send('JOIN_GAME', { sessionId, playerIndex });
 
-    // Listen for state updates
     const unsub = ws.on('GAME_STATE', (msg) => {
-      // State is stored in the game component via API calls
       console.log('Game state update:', msg.payload);
     });
 
+    // Wire CHAT_MESSAGE events from WS to the ChatBox
+    const unsubChat = ws.on('CHAT_MESSAGE', (msg) => {
+      dispatchChatMessage(msg.payload);
+    });
+
     setReady(true);
-    return () => unsub();
+    return () => { unsub(); unsubChat(); };
   }, [sessionId, playerIndex]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
 
   return (
-    <YahtzeeGame
-      playerCount={playerCount}
-      playerIndex={playerIndex}
-      playerName={playerName}
-      sessionId={sessionId}
-      players={players}
-    />
+    <>
+      <YahtzeeGame
+        playerCount={playerCount}
+        playerIndex={playerIndex}
+        playerName={playerName}
+        sessionId={sessionId}
+        players={players}
+        playerId={playerId}
+      />
+      {sessionId && (
+        <ChatBox
+          sessionId={sessionId}
+          playerId={playerId}
+          playerName={playerName}
+        />
+      )}
+    </>
   );
 }

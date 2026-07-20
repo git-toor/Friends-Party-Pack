@@ -27,7 +27,8 @@ interface YahtzeeGameProps {
   playerIndex?: number;
   playerName?: string;
   sessionId?: string;
-  players?: { name: string; index: number }[];
+  players?: { name: string; index: number; id?: string }[];
+  playerId?: string;
 }
 
 const uiLayerStyle: React.CSSProperties = {
@@ -40,7 +41,7 @@ const bottomBarStyle: React.CSSProperties = {
   marginTop: 'auto',
 };
 
-export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerName = 'You', sessionId, players }: YahtzeeGameProps) {
+export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerName = 'You', sessionId, players, playerId }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gameState, setGameState] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [selectedDice, setSelectedDice] = useState<Set<number>>(new Set());
@@ -235,15 +236,15 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
           )}
 
           <div style={{ alignSelf: 'stretch', maxHeight: '45vh', overflowY: 'auto' }}>
-            {/* Player tabs */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+            {/* Player tabs — slim, no stretch */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
               {gameState.players.map((p: any, i: number) => (
                 <button key={i} onClick={() => setScorecardTab(i)}
                   style={{
-                    flex: 1, minWidth: 60, padding: '4px 8px', borderRadius: 4, border: 'none',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    padding: '3px 10px', borderRadius: 10, border: 'none',
+                    fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                     background: scorecardTab === i ? '#e94560' : '#0f3460',
-                    color: '#fff', opacity: i === gameState.currentPlayerIndex ? 1 : 0.7,
+                    color: '#fff', opacity: i === gameState.currentPlayerIndex ? 1 : 0.6,
                   }}>
                   {players?.[i]?.name || `P${i + 1}`}
                 </button>
