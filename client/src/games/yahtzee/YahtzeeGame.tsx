@@ -29,16 +29,20 @@ interface YahtzeeGameProps {
   sessionId?: string;
 }
 
+const containerStyle: React.CSSProperties = {
+  position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0,
+};
+
 const uiLayerStyle: React.CSSProperties = {
-  position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-  zIndex: 1000, pointerEvents: 'none', display: 'flex', flexDirection: 'column',
+  position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+  zIndex: 2, pointerEvents: 'none', display: 'flex', flexDirection: 'column',
 };
 
 const clickableStyle: React.CSSProperties = { pointerEvents: 'auto' };
 
 const bottomBarStyle: React.CSSProperties = {
-  position: 'fixed', bottom: 0, left: 0, right: 0,
   padding: '12px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+  marginTop: 'auto',
 };
 
 export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerName = 'You', sessionId }: YahtzeeGameProps) {
@@ -195,7 +199,7 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
   }, [gameState.winners]);
 
   return (
-    <>
+    <div style={containerStyle}>
       <DiceOverlay
         ref={diceRef}
         onSettle={(values) => console.log('Dice settled:', values)}
@@ -204,31 +208,33 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
       />
 
       <div style={uiLayerStyle}>
-        <div style={{ ...clickableStyle, padding: 12, textAlign: 'center' }}>
+        <div style={{ ...clickableStyle, padding: 12, textAlign: 'center', background: 'rgba(26,26,46,0.85)' }}>
           <span style={{ fontSize: 13, color: '#999' }}>
             Round {gameState.round}/{gameState.totalRounds} · Player {gameState.currentPlayerIndex + 1}'s turn
             {sessionId ? (gameState.isMyTurn ? ' ← You' : '') : ' (local)'}
           </span>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1, minHeight: 0 }} />
 
         <div style={bottomBarStyle}>
-          <div style={{ ...clickableStyle, display: 'flex', gap: 8 }}>
-            {canRoll && (
+          {canRoll && (
+            <div style={{ ...clickableStyle }}>
               <Button size="lg" onClick={handleRoll}>
                 🎲 Roll ({turn.rollPhase}/3)
               </Button>
-            )}
-            {canKeep && (
+            </div>
+          )}
+          {canKeep && (
+            <div style={{ ...clickableStyle }}>
               <Button variant="secondary" size="lg" onClick={handleKeep}>
                 ✅ Keep Selected ({selectedDice.size})
               </Button>
-            )}
-            {!canRoll && !canKeep && turn.phase === 'WAITING_FOR_CATEGORY' && !gameState.isMyTurn && sessionId && (
-              <span style={{ color: '#999', fontSize: 14 }}>Waiting for other player...</span>
-            )}
-          </div>
+            </div>
+          )}
+          {!canRoll && !canKeep && turn.phase === 'WAITING_FOR_CATEGORY' && !gameState.isMyTurn && sessionId && (
+            <span style={{ color: '#999', fontSize: 14 }}>Waiting for other player...</span>
+          )}
 
           <div style={{ ...clickableStyle, alignSelf: 'stretch', maxHeight: '40vh', overflowY: 'auto' }}>
             <ScoreCard
@@ -243,7 +249,7 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
