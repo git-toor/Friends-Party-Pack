@@ -44,6 +44,7 @@ export default function GamePage() {
       playerIndex={playerIndex}
       playerName={playerName}
       sessionId={sessionId}
+      players={players}
     />
   );
 }

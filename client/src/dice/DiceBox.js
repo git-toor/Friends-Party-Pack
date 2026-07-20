@@ -153,6 +153,10 @@ class DiceBox {
 		this.renderer.shadowMap.enabled = false;
 		this.renderer.setClearColor(0x000000, 0);
 
+		// Refresh dimensions from actual DOM — container may have been 0 at construction
+		const w = this.container.clientWidth || window.innerWidth;
+		const h = this.container.clientHeight || window.innerHeight;
+		this.dimensions.set(w, h);
 		this.setDimensions(this.dimensions);
 
 		this.world.gravity.set(0, 0, -9.8 * this.gravity_multiplier);

@@ -27,6 +27,7 @@ interface YahtzeeGameProps {
   playerIndex?: number;
   playerName?: string;
   sessionId?: string;
+  players?: { name: string; index: number }[];
 }
 
 const uiLayerStyle: React.CSSProperties = {
@@ -39,7 +40,7 @@ const bottomBarStyle: React.CSSProperties = {
   marginTop: 'auto',
 };
 
-export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerName = 'You', sessionId }: YahtzeeGameProps) {
+export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerName = 'You', sessionId, players }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gameState, setGameState] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [selectedDice, setSelectedDice] = useState<Set<number>>(new Set());
@@ -58,8 +59,9 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
     })();
   }, [sessionId, playerIndex]);
 
+  const [scorecardTab, setScorecardTab] = useState(0);
   const turn = gameState.turn;
-  const myState = gameState.players[gameState.currentPlayerIndex] || EMPTY_PLAYER();
+  const myState = gameState.players[scorecardTab] || gameState.players[gameState.currentPlayerIndex] || EMPTY_PLAYER();
   const canRoll = turn.phase === 'WAITING_FOR_ROLL' && !rolling && (gameState.isMyTurn || !sessionId);
   const canKeep = turn.phase === 'WAITING_FOR_KEEP' && selectedDice.size > 0 && !animatingKeep;
   const canScore = turn.phase === 'WAITING_FOR_CATEGORY' && (gameState.isMyTurn || !sessionId);
@@ -204,8 +206,14 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
       <div style={uiLayerStyle}>
         <div style={{ padding: 12, textAlign: 'center', background: 'rgba(26,26,46,0.85)' }}>
           <span style={{ fontSize: 13, color: '#999' }}>
-            Round {gameState.round}/{gameState.totalRounds} · Player {gameState.currentPlayerIndex + 1}'s turn
-            {sessionId ? (gameState.isMyTurn ? ' ← You' : '') : ' (local)'}
+            Round {gameState.round}/{gameState.totalRounds} ·&nbsp;
+            {(() => {
+              const currentName = players?.[gameState.currentPlayerIndex]?.name || `Player ${gameState.currentPlayerIndex + 1}`;
+              if (sessionId) {
+                return gameState.isMyTurn ? <b style={{ color: '#e94560' }}>Your turn</b> : <>{currentName}'s turn</>;
+              }
+              return `Player ${gameState.currentPlayerIndex + 1}'s turn (local)`;
+            })()}
           </span>
         </div>
 
@@ -226,15 +234,29 @@ export default function YahtzeeGame({ playerCount = 2, playerIndex = 0, playerNa
             <span style={{ color: '#999', fontSize: 14 }}>Waiting for other player...</span>
           )}
 
-          <div style={{ alignSelf: 'stretch', maxHeight: '40vh', overflowY: 'auto' }}>
+          <div style={{ alignSelf: 'stretch', maxHeight: '45vh', overflowY: 'auto' }}>
+            {/* Player tabs */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+              {gameState.players.map((p: any, i: number) => (
+                <button key={i} onClick={() => setScorecardTab(i)}
+                  style={{
+                    flex: 1, minWidth: 60, padding: '4px 8px', borderRadius: 4, border: 'none',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    background: scorecardTab === i ? '#e94560' : '#0f3460',
+                    color: '#fff', opacity: i === gameState.currentPlayerIndex ? 1 : 0.7,
+                  }}>
+                  {players?.[i]?.name || `P${i + 1}`}
+                </button>
+              ))}
+            </div>
             <ScoreCard
               scores={myState.scores}
-              dice={turn.dice}
-              canScore={canScore}
-              onScore={handleScore}
+              dice={scorecardTab === gameState.currentPlayerIndex ? turn.dice : []}
+              canScore={canScore && scorecardTab === gameState.currentPlayerIndex}
+              onScore={canScore && scorecardTab === gameState.currentPlayerIndex ? handleScore : undefined}
               totalScore={myState.totalScore}
-              playerName={playerName}
-              isCurrentPlayer={gameState.isMyTurn}
+              playerName={players?.[scorecardTab]?.name || `Player ${scorecardTab + 1}`}
+              isCurrentPlayer={scorecardTab === gameState.currentPlayerIndex}
             />
           </div>
         </div>

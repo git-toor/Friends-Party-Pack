@@ -96,7 +96,11 @@ export default function LobbyPanel() {
       {joinUrl && <QRCode url={joinUrl} />}
 
       <Button variant="secondary" size="sm" style={{ marginTop: 12, marginBottom: 24 }}
-        onClick={() => navigator.clipboard.writeText(joinUrl)}>
+        onClick={() => {
+          navigator.clipboard.writeText(joinUrl);
+          const btn = document.activeElement as HTMLButtonElement;
+          if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000); }
+        }}>
         📋 Copy Link
       </Button>
 
