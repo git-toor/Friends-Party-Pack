@@ -49,6 +49,10 @@ export function setupWsHandlers(wsServer: WsServer, lobbyManager: LobbyManager):
         case 'JOIN_GAME': {
           const { sessionId, playerIndex } = msg.payload;
           wsServer.joinRoom(ws, `game:${sessionId}`);
+          // Register broadcast function for this session
+          setWsBroadcast(sessionId, (payload: any) => {
+            wsServer.broadcast(`game:${sessionId}`, payload);
+          });
           // Send initial state
           const state = getYahtzeeState(sessionId, playerIndex);
           if (state) {

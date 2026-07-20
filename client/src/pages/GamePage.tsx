@@ -19,6 +19,7 @@ export default function GamePage() {
   const playerName = myPlayer.name || state?.playerName || 'You';
   const playerId = state?.playerId || players[playerIndex]?.id || '';
   const diceAppearance = loadDiceAppearance();
+  const [rollTrigger, setRollTrigger] = useState(0);
 
   useEffect(() => {
     if (!sessionId) {
@@ -38,8 +39,15 @@ export default function GamePage() {
       dispatchChatMessage(msg.payload);
     });
 
+    // Wire DICE_ROLL — trigger dice animation on all clients except the roller
+    const unsubDice = ws.on('DICE_ROLL', (msg) => {
+      if (msg.payload.playerIndex !== playerIndex) {
+        setRollTrigger(n => n + 1);
+      }
+    });
+
     setReady(true);
-    return () => { unsub(); unsubChat(); };
+    return () => { unsub(); unsubChat(); unsubDice(); };
   }, [sessionId, playerIndex]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
@@ -54,6 +62,7 @@ export default function GamePage() {
         players={players}
         playerId={playerId}
         diceAppearance={diceAppearance}
+        remoteRoll={rollTrigger}
       />
       {sessionId && (
         <ChatBox

@@ -16,11 +16,12 @@ interface YahtzeeGameProps {
   playerCount?: number; playerIndex?: number; playerName?: string; sessionId?: string;
   players?: { name: string; index: number; id?: string }[]; playerId?: string;
   diceAppearance?: DiceAppearanceConfig;
+  remoteRoll?: number;
 }
 
 const bottomBarStyle: React.CSSProperties = { padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, marginTop:'auto' };
 
-export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance }: YahtzeeGameProps) {
+export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance, remoteRoll }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gs, setGs] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [rolling, setRolling] = useState(false);
@@ -37,6 +38,13 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     }, 200);
     return () => clearInterval(t);
   }, [diceAppearance]);
+
+  // Remote roll trigger — animate dice when another player rolls
+  useEffect(() => {
+    if (remoteRoll && remoteRoll > 0) {
+      diceRef.current?.roll('d6', 5);
+    }
+  }, [remoteRoll]);
 
   useEffect(() => {
     if (!sessionId) return;
