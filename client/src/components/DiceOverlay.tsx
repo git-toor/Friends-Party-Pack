@@ -88,10 +88,10 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         beforeSpawnDie: (type: string, _vec: any, factory: any) => {
           const cache = texCache.current;
           const config = configRef.current;
-          // Cycle through dice_0..dice_4 configs based on spawn counter
           const idx = spawnCount.current % 5;
           spawnCount.current = spawnCount.current + 1;
-          const c = (config[`dice_${idx}`] || config[type as DieType] || {}) as PerDieConfig;
+          const diceKey = `dice_${idx}`;
+          const c = (config[diceKey] || config[type as DieType] || {}) as PerDieConfig;
           if (c.colorset && COLORSETS[c.colorset]) {
             const cs = COLORSETS[c.colorset] as any;
             const face = c.faceColor || cs.background || '#ffffff';
@@ -105,7 +105,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
             factory.label_outline = c.outline || 'none';
             factory.edge_color = c.edgeColor || '#888888';
           }
-          const texObj = cache.get(type);
+          const texObj = cache.get(diceKey);
           const userMaterial = c.material && c.material !== 'none' ? c.material : null;
           if (texObj && texObj.texture) {
             factory.dice_texture = {
