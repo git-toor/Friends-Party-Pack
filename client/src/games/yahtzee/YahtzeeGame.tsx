@@ -90,14 +90,21 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL'}}) });
       const data = await res.json();
       if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
-      if (data.state) setGs(data.state);
+      if (data.state) {
+        console.log('[YahtzeeGame] server state, phase:', data.state.turn?.phase, 'rollPhase:', data.state.turn?.rollPhase);
+        setGs(data.state);
+      }
       if (data.diceValues) {
         const suffix = '@' + data.diceValues.join(',');
         await diceRef.current?.roll('d6', 5, suffix);
       }
     } else {
       await diceRef.current?.roll('d6', 5);
-      setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
+      setGs(p => {
+        const n = {...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}};
+        console.log('[YahtzeeGame] setGs after roll, phase:', n.turn.phase, 'rollPhase:', n.turn.rollPhase);
+        return n;
+      });
     }
     setRolling(false);
   }, [canRoll, sessionId, playerIndex]);
