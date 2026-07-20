@@ -40,11 +40,11 @@ export default function GamePage() {
       dispatchChatMessage(msg.payload);
     });
 
-    // Wire DICE_ROLL — trigger dice animation on all clients except the roller
+    // Wire DICE_ROLL — trigger dice animation with same seed on all clients except the roller
     const unsubDice = ws.on('DICE_ROLL', (msg) => {
-      console.log('[DICE_ROLL] received:', msg.payload?.playerIndex, 'vs my', playerIndex, 'has vectors:', !!msg.payload?.vectors);
+      console.log('[DICE_ROLL] received: roller', msg.payload?.playerIndex, 'vs me', playerIndex, 'seed:', msg.payload?.seed, 'hasAppearance:', !!msg.payload?.appearance);
       if (msg.payload.playerIndex !== playerIndex) {
-        setRemoteVectors(msg.payload.vectors);
+        setRemoteVectors(msg.payload);
         setRollTrigger(n => n + 1);
       }
     });

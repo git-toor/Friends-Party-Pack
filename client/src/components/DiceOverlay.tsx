@@ -33,6 +33,7 @@ export interface DiceOverlayHandle {
   clear: () => void;
   generateVectors: (notation: string) => any;
   rollWithVectors: (nv: any) => Promise<number[]>;
+  setConfig: (config: Record<string, PerDieConfig>) => void;
 }
 
 function resolveTheme(config: DiceAppearanceConfig): {
@@ -188,6 +189,10 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         }
       }
       await Promise.all(loads);
+    },
+    setConfig: (config: Record<string, PerDieConfig>) => {
+      configRef.current = config;
+      texCache.current.clear();
     },
     generateVectors: (notation: string) => {
       return box.current?.generateVectors(notation) || null;
