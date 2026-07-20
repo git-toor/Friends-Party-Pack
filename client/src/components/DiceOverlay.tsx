@@ -119,6 +119,17 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         onRollComplete: () => {},
       });
       await diceBox.initialize();
+      // TEST: add visible sphere to confirm 3D rendering
+      try {
+        const THREEmod = await import('three');
+        const sg = new THREEmod.SphereGeometry(80, 16, 16);
+        const sm = new THREEmod.MeshBasicMaterial({ color: 0x00ff00 });
+        const sp = new THREEmod.Mesh(sg, sm);
+        sp.position.set(0, 0, 100);
+        diceBox.scene.add(sp);
+        diceBox.renderer.render(diceBox.scene, diceBox.camera);
+        console.log('[DiceOverlay] Test sphere added at (0,0,100)');
+      } catch(e) { console.error('[DiceOverlay] Test sphere failed:', e); }
       if (!cancelled) box.current = diceBox;
     })();
     return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
