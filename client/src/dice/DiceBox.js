@@ -182,6 +182,30 @@ class DiceBox {
 			.catch(e=>{throw new Error("Unable to load sounds")})
 		}
 
+		// Test: add spheres at various positions to verify rendering & coordinate system
+		if (!this._testMarkers) {
+			this._testMarkers = [];
+			const testPositions = [
+				{ x: 0, y: 0, z: 0, color: 0xff0000, label: 'origin' },
+				{ x: 0, y: 0, z: 100, color: 0x00ff00, label: 'z100' },
+				{ x: 200, y: 0, z: 50, color: 0x0000ff, label: 'x200' },
+				{ x: 0, y: -200, z: 50, color: 0xffff00, label: 'y-200' },
+				{ x: 0, y: -500, z: 50, color: 0xff00ff, label: 'y-500' },
+				{ x: 0, y: -700, z: 50, color: 0x00ffff, label: 'y-700' },
+			];
+			for (const tp of testPositions) {
+				const sg = new THREE.SphereGeometry(30, 12, 12);
+				const sm = new THREE.MeshBasicMaterial({ color: tp.color });
+				const sp = new THREE.Mesh(sg, sm);
+				sp.position.set(tp.x, tp.y, tp.z);
+				sp.name = tp.label;
+				this.scene.add(sp);
+				this._testMarkers.push(sp);
+			}
+			console.log('[DiceBox] Camera at z=', this.camera?.position.z, 'FOV=', this.camera?.fov);
+			console.log('[DiceBox] Display:', JSON.stringify(this.display));
+		}
+
 		this.initialized = true
 
 		this.renderer.render(this.scene, this.camera);
@@ -855,13 +879,25 @@ class DiceBox {
 		if (this.running == threadid && this.throwFinished()) {
 			this.running = false;
 			this.rolling = false;
-			// TEST: override dice materials with solid colors to check visibility
+			// TEST: override dice with DoubleSide solid color + marker sphere
 			for (let i = 0; i < this.diceList.length; i++) {
 				const d = this.diceList[i];
-				if (d && d.material) {
+				if (d) {
 					const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
-					const newMat = new THREE.MeshStandardMaterial({ color: cols[i % 5], roughness: 0.5, metalness: 0.1 });
+					const newMat = new THREE.MeshStandardMaterial({
+						color: cols[i % 5], roughness: 0.5, metalness: 0.1,
+						side: THREE.DoubleSide,
+					});
 					d.material = newMat;
+					console.log(`[dice ${i}] pos:`, d.position.x.toFixed(0), d.position.y.toFixed(0), d.position.z.toFixed(0));
+					// Add a sphere at each die position as a visual reference
+					if (!d._marker) {
+						const sg = new THREE.SphereGeometry(20, 12, 12);
+						const sm = new THREE.MeshBasicMaterial({ color: cols[i % 5] });
+						d._marker = new THREE.Mesh(sg, sm);
+						this.scene.add(d._marker);
+					}
+					d._marker.position.copy(d.position);
 				}
 			}
 			if(callback) callback.call(this, this.notationVectors);
