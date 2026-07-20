@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button.js';
 import { QRCode } from '../components/QRCode.js';
+import { DiceAppearanceSelector } from '../components/DiceAppearance.js';
 import { api } from '../api/client.js';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 
@@ -116,6 +117,10 @@ export default function LobbyPanel() {
             </span>
           </div>
         ))}
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
+        <DiceAppearanceSelector />
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 360, alignItems: 'stretch' }}>

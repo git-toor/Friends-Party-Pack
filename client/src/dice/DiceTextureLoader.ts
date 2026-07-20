@@ -12,7 +12,7 @@ export interface DiceTextureObject {
 const textureCache = new Map<string, DiceTextureObject>();
 const loadingPromises = new Map<string, Promise<DiceTextureObject>>();
 
-const ASSET_BASE = '/app/assets/textures/';
+const ASSET_BASE = '/textures/';
 
 function extractFilename(source: string): string {
   return source.replace(/^textures\//, '');
