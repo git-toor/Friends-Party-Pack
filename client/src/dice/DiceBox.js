@@ -182,38 +182,13 @@ class DiceBox {
 			.catch(e=>{throw new Error("Unable to load sounds")})
 		}
 
-		// Test: before any roll, add a box where dice would be (same position as die 0)
-		if (!this._testCube) {
-			const bg = new THREE.BoxGeometry(60, 60, 60);
-			const bm = new THREE.MeshStandardMaterial({ color: 0x00ffff, roughness: 0.5, metalness: 0.1 });
-			this._testCube = new THREE.Mesh(bg, bm);
-			this._testCube.position.set(131, 383, 47); // same as die 0's position
-			this.scene.add(this._testCube);
-			console.log('[DiceBox] Added test cube at (131, 383, 47)');
+		// Remove all debug markers from previous sessions
+		if (this._testMarkers) {
+			for (const m of this._testMarkers) this.scene.remove(m);
+			this._testMarkers = null;
 		}
-		// Test: add spheres at various positions to verify rendering & coordinate system
-		if (!this._testMarkers) {
-			this._testMarkers = [];
-			const testPositions = [
-				{ x: 0, y: 0, z: 0, color: 0xff0000, label: 'origin' },
-				{ x: 0, y: 0, z: 100, color: 0x00ff00, label: 'z100' },
-				{ x: 200, y: 0, z: 50, color: 0x0000ff, label: 'x200' },
-				{ x: 0, y: -200, z: 50, color: 0xffff00, label: 'y-200' },
-				{ x: 0, y: -500, z: 50, color: 0xff00ff, label: 'y-500' },
-				{ x: 0, y: -700, z: 50, color: 0x00ffff, label: 'y-700' },
-			];
-			for (const tp of testPositions) {
-				const sg = new THREE.SphereGeometry(30, 12, 12);
-				const sm = new THREE.MeshBasicMaterial({ color: tp.color });
-				const sp = new THREE.Mesh(sg, sm);
-				sp.position.set(tp.x, tp.y, tp.z);
-				sp.name = tp.label;
-				this.scene.add(sp);
-				this._testMarkers.push(sp);
-			}
-			console.log('[DiceBox] Camera at z=', this.camera?.position.z, 'FOV=', this.camera?.fov);
-			console.log('[DiceBox] Display:', JSON.stringify(this.display));
-		}
+		if (this._testCube) { this.scene.remove(this._testCube); this._testCube = null; }
+		if (this._debugCube) { this.scene.remove(this._debugCube); this._debugCube = null; }
 
 		this.initialized = true
 
@@ -888,25 +863,24 @@ class DiceBox {
 		if (this.running == threadid && this.throwFinished()) {
 			this.running = false;
 			this.rolling = false;
-			// TEST: override dice with DoubleSide solid color + marker sphere
+			// Patch each die material individually
 			for (let i = 0; i < this.diceList.length; i++) {
 				const d = this.diceList[i];
-				if (d) {
-					const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
-					const newMat = new THREE.MeshStandardMaterial({
-						color: cols[i % 5], roughness: 0.5, metalness: 0.1,
-						side: THREE.DoubleSide,
-					});
-					d.material = newMat;
-					console.log(`[dice ${i}] pos:`, d.position.x.toFixed(0), d.position.y.toFixed(0), d.position.z.toFixed(0));
-					// Add a sphere at each die position as a visual reference
-					if (!d._marker) {
-						const sg = new THREE.SphereGeometry(20, 12, 12);
-						const sm = new THREE.MeshBasicMaterial({ color: cols[i % 5] });
-						d._marker = new THREE.Mesh(sg, sm);
-						this.scene.add(d._marker);
+				if (!d) continue;
+				const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
+				const c = new THREE.Color(cols[i % 5]);
+				// If mesh has multiple materials, patch each one
+				if (Array.isArray(d.material)) {
+					for (const m of d.material) {
+						if (m.color) m.color.copy(c);
+						if (m.map) { m.map = null; }
+						m.opacity = 1;
+						m.transparent = false;
+						m.needsUpdate = true;
 					}
-					d._marker.position.copy(d.position);
+				} else if (d.material) {
+					d.material.color.copy(c);
+					d.material.needsUpdate = true;
 				}
 			}
 			if(callback) callback.call(this, this.notationVectors);
