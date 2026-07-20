@@ -644,8 +644,11 @@ class DiceFactory {
 				return geom;
 			case 'd4':
 				return this[func](DICE_GEOM.d4.vertices, DICE_GEOM.d4.faces, radius, -0.1, Math.PI * 7 / 6, 0.96);
-			case 'd6':
-				return this[func](DICE_GEOM.d6.vertices, DICE_GEOM.d6.faces, radius, 0.1, Math.PI / 4, 0.96);
+			case 'd6': {
+				const boxGeo = new THREE.BoxGeometry(radius * 1.6, radius * 1.6, radius * 1.6);
+				boxGeo.cannon_shape = new CANNON.Box(new CANNON.Vec3(radius * 0.8, radius * 0.8, radius * 0.8));
+				return boxGeo;
+			}
 			case 'd8':
 				return this[func](DICE_GEOM.d8.vertices, DICE_GEOM.d8.faces, radius, 0, -Math.PI / 4 / 2, 0.965);
 			case 'd10':

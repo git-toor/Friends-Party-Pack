@@ -863,26 +863,13 @@ class DiceBox {
 		if (this.running == threadid && this.throwFinished()) {
 			this.running = false;
 			this.rolling = false;
-			// Patch each die material individually
-			for (let i = 0; i < this.diceList.length; i++) {
-				const d = this.diceList[i];
-				if (!d) continue;
-				const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
-				const c = new THREE.Color(cols[i % 5]);
-				// If mesh has multiple materials, patch each one
-				if (Array.isArray(d.material)) {
-					for (const m of d.material) {
-						if (m.color) m.color.copy(c);
-						if (m.map) { m.map = null; }
-						m.opacity = 1;
-						m.transparent = false;
-						m.needsUpdate = true;
-					}
-				} else if (d.material) {
-					d.material.color.copy(c);
-					d.material.needsUpdate = true;
-				}
+			// Clean up old debug objects
+			if (this._testMarkers) {
+				for (const m of this._testMarkers) this.scene.remove(m);
+				this._testMarkers = null;
 			}
+			if (this._testCube) { this.scene.remove(this._testCube); this._testCube = null; }
+			if (this._debugCube) { this.scene.remove(this._debugCube); this._debugCube = null; }
 			if(callback) callback.call(this, this.notationVectors);
 			
 			this.running = Date.now();
