@@ -148,12 +148,14 @@ describe('Phase 4: Yahtzee Engine', () => {
     r = handleAction(r.state, 0, { type: 'KEEP', payload: { indices: [0, 1, 2, 3, 4] } });
     r = handleAction(r.state, 0, { type: 'SCORE', payload: { category: 'chance' } });
     expect(r.valid).toBe(true);
-    expect(r.state.players[0].scores['chance']).toBeGreaterThan(0);
-
-    // New turn starts for same player
+    expect(r.state.currentPlayerIndex).toBe(1); // advances to next player
+    // Back to player 0 — roll, keep all, try scoring chance again
+    r = handleAction(r.state, 1, { type: 'ROLL' });
+    r = handleAction(r.state, 1, { type: 'KEEP', payload: { indices: [0, 1, 2, 3, 4] } });
+    r = handleAction(r.state, 1, { type: 'SCORE', payload: { category: 'twos' } });
+    expect(r.state.currentPlayerIndex).toBe(0);
     r = handleAction(r.state, 0, { type: 'ROLL' });
     r = handleAction(r.state, 0, { type: 'KEEP', payload: { indices: [0, 1, 2, 3, 4] } });
-    // Try scoring chance again — should fail
     const r2 = handleAction(r.state, 0, { type: 'SCORE', payload: { category: 'chance' } });
     expect(r2.valid).toBe(false);
     expect(r2.error).toContain('already scored');
@@ -210,13 +212,13 @@ describe('Phase 4: Yahtzee Engine', () => {
   });
 
   // ─── Full Turn Flow ─────────────────────────────────────
-  it('same player continues until all categories filled', () => {
+  it('advances to next player after scoring', () => {
     const game = createGame(2);
     let r = handleAction(game, 0, { type: 'ROLL' });
     r = handleAction(r.state, 0, { type: 'KEEP', payload: { indices: [0, 1, 2, 3, 4] } });
     r = handleAction(r.state, 0, { type: 'SCORE', payload: { category: 'ones' } });
-    // Same player still (only 1 of 13 categories scored)
-    expect(r.state.currentPlayerIndex).toBe(0);
+    // Advances to next player (standard Yahtzee turn order)
+    expect(r.state.currentPlayerIndex).toBe(1);
     expect(r.state.players[0].scores['ones']).toBeGreaterThanOrEqual(0);
     expect(r.state.turn.phase).toBe('WAITING_FOR_ROLL');
   });

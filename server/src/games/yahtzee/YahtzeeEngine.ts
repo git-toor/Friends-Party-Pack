@@ -192,15 +192,6 @@ function advanceTurn(state: YahtzeeGameState): void {
     phase: 'WAITING_FOR_ROLL',
   };
 
-  // If current player still has categories to fill, stay on same player
-  const currentPlayer = state.players[state.currentPlayerIndex];
-  const scoredCount = Object.keys(currentPlayer.scores).length;
-
-  if (scoredCount < 13) {
-    // Same player continues until all 13 categories done
-    return;
-  }
-
   // Move to next player
   state.currentPlayerIndex++;
   if (state.currentPlayerIndex >= state.players.length) {

@@ -164,9 +164,11 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
         let u=0,l=0; for(const c of cats.slice(0,6)) u+=pl.scores[c as YahtzeeCategory]||0; for(const c of cats.slice(6)) l+=pl.scores[c as YahtzeeCategory]||0;
         pl.totalScore=u+(u>=63?35:0)+l;
         ps[p.currentPlayerIndex]=pl;
-        const filled=Object.keys(pl.scores).length; let np=p.currentPlayerIndex, nr=p.round;
-        if(filled>=13){ np++; if(np>=playerCount){np=0;nr++;} }
-        return {...p, turn:{...EMPTY_TURN}, currentPlayerIndex:np, round:nr, players:ps, winners:nr>13?[0]:[]};
+        let np = p.currentPlayerIndex + 1;
+        let nr = p.round;
+        if (np >= playerCount) { np = 0; nr++; }
+        const winners = nr > p.totalRounds ? calculateWinnersLocal(ps) : [];
+        return {...p, turn:{...EMPTY_TURN}, currentPlayerIndex:np, round:nr, players:ps, winners};
       });
     }
   }, [canScore, myState.scores, turn.dice, playerCount, sessionId, playerIndex]);
@@ -226,4 +228,15 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       </div>
     </div>
   );
+}
+
+function calculateWinnersLocal(players: YahtzeePlayerState[]): number[] {
+  const cats: YahtzeeCategory[] = ['ones','twos','threes','fours','fives','sixes','three_of_a_kind','four_of_a_kind','full_house','small_straight','large_straight','yahtzee','chance'];
+  const totals = players.map((p, i) => {
+    let u=0,l=0; for(const c of cats.slice(0,6)) u+=p.scores[c as YahtzeeCategory]||0; for(const c of cats.slice(6)) l+=p.scores[c as YahtzeeCategory]||0;
+    return { index: i, total: u+(u>=63?35:0)+l };
+  });
+  totals.sort((a,b) => b.total - a.total);
+  const max = totals[0]?.total ?? 0;
+  return totals.filter(t => t.total === max).map(t => t.index);
 }
