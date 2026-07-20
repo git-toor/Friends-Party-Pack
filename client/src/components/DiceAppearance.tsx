@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { COLORSETS } from '../dice/colorsets.js';
 // @ts-ignore
 import { TEXTURELIST } from '../dice/texturelist.js';
-import type { DiceAppearanceConfig, PerDieConfig } from './DiceOverlay.js';
+import type { PerDieConfig } from './DiceOverlay.js';
 import { DicePreview } from './DicePreview.js';
 
 const DICE_KEYS = ['dice_0', 'dice_1', 'dice_2', 'dice_3', 'dice_4'];

@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
-import DiceTest from './pages/DiceTest.js';
 import GameSettingsPage from './pages/GameSettingsPage.js';
 import JoinView from './pages/JoinView.js';
 import LobbyPanel from './pages/LobbyPanel.js';
@@ -16,7 +15,6 @@ export default function App() {
         <Route path="/join/:code" element={<JoinView />} />
         <Route path="/lobby/:code" element={<LobbyPanel />} />
         <Route path="/game/:sessionId" element={<GamePage />} />
-        <Route path="/dice" element={<DiceTest />} />
       </Routes>
     </BrowserRouter>
   );

@@ -31,7 +31,6 @@ export interface DiceOverlayHandle {
   rollBatch: (combo: DiceComboEntry[]) => Promise<number[]>;
   configure: (config: Record<string, PerDieConfig>) => Promise<void>;
   clear: () => void;
-  setConfig: (config: Record<string, PerDieConfig>) => void;
 }
 
 function resolveTheme(config: DiceAppearanceConfig): {
@@ -187,10 +186,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
         }
       }
       await Promise.all(loads);
-    },
-    setConfig: (config: Record<string, PerDieConfig>) => {
-      configRef.current = config;
-      texCache.current.clear();
     },
     clear: () => {
       box.current?.clearDice();
