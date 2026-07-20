@@ -44,15 +44,17 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   // Remote roll — replay exact same vectors from the rolling player
   useEffect(() => {
     if (remoteRoll && remoteRoll > 0 && remoteVectors) {
-      const vectors = remoteVectors?.vectors || remoteVectors;
+      const nv = remoteVectors?.vectors || null; // full notationVectors object
       const appearance = remoteVectors?.appearance || null;
       if (appearance) diceRef.current?.setConfig(appearance);
-      if (vectors && vectors.length > 0) {
-        const nv = { vectors, set: [], constant: 0, op: '', notation: '', result: [], error: false };
+      if (nv && nv.vectors && nv.vectors.length > 0) {
+        console.log('[YahtzeeGame] remote rollWithVectors, dice:', nv.vectors.length);
         diceRef.current?.rollWithVectors(nv)?.then(async () => {
           const localCfg = loadDiceAppearance();
           if (Object.keys(localCfg).length > 0) diceRef.current?.configure(localCfg);
         }).catch(() => {});
+      } else {
+        console.log('[YahtzeeGame] remote roll missing vectors:', !!nv, nv?.vectors?.length);
       }
     }
   }, [remoteRoll, remoteVectors]);
