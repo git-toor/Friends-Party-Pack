@@ -53,19 +53,20 @@ class DiceFactory {
 	// returns a dicemesh (THREE.Mesh) object
 	create(type) {
 		let diceobj = this.get(type);
-		if (!diceobj) return null;
+		if (!diceobj) { console.warn('[DiceFactory] no diceobj for', type); return null; }
 
 		let geom = this.geometries[type];
 		if(!geom) {
 			geom = this.createGeometry(diceobj.shape, diceobj.scale * this.baseScale);
 			this.geometries[type] = geom;
 		}
-		if (!geom) return null;
+		if (!geom) { console.warn('[DiceFactory] no geom for', type); return null; }
 
 		this.setMaterialInfo();
 
 		let dicemesh = new THREE.Mesh(geom, this.createMaterials(diceobj, this.baseScale / 2, 1.0));
 		dicemesh.result = [];
+		console.log('[DiceFactory] created', type, 'mesh, verts:', geom.attributes.position?.count, 'materials:', dicemesh.material?.length);
 		dicemesh.shape = diceobj.shape;
 		dicemesh.rerolls = 0;
 		dicemesh.resultReason = 'natural';

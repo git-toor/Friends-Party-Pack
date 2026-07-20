@@ -645,14 +645,19 @@ class DiceBox {
 			if (typeof this.beforeSpawnDie === 'function') {
 				this.beforeSpawnDie(vectordata.type, vectordata, this.DiceFactory);
 			}
-			dicemesh = this.DiceFactory.create(vectordata.type, this.colorData);
-			if(!dicemesh) return;
-			dicemesh.notation = vectordata;
+
+			// TEMP: Create a simple box mesh with visible material
+			const boxGeo = new THREE.BoxGeometry(60, 60, 60);
+			const boxMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.3, metalness: 0.1 });
+			dicemesh = new THREE.Mesh(boxGeo, boxMat);
+			dicemesh.shape = 'd6';
+			dicemesh.mass = 300;
 			dicemesh.result = [];
 			dicemesh.stopped = 0;
-			dicemesh.castShadow = this.shadows;
+			dicemesh.geometry.cannon_shape = new CANNON.Box(new CANNON.Vec3(30, 30, 30));
 			this.scene.add(dicemesh);
 			this.diceList.push(dicemesh);
+			console.log('[spawnDice] created green cube at', pos.x.toFixed(0), pos.y.toFixed(0), pos.z.toFixed(0));
 		} else {
 			dicemesh = reset
 			// dicemesh.result = [];
