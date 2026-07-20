@@ -855,6 +855,15 @@ class DiceBox {
 		if (this.running == threadid && this.throwFinished()) {
 			this.running = false;
 			this.rolling = false;
+			// TEST: override dice materials with solid colors to check visibility
+			for (let i = 0; i < this.diceList.length; i++) {
+				const d = this.diceList[i];
+				if (d && d.material) {
+					const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
+					const newMat = new THREE.MeshStandardMaterial({ color: cols[i % 5], roughness: 0.5, metalness: 0.1 });
+					d.material = newMat;
+				}
+			}
 			if(callback) callback.call(this, this.notationVectors);
 			
 			this.running = Date.now();
