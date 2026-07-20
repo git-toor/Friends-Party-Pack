@@ -1108,35 +1108,6 @@ class DiceBox {
 		})
 	}
 
-	// Generate full notationVectors WITHOUT rolling (for multiplayer sync)
-	generateVectors(notation) {
-		const nv = this.startClickThrow(notation);
-		if (!nv) return null;
-		return {
-			vectors: nv.vectors,
-			set: nv.set,
-			constant: nv.constant,
-			op: nv.op,
-			notation: nv.notation,
-			result: nv.result || [],
-			error: false,
-		};
-	}
-
-	// Roll using pre-computed notationVectors (for replaying another player's roll)
-	rollWithVectors(nv) {
-		this.notationVectors = nv;
-		return new Promise((resolve) => {
-			this.rollDice(() => {
-				const results = this.getDiceResults();
-				this.onRollComplete(results);
-				const event = new CustomEvent('rollComplete', {detail: results});
-				document.dispatchEvent(event);
-				resolve(results);
-			});
-		});
-	}
-
 	rollDice(callback){
 
 		if (this.notationVectors.error) {
@@ -1178,18 +1149,6 @@ class DiceBox {
 		this.animateThrow(this.running, callback);
 	}
 
-	// Return the last notationVectors (for multiplayer sync)
-	getLastNotation() {
-		return this.notationVectors ? {
-			vectors: this.notationVectors.vectors,
-			set: this.notationVectors.set,
-			constant: this.notationVectors.constant,
-			op: this.notationVectors.op,
-			notation: this.notationVectors.notation,
-			result: this.notationVectors.result || [],
-			error: false,
-		} : null;
-	}
 }
 
 export { DiceBox }

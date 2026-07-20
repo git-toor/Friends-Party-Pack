@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { DiceOverlay, type DiceOverlayHandle, type DieType, type PerDieConfig } from '../../components/DiceOverlay.js';
 import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
-import { loadDiceAppearance } from '../../components/DiceAppearance.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
 
 const CATEGORIES: YahtzeeCategory[] = ['ones','twos','threes','fours','fives','sixes','three_of_a_kind','four_of_a_kind','full_house','small_straight','large_straight','yahtzee','chance'];
@@ -41,20 +40,13 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     return () => clearInterval(t);
   }, [diceAppearance]);
 
-  // Remote roll — replay exact same vectors from the rolling player
+  // Remote roll — animate with the same dice values using forced result notation
   useEffect(() => {
     if (remoteRoll && remoteRoll > 0 && remoteVectors) {
-      const nv = remoteVectors?.vectors || null; // full notationVectors object
-      const appearance = remoteVectors?.appearance || null;
-      if (appearance) diceRef.current?.setConfig(appearance);
-      if (nv && nv.vectors && nv.vectors.length > 0) {
-        console.log('[YahtzeeGame] remote rollWithVectors, dice:', nv.vectors.length);
-        diceRef.current?.rollWithVectors(nv)?.then(async () => {
-          const localCfg = loadDiceAppearance();
-          if (Object.keys(localCfg).length > 0) diceRef.current?.configure(localCfg);
-        }).catch(() => {});
-      } else {
-        console.log('[YahtzeeGame] remote roll missing vectors:', !!nv, nv?.vectors?.length);
+      const values = remoteVectors?.values || null;
+      if (values && values.length > 0) {
+        console.log('[YahtzeeGame] remote roll values:', values);
+        diceRef.current?.roll('d6', values.length, `@${values.join(',')}`)?.catch(() => {});
       }
     }
   }, [remoteRoll, remoteVectors]);
@@ -80,25 +72,20 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     if (!canRoll) return;
     setRolling(true);
 
-    try {
-      // Roll first — this generates vectors internally via startClickThrow
-      await diceRef.current?.roll('d6', 5);
-      
-      // Get the exact vectors that were just used
-      const nv = diceRef.current?.getLastNotation();
-      console.log('[YahtzeeGame] roll complete, got vectors:', nv ? nv.vectors?.length + ' dice' : 'NO');
-
-      if (sessionId) {
-        const diceCfg = loadDiceAppearance();
-        const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL',vectors:nv,appearance:diceCfg}}) });
-        const data = await res.json();
-        if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
-        if (data.state) setGs(data.state);
-      } else {
-        setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
+    if (sessionId) {
+      // Server mode: send ROLL action, server returns dice values
+      const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL'}}) });
+      const data = await res.json();
+      if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
+      if (data.state) setGs(data.state);
+      // Animate using forced result notation so dice show the correct values
+      if (data.diceValues) {
+        const suffix = '@' + data.diceValues.join(',');
+        await diceRef.current?.roll('d6', 5, suffix);
       }
-    } catch(e) {
-      console.error('Roll error:', e);
+    } else {
+      await diceRef.current?.roll('d6', 5);
+      setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
     }
     setRolling(false);
   }, [canRoll, sessionId, playerIndex]);

@@ -27,12 +27,10 @@ export interface PerDieConfig {
 export type DiceAppearanceConfig = Partial<Record<DieType, PerDieConfig>>;
 
 export interface DiceOverlayHandle {
-  roll: (dieType: DieType, count?: number) => Promise<number[]>;
+  roll: (dieType: DieType, count?: number, suffix?: string) => Promise<number[]>;
   rollBatch: (combo: DiceComboEntry[]) => Promise<number[]>;
   configure: (config: Record<string, PerDieConfig>) => Promise<void>;
   clear: () => void;
-  getLastNotation: () => any;
-  rollWithVectors: (nv: any) => Promise<number[]>;
   setConfig: (config: Record<string, PerDieConfig>) => void;
 }
 
@@ -136,7 +134,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
   }, []);
 
   useImperativeHandle(ref, () => ({
-    roll: async (type: DieType, count = 1) => {
+    roll: async (type: DieType, count = 1, suffix = '') => {
       const b = box.current;
       if (!b) return [];
       for (let attempt = 0; attempt < 20; attempt++) {
@@ -145,7 +143,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
       }
       if (!b.initialized) return [];
       try {
-        const results = await b.roll(`${count}${type}`);
+        const results = await b.roll(`${count}${type}${suffix}`);
         const values: number[] = [];
         for (const set of results.sets || []) {
           for (const roll of set.rolls || []) {
@@ -193,28 +191,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {}>(function DiceOverla
     setConfig: (config: Record<string, PerDieConfig>) => {
       configRef.current = config;
       texCache.current.clear();
-    },
-    getLastNotation: () => {
-      return box.current?.getLastNotation() || null;
-    },
-    rollWithVectors: async (nv: any) => {
-      const b = box.current;
-      if (!b) return [];
-      for (let attempt = 0; attempt < 20; attempt++) {
-        if (b.initialized) break;
-        await new Promise(r => setTimeout(r, 100));
-      }
-      if (!b.initialized) return [];
-      try {
-        const results = await b.rollWithVectors(nv);
-        const values: number[] = [];
-        for (const set of results.sets || []) {
-          for (const roll of set.rolls || []) {
-            values.push(roll.value);
-          }
-        }
-        return values;
-      } catch { return []; }
     },
     clear: () => {
       box.current?.clearDice();

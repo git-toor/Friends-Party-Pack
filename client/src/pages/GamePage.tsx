@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import YahtzeeGame from '../games/yahtzee/YahtzeeGame.js';
 import ChatBox, { dispatchChatMessage } from '../components/ChatBox.js';
-import { loadDiceAppearance } from '../components/DiceAppearance.js';
 import { getWs } from '../api/ws.js';
 
 export default function GamePage() {
@@ -18,7 +17,7 @@ export default function GamePage() {
   const myPlayer = players[playerIndex] || { name: 'You' };
   const playerName = myPlayer.name || state?.playerName || 'You';
   const playerId = state?.playerId || players[playerIndex]?.id || '';
-  const diceAppearance = loadDiceAppearance();
+  const diceAppearance = (() => { try { return JSON.parse(localStorage.getItem('fpp_dice_appearance') || '{}'); } catch { return {}; } })();
   const [rollTrigger, setRollTrigger] = useState(0);
   const [remoteVectors, setRemoteVectors] = useState<any>(null);
 
@@ -40,9 +39,9 @@ export default function GamePage() {
       dispatchChatMessage(msg.payload);
     });
 
-    // Wire DICE_ROLL — trigger dice animation with same seed on all clients except the roller
+    // Wire DICE_ROLL — animate dice with same result on all clients except the roller
     const unsubDice = ws.on('DICE_ROLL', (msg) => {
-      console.log('[DICE_ROLL] received: roller', msg.payload?.playerIndex, 'vs me', playerIndex, 'seed:', msg.payload?.seed, 'hasAppearance:', !!msg.payload?.appearance);
+      console.log('[DICE_ROLL] received: roller', msg.payload?.playerIndex, 'vs me', playerIndex, 'values:', msg.payload?.values);
       if (msg.payload.playerIndex !== playerIndex) {
         setRemoteVectors(msg.payload);
         setRollTrigger(n => n + 1);
