@@ -34,7 +34,7 @@ export default function LobbyPanel() {
     loadState();
   }, [code, lobbyId]);
 
-  useWebSocket({
+  const { send } = useWebSocket({
     LOBBY_UPDATED: (payload: any) => {
       if (payload.lobby) setLobby(payload.lobby);
       if (payload.players) setPlayers(payload.players);
@@ -43,6 +43,13 @@ export default function LobbyPanel() {
       navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: payload.players?.findIndex((p: any) => p.id === playerId), playerName, lobby: payload.lobby } });
     },
   });
+
+  // Join the WS room for this lobby
+  useEffect(() => {
+    if (!code) return;
+    const t = setTimeout(() => send('JOIN_LOBBY', { code, playerName, playerId, lobbyId }), 300);
+    return () => clearTimeout(t);
+  }, [code]);
 
   const loadState = async () => {
     if (!lobbyId) return;

@@ -17,13 +17,21 @@ export function setupWsHandlers(wsServer: WsServer, lobbyManager: LobbyManager):
           break;
 
         case 'JOIN_LOBBY': {
-          const result = lobbyManager.join(msg.payload.code, msg.payload.playerName);
-          if ('error' in result) {
-            wsServer.sendTo(ws, { type: 'ERROR', payload: { error: result.error } });
+          // If already joined via REST, just join the WS room
+          if (msg.payload.lobbyId) {
+            wsServer.joinRoom(ws, `lobby:${msg.payload.lobbyId}`);
+            const state = lobbyManager.getState(msg.payload.lobbyId);
+            wsServer.sendTo(ws, { type: 'LOBBY_UPDATED', payload: state });
           } else {
-            wsServer.joinRoom(ws, `lobby:${result.lobbyId}`);
-            wsServer.broadcast(`lobby:${result.lobbyId}`, { type: 'LOBBY_UPDATED', payload: { lobby: result.lobby, players: result.players } });
-            wsServer.sendTo(ws, { type: 'JOINED', payload: result });
+            // First-time join via WS
+            const result = lobbyManager.join(msg.payload.code, msg.payload.playerName);
+            if ('error' in result) {
+              wsServer.sendTo(ws, { type: 'ERROR', payload: { error: result.error } });
+            } else {
+              wsServer.joinRoom(ws, `lobby:${result.lobbyId}`);
+              wsServer.broadcast(`lobby:${result.lobbyId}`, { type: 'LOBBY_UPDATED', payload: { lobby: result.lobby, players: result.players } });
+              wsServer.sendTo(ws, { type: 'JOINED', payload: result });
+            }
           }
           break;
         }

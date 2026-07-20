@@ -48,6 +48,7 @@ app.post('/api/lobby/join', (req, res) => {
   if ('error' in result) {
     res.status(400).json(result);
   } else {
+    wsServer.broadcast(`lobby:${result.lobbyId}`, { type: 'LOBBY_UPDATED', payload: { lobby: result.lobby, players: result.players } });
     res.json(result);
   }
 });
@@ -57,6 +58,7 @@ app.post('/api/lobby/ready', (req, res) => {
   if ('error' in result) {
     res.status(400).json(result);
   } else {
+    wsServer.broadcast(`lobby:${req.body.lobbyId}`, { type: 'LOBBY_UPDATED', payload: result });
     res.json(result);
   }
 });
