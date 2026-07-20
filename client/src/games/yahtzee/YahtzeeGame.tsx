@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { DiceOverlay, type DiceOverlayHandle } from '../../components/DiceOverlay.js';
+import { DiceOverlay, type DiceOverlayHandle, type DieType } from '../../components/DiceOverlay.js';
 import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
@@ -50,9 +50,9 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       const data = await res.json();
       if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
       if (data.state) setGs(data.state);
-      await diceRef.current?.roll();
+      await diceRef.current?.roll('d6', 5);
     } else {
-      await diceRef.current?.roll();
+      await diceRef.current?.roll('d6', 5);
       setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_KEEP', rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
     }
     setRolling(false);
