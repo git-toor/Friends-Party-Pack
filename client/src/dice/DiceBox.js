@@ -1154,15 +1154,19 @@ class DiceBox {
 		const raycaster = new THREE.Raycaster();
 		const mouse = new THREE.Vector2();
 		canvas.addEventListener('click', (event) => {
+			console.log('[DiceBox] canvas click at', event.clientX, event.clientY, 'pointerEvents:', canvas.style.pointerEvents);
 			const rect = canvas.getBoundingClientRect();
 			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
 			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 			raycaster.setFromCamera(mouse, this.camera);
 			const meshes = this.diceList.filter(d => d && !d._kept);
+			console.log('[DiceBox] meshes for raycast:', meshes.length, 'diceList:', this.diceList.length);
 			const intersects = raycaster.intersectObjects(meshes);
+			console.log('[DiceBox] intersects:', intersects.length);
 			if (intersects.length > 0) {
 				const hit = intersects[0].object;
 				const idx = this.diceList.indexOf(hit);
+				console.log('[DiceBox] hit', idx, 'onDieTap:', typeof this.onDieTap);
 				if (idx !== -1 && typeof this.onDieTap === 'function') {
 					this.onDieTap(idx);
 				}
