@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import YahtzeeGame from '../games/yahtzee/YahtzeeGame.js';
 import ChatBox, { dispatchChatMessage } from '../components/ChatBox.js';
+import { loadDiceAppearance } from '../components/DiceAppearance.js';
 import { getWs } from '../api/ws.js';
 
 export default function GamePage() {
@@ -17,6 +18,7 @@ export default function GamePage() {
   const myPlayer = players[playerIndex] || { name: 'You' };
   const playerName = myPlayer.name || state?.playerName || 'You';
   const playerId = state?.playerId || players[playerIndex]?.id || '';
+  const diceAppearance = loadDiceAppearance();
 
   useEffect(() => {
     if (!sessionId) {
@@ -51,6 +53,7 @@ export default function GamePage() {
         sessionId={sessionId}
         players={players}
         playerId={playerId}
+        diceAppearance={diceAppearance}
       />
       {sessionId && (
         <ChatBox

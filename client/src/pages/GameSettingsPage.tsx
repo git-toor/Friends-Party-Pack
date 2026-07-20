@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button.js';
 import { useLobby } from '../hooks/useLobby.js';
+import { DiceAppearanceSelector } from '../components/DiceAppearance.js';
 
 const pageStyle: React.CSSProperties = {
   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -54,6 +55,10 @@ export default function GameSettingsPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
+        <DiceAppearanceSelector />
       </div>
 
       {error && <p style={{ color: '#e94560', marginBottom: 12 }}>{error}</p>}

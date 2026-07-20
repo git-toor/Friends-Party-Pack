@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { DiceOverlay, type DiceOverlayHandle, type DieType } from '../../components/DiceOverlay.js';
+import { DiceOverlay, type DiceOverlayHandle, type DieType, type DiceAppearanceConfig } from '../../components/DiceOverlay.js';
 import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
@@ -15,15 +15,28 @@ function createInitialState(playerCount: number): YahtzeeGameState {
 interface YahtzeeGameProps {
   playerCount?: number; playerIndex?: number; playerName?: string; sessionId?: string;
   players?: { name: string; index: number; id?: string }[]; playerId?: string;
+  diceAppearance?: DiceAppearanceConfig;
 }
 
 const bottomBarStyle: React.CSSProperties = { padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, marginTop:'auto' };
 
-export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You' }: YahtzeeGameProps) {
+export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gs, setGs] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [rolling, setRolling] = useState(false);
   const [tab, setTab] = useState(0);
+
+  // Apply dice appearance config when DiceOverlay is ready
+  useEffect(() => {
+    if (!diceAppearance || Object.keys(diceAppearance).length === 0) return;
+    const t = setInterval(async () => {
+      if (diceRef.current?.configure) {
+        await diceRef.current.configure(diceAppearance);
+        clearInterval(t);
+      }
+    }, 200);
+    return () => clearInterval(t);
+  }, [diceAppearance]);
 
   useEffect(() => {
     if (!sessionId) return;
