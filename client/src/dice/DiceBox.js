@@ -194,7 +194,7 @@ class DiceBox {
 		this.initialized = true
 
 		this.renderer.render(this.scene, this.camera);
-		console.log('[DiceBox] initialized, canvas size:', this.renderer.domElement.width, 'x', this.renderer.domElement.height);
+		console.log('[DiceBox] initialized, canvas:', this.renderer.domElement.width, 'x', this.renderer.domElement.height, 'container:', this.container.clientWidth, 'x', this.container.clientHeight);
 	}
 
 	makeWorldBox(){
@@ -646,18 +646,15 @@ class DiceBox {
 				this.beforeSpawnDie(vectordata.type, vectordata, this.DiceFactory);
 			}
 
-			// TEMP: Create a simple box mesh with visible material
-			const boxGeo = new THREE.BoxGeometry(60, 60, 60);
-			const boxMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, roughness: 0.3, metalness: 0.1 });
-			dicemesh = new THREE.Mesh(boxGeo, boxMat);
-			dicemesh.shape = 'd6';
-			dicemesh.mass = 300;
+			// Use the actual DiceFactory to create dice
+			dicemesh = this.DiceFactory.create(vectordata.type, this.colorData);
+			if(!dicemesh) return;
+			dicemesh.notation = vectordata;
 			dicemesh.result = [];
 			dicemesh.stopped = 0;
-			dicemesh.geometry.cannon_shape = new CANNON.Box(new CANNON.Vec3(30, 30, 30));
+			dicemesh.castShadow = this.shadows;
 			this.scene.add(dicemesh);
 			this.diceList.push(dicemesh);
-			console.log('[spawnDice] created green cube at', pos.x.toFixed(0), pos.y.toFixed(0), pos.z.toFixed(0));
 		} else {
 			dicemesh = reset
 			// dicemesh.result = [];
