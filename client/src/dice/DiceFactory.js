@@ -53,25 +53,18 @@ class DiceFactory {
 	// returns a dicemesh (THREE.Mesh) object
 	create(type) {
 		let diceobj = this.get(type);
-		if (!diceobj) { console.warn('[DiceFactory] no diceobj for', type); return null; }
+		if (!diceobj) return null;
 
 		let geom = this.geometries[type];
 		if(!geom) {
 			geom = this.createGeometry(diceobj.shape, diceobj.scale * this.baseScale);
 			this.geometries[type] = geom;
 		}
-		if (!geom) { console.warn('[DiceFactory] no geom for', type); return null; }
+		if (!geom) return null;
 
 		this.setMaterialInfo();
 
-		let materials = this.createMaterials(diceobj, this.baseScale / 2, 1.0);
-		// Ensure materials are opaque (no transparency, no canvas textures)
-		for (const m of materials) {
-			m.transparent = false;
-			m.map = null;
-			m.needsUpdate = true;
-		}
-		let dicemesh = new THREE.Mesh(geom, materials);
+		let dicemesh = new THREE.Mesh(geom, this.createMaterials(diceobj, this.baseScale / 2, 1.0));
 		dicemesh.result = [];
 		dicemesh.shape = diceobj.shape;
 		dicemesh.rerolls = 0;
@@ -651,15 +644,8 @@ class DiceFactory {
 				return geom;
 			case 'd4':
 				return this[func](DICE_GEOM.d4.vertices, DICE_GEOM.d4.faces, radius, -0.1, Math.PI * 7 / 6, 0.96);
-			case 'd6': {
-				const boxGeo = new THREE.BoxGeometry(radius * 1.6, radius * 1.6, radius * 1.6);
-				// Remap material indices: BoxGeometry has groups 0-5 (6 faces), shift to 1-6 for face materials
-				for (const g of boxGeo.groups) {
-					g.materialIndex = g.materialIndex + 1;
-				}
-				boxGeo.cannon_shape = new CANNON.Box(new CANNON.Vec3(radius * 0.8, radius * 0.8, radius * 0.8));
-				return boxGeo;
-			}
+			case 'd6':
+				return this[func](DICE_GEOM.d6.vertices, DICE_GEOM.d6.faces, radius, 0.1, Math.PI / 4, 0.96);
 			case 'd8':
 				return this[func](DICE_GEOM.d8.vertices, DICE_GEOM.d8.faces, radius, 0, -Math.PI / 4 / 2, 0.965);
 			case 'd10':

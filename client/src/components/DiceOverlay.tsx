@@ -3,33 +3,25 @@ import { forwardRef, useRef, useEffect, useImperativeHandle } from 'react';
 import { DiceBox } from '../dice/DiceBox.js';
 
 export interface DiceOverlayHandle {
-  roll: (count?: number) => Promise<number[]>;
-  keep: (indices: number[]) => { value: number }[];
-  getSettledValues: () => (number | null)[];
-  resetKept: () => void;
+  roll: (notation?: string) => Promise<number[]>;
   clear: () => void;
-  isRolling: () => boolean;
 }
 
 export const DiceOverlay = forwardRef<DiceOverlayHandle, {
   onSettle?: (values: number[]) => void;
-  onDieTap?: (index: number) => void;
-  onKeepComplete?: (count: number) => void;
-}>(function DiceOverlay({ onSettle, onDieTap, onKeepComplete }, ref) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const boxRef = useRef<InstanceType<typeof DiceBox> | null>(null);
-  const pointerMode = useRef<'auto' | 'none'>('none');
+}>(function DiceOverlay({ onSettle }, ref) {
+  const cr = useRef<HTMLDivElement>(null);
+  const box = useRef<InstanceType<typeof DiceBox> | null>(null);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = cr.current;
     if (!el) return;
     let cancelled = false;
-
     (async () => {
       const diceBox = new DiceBox(`#${el.id}`, {
         theme_colorset: 'white',
         theme_texture: '',
-        theme_material: 'glass',
+        theme_material: 'none',
         baseScale: 90,
         gravity_multiplier: 400,
         light_intensity: 0.7,
@@ -37,40 +29,17 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {
         theme_surface: 'green-felt',
         strength: 1,
         iterationLimit: 1000,
-        onRollComplete: (results: any) => {
-          const values = getValuesFromResults(results);
-          if (!cancelled && onSettle) onSettle(values);
-        },
-        onKeepComplete: (count: number) => {
-          if (!cancelled && onKeepComplete) onKeepComplete(count);
-        },
-        onDieTap: (index: number) => {
-          if (!cancelled && onDieTap) onDieTap(index);
-        },
+        onRollComplete: () => {},
       });
-
       await diceBox.initialize();
-      if (diceBox.renderer) {
-        diceBox.setupDieTap(diceBox.renderer.domElement);
-      }
-
-      if (!cancelled) {
-        boxRef.current = diceBox;
-      }
+      if (!cancelled) box.current = diceBox;
     })();
-
-    return () => {
-      cancelled = true;
-      if (boxRef.current) {
-        boxRef.current.clearDice();
-        boxRef.current = null;
-      }
-    };
+    return () => { cancelled = true; if (box.current) { box.current.clearDice(); box.current = null; } };
   }, []);
 
   useImperativeHandle(ref, () => ({
-    roll: async (count = 5) => {
-      const b = boxRef.current;
+    roll: async (notation = '5d6') => {
+      const b = box.current;
       if (!b) return [];
       for (let attempt = 0; attempt < 20; attempt++) {
         if (b.initialized) break;
@@ -78,57 +47,21 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, {
       }
       if (!b.initialized) return [];
       try {
-        const results = await b.roll(`${count}d6`);
-        return getValuesFromResults(results);
-      } catch {
-        return [];
-      }
-    },
-    keep: (indices: number[]) => {
-      const b = boxRef.current;
-      if (!b) return [];
-      return b.keepDice(indices);
-    },
-    getSettledValues: () => {
-      const b = boxRef.current;
-      if (!b) return [];
-      return b.getSettledValues();
-    },
-    resetKept: () => {
-      boxRef.current?.resetKept();
+        const results = await b.roll(notation);
+        const values: number[] = [];
+        for (const set of results.sets || []) {
+          for (const roll of set.rolls || []) {
+            values.push(roll.value);
+          }
+        }
+        if (onSettle) onSettle(values);
+        return values;
+      } catch { return []; }
     },
     clear: () => {
-      boxRef.current?.clearDice();
-    },
-    isRolling: () => {
-      return boxRef.current?.rolling ?? false;
+      box.current?.clearDice();
     },
   }), []);
 
-  return (
-    <div
-      id="dice-overlay"
-      ref={containerRef}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 999,
-      }}
-    />
-  );
+  return <div id="dice-overlay" ref={cr} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 999 }} />;
 });
-
-function getValuesFromResults(results: any): number[] {
-  const values: number[] = [];
-  if (!results) return values;
-  for (const set of results.sets || []) {
-    for (const roll of set.rolls || []) {
-      values.push(roll.value);
-    }
-  }
-  return values;
-}

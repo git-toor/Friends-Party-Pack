@@ -32,8 +32,6 @@ const defaultConfig = {
 	onRerollComplete: () => {},
 	onAddDiceComplete: () => {},
 	onRemoveDiceComplete: () => {},
-	onKeepComplete: () => {},
-	onDieTap: null,
 }
 
 class DiceBox {
@@ -86,10 +84,6 @@ class DiceBox {
 		this.diceList = [];
 		this.notationVectors = null
 		this.dieIndex = 0
-		this.keptMeshes = []
-		this.keepAnims = []
-		this.keepLoopRunning = false
-		this._onDieTap = null
 
 		//public variables
 		// this.framerate = (1/60);
@@ -153,10 +147,6 @@ class DiceBox {
 		this.renderer.shadowMap.enabled = false;
 		this.renderer.setClearColor(0x000000, 0);
 
-		// Refresh dimensions from actual DOM — container may have been 0 at construction
-		const w = this.container.clientWidth || window.innerWidth;
-		const h = this.container.clientHeight || window.innerHeight;
-		this.dimensions.set(w, h);
 		this.setDimensions(this.dimensions);
 
 		this.world.gravity.set(0, 0, -9.8 * this.gravity_multiplier);
@@ -181,14 +171,6 @@ class DiceBox {
 			await this.loadSounds()
 			.catch(e=>{throw new Error("Unable to load sounds")})
 		}
-
-		// Remove all debug markers from previous sessions
-		if (this._testMarkers) {
-			for (const m of this._testMarkers) this.scene.remove(m);
-			this._testMarkers = null;
-		}
-		if (this._testCube) { this.scene.remove(this._testCube); this._testCube = null; }
-		if (this._debugCube) { this.scene.remove(this._debugCube); this._debugCube = null; }
 
 		this.initialized = true
 
@@ -441,11 +423,11 @@ class DiceBox {
 				vec.x /= dist;
 				vec.y /= dist;
 
-			let pos = {
-				x: this.display.containerWidth * (vec.x > 0 ? -1 : 1) * 0.35,
-				y: this.display.containerHeight * (vec.y > 0 ? -1 : 1) * 0.35,
-				z: Math.random() * 200 + 200
-			};
+				let pos = {
+					x: this.display.containerWidth * (vec.x > 0 ? -1 : 1) * 0.9,
+					y: this.display.containerHeight * (vec.y > 0 ? -1 : 1) * 0.9,
+					z: Math.random() * 200 + 200
+				};
 
 				let projector = Math.abs(vec.x / vec.y);
 				if (projector > 1.0) pos.y /= projector; else pos.x *= projector;
@@ -643,23 +625,17 @@ class DiceBox {
 			if (typeof this.beforeSpawnDie === 'function') {
 				this.beforeSpawnDie(vectordata.type, vectordata, this.DiceFactory);
 			}
-
-			// COMPLETELY bypass DiceFactory — use a simple BoxGeometry with solid color
-			const size = this.baseScale * 0.8;
-			const geo = new THREE.BoxGeometry(size, size, size);
-			const cols = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff];
-			const mat = new THREE.MeshStandardMaterial({ color: cols[this.diceList.length % 5], roughness: 0.5 });
-			dicemesh = new THREE.Mesh(geo, mat);
-			dicemesh.shape = 'd6';
-			dicemesh.mass = 300;
+			dicemesh = this.DiceFactory.create(vectordata.type, this.colorData);
+			if(!dicemesh) return;
 			dicemesh.notation = vectordata;
 			dicemesh.result = [];
 			dicemesh.stopped = 0;
-			dicemesh.geometry.cannon_shape = new CANNON.Box(new CANNON.Vec3(size/2, size/2, size/2));
+			dicemesh.castShadow = this.shadows;
 			this.scene.add(dicemesh);
 			this.diceList.push(dicemesh);
 		} else {
 			dicemesh = reset
+			// dicemesh.result = [];
 			dicemesh.stopped = 0;
 			this.world.removeBody(dicemesh.body);
 		}
@@ -867,13 +843,6 @@ class DiceBox {
 		if (this.running == threadid && this.throwFinished()) {
 			this.running = false;
 			this.rolling = false;
-			// Clean up old debug objects
-			if (this._testMarkers) {
-				for (const m of this._testMarkers) this.scene.remove(m);
-				this._testMarkers = null;
-			}
-			if (this._testCube) { this.scene.remove(this._testCube); this._testCube = null; }
-			if (this._debugCube) { this.scene.remove(this._debugCube); this._debugCube = null; }
 			if(callback) callback.call(this, this.notationVectors);
 			
 			this.running = Date.now();
@@ -950,108 +919,6 @@ class DiceBox {
 		}
 		this.renderer.render(this.scene, this.camera);
 		setTimeout(() => { this.renderer.render(this.scene, this.camera); }, 100);
-	}
-
-	keepDice(indices) {
-		const kept = [];
-		const sorted = [...indices].sort((a,b) => b - a);
-		for (const i of sorted) {
-			const mesh = this.diceList[i];
-			if (!mesh) continue;
-			this.world.removeBody(mesh.body);
-			mesh.body = null;
-			kept.push(mesh);
-			this.diceList.splice(i, 1);
-		}
-		this.keptMeshes.push(...kept);
-		kept.forEach((mesh, i) => {
-			const target = this.getKeptPosition(i, kept.length);
-			this.keepAnims.push({
-				mesh,
-				start: mesh.position.clone(),
-				target,
-				progress: 0
-			});
-		});
-		this.startKeepAnimLoop();
-		return kept.map(m => m.getFaceValue());
-	}
-
-	resetKept() {
-		for (const mesh of this.keptMeshes) {
-			this.scene.remove(mesh);
-			if (mesh.geometry) mesh.geometry.dispose();
-			if (mesh.material) {
-				if (Array.isArray(mesh.material)) {
-					mesh.material.forEach(m => m.dispose());
-				} else {
-					mesh.material.dispose();
-				}
-			}
-		}
-		this.keptMeshes = [];
-		this.keepAnims = [];
-	}
-
-	getKeptPosition(index, total) {
-		const spacing = this.baseScale * 1.8;
-		const totalWidth = (total - 1) * spacing;
-		const startX = -totalWidth / 2;
-		return new THREE.Vector3(
-			startX + index * spacing,
-			-this.display.containerHeight * 0.35,
-			this.baseScale * 0.3
-		);
-	}
-
-	startKeepAnimLoop() {
-		if (this.keepLoopRunning) return;
-		this.keepLoopRunning = true;
-		const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-		const animate = () => {
-			let anyActive = false;
-			for (const anim of this.keepAnims) {
-				anim.progress = Math.min(anim.progress + 0.04, 1);
-				const t = easeOutCubic(anim.progress);
-				anim.mesh.position.lerpVectors(anim.start, anim.target, t);
-				if (anim.progress < 1) anyActive = true;
-			}
-			this.renderer.render(this.scene, this.camera);
-			if (anyActive) {
-				requestAnimationFrame(animate);
-			} else {
-				this.keepLoopRunning = false;
-				this.onKeepComplete(this.keptMeshes.length);
-			}
-		};
-		requestAnimationFrame(animate);
-	}
-
-	getSettledValues() {
-		return this.diceList.map(m => {
-			const fv = m.getFaceValue();
-			return fv ? fv.value : null;
-		});
-	}
-
-	setupDieTap(canvas) {
-		const raycaster = new THREE.Raycaster();
-		const mouse = new THREE.Vector2();
-		canvas.addEventListener('click', (event) => {
-			const rect = canvas.getBoundingClientRect();
-			mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-			mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-			raycaster.setFromCamera(mouse, this.camera);
-			const meshes = this.diceList.map(m => m);
-			const intersects = raycaster.intersectObjects(meshes);
-			if (intersects.length > 0) {
-				const hitMesh = intersects[0].object;
-				const idx = this.diceList.indexOf(hitMesh);
-				if (idx !== -1 && this.onDieTap) {
-					this.onDieTap(idx);
-				}
-			}
-		});
 	}
 
 	getDiceResults(id){
