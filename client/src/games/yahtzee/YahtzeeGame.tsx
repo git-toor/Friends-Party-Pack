@@ -85,8 +85,9 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   const myState = gs.players[tab] || gs.players[gs.currentPlayerIndex] || EMPTY_PLAYER();
   const isMe = gs.isMyTurn || !sessionId;
   const canRoll = turn.phase === 'WAITING_FOR_ROLL' && !rolling && isMe;
-  const canKeep = turn.phase === 'WAITING_FOR_KEEP' && selected.some(s=>s) && !rolling && isMe;
+  const canKeep = turn.phase === 'WAITING_FOR_KEEP' && !rolling && isMe;
   const canScore = turn.phase === 'WAITING_FOR_CATEGORY' && isMe;
+  const hasSel = selected.some(s=>s);
 
   const handleRoll = useCallback(async () => {
     if (!canRoll) return;
@@ -208,7 +209,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
         <div style={{ flex:1, minHeight:0 }} />
         <div style={bottomBarStyle}>
           {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase}/3)</Button>}
-          {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>🔒 Hold ({selected.filter(Boolean).length})</Button>}
+          {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>{hasSel ? `🔒 Hold (${selected.filter(Boolean).length})` : '🎲 Roll All'}</Button>}
           {turn.phase === 'WAITING_FOR_CATEGORY' && canScore && <span style={{color:'#fbbf24',fontSize:12}}>Select a category to score</span>}
           {!canRoll && !canKeep && !canScore && sessionId && <span style={{color:'#999',fontSize:14}}>Waiting...</span>}
           <div style={{ alignSelf:'stretch', maxHeight:'45vh', overflowY:'auto' }}>

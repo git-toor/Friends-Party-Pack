@@ -124,13 +124,13 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
 
   useImperativeHandle(ref, () => ({
     roll: async (type: DieType, count = 1, suffix = '') => {
-      const b = box.current;
-      if (!b) return [];
-      for (let attempt = 0; attempt < 20; attempt++) {
-        if (b.initialized) break;
-        await new Promise(r => setTimeout(r, 100));
+      let b = box.current;
+      for (let attempt = 0; attempt < 50; attempt++) {
+        if (b && b.initialized) break;
+        await new Promise(r => setTimeout(r, 200));
+        b = box.current;
       }
-      if (!b.initialized) return [];
+      if (!b || !b.initialized) return [];
       try {
         const results = await b.roll(`${count}${type}${suffix}`);
         const values: number[] = [];
