@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage.js';
 import GameSettingsPage from './pages/GameSettingsPage.js';
 import JoinView from './pages/JoinView.js';
 import LobbyPanel from './pages/LobbyPanel.js';
+import GamePage from './pages/GamePage.js';
 
 export default function App() {
   return (
@@ -13,7 +14,7 @@ export default function App() {
         <Route path="/join" element={<JoinView />} />
         <Route path="/join/:code" element={<JoinView />} />
         <Route path="/lobby/:code" element={<LobbyPanel />} />
-        <Route path="/game/:sessionId" element={<div style={{ padding: 40, textAlign: 'center' }}>Game coming soon</div>} />
+        <Route path="/game/:sessionId" element={<GamePage />} />
       </Routes>
     </BrowserRouter>
   );
