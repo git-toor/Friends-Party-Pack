@@ -238,6 +238,27 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       {/* Game area (dice + floating chat go here) */}
       <div style={{ flex:1, minHeight:0 }} />
 
+      {/* Chat messages above buttons */}
+      <div style={{ padding:'2px 12px', display:'flex', flexDirection:'column-reverse', alignItems:'center', gap:1, overflow:'hidden', maxHeight:72, zIndex:1 }}>
+        {chatMsgs.slice(-4).map((m, i) => {
+          const isMe = m.playerId === playerId;
+          const allMsgs = chatMsgs.slice(-4);
+          const isNewest = i === allMsgs.length - 1;
+          return (
+            <div key={m.id} style={{
+              padding:'2px 10px', borderRadius:6, fontSize:11,
+              background: isMe ? 'rgba(15,52,96,0.8)' : 'rgba(26,26,46,0.8)',
+              color:'#ddd', maxWidth:'80%', textAlign:'center',
+              animation: isNewest ? 'chatFadeIn 0.3s ease' : 'none',
+            }}>
+              <span style={{ color:'#e94560', fontWeight:600, marginRight:4 }}>
+                {isMe ? 'You' : m.playerName}:
+              </span>{m.text}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Action buttons */}
       <div style={{ padding:'8px 12px', display:'flex', justifyContent:'center', gap:8, flexWrap:'wrap', zIndex:1 }}>
         {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase + 1}/3)</Button>}
@@ -245,20 +266,6 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
         {canKeep && <Button variant="primary" size="lg" onClick={handleScoreNow}>Score</Button>}
         {turn.phase === 'WAITING_FOR_CATEGORY' && isMe && <span style={{color:'#fbbf24',fontSize:11}}>Select a category to score</span>}
         {!canRoll && !canKeep && !(turn.phase === 'WAITING_FOR_CATEGORY' && isMe) && sessionId && <span style={{color:'#999',fontSize:13}}>Waiting...</span>}
-      </div>
-
-      {/* Chat messages above scorecard */}
-      <div style={{ padding:'2px 8px', zIndex:1, display:'flex', flexDirection:'column-reverse', alignItems:'center', gap:1, overflow:'hidden', maxHeight:80 }}>
-        {chatMsgs.slice(-5).map((m, i) => (
-          <div key={m.id} style={{
-            padding:'2px 8px', borderRadius:6, fontSize:11,
-            background: m.playerId === playerId ? 'rgba(15,52,96,0.8)' : 'rgba(26,26,46,0.8)',
-            color:'#ddd', maxWidth:'80%', textAlign:'center',
-            animation: i === chatMsgs.slice(-5).length - 1 ? 'chatFadeIn 0.3s ease' : 'none',
-          }}>
-            <span style={{ color:'#e94560', fontWeight:600, marginRight:4 }}>{m.playerName}:</span>{m.text}
-          </div>
-        ))}
       </div>
 
       {/* Scorecard */}
