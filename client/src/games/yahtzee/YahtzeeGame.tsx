@@ -88,9 +88,8 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   const isMe = gs.isMyTurn || !sessionId;
   const canRoll = turn.phase === 'WAITING_FOR_ROLL' && !rolling && isMe;
   const canKeep = turn.phase === 'WAITING_FOR_KEEP' && !rolling && isMe;
-  const canScore = (turn.phase === 'WAITING_FOR_CATEGORY' || turn.phase === 'WAITING_FOR_KEEP') && isMe;
+  const canScore = turn.phase === 'WAITING_FOR_CATEGORY' && isMe;
   const hasSel = selected.some(s=>s);
-  const hasDice = turn.dice.some(d => d > 0);
 
   const handleRoll = useCallback(async () => {
     if (!canRoll) return;
@@ -146,6 +145,17 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       });
     }
   }, [canKeep, selected, sessionId, playerIndex]);
+
+  const handleScoreNow = useCallback(async () => {
+    if (!canKeep) return;
+    if (sessionId) {
+      const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'SCORE_NOW'}}) });
+      const data = await res.json();
+      if (data.state) setGs(data.state);
+    } else {
+      setGs(p => ({...p, turn:{...p.turn, phase:'WAITING_FOR_CATEGORY' as YahtzeeTurn['phase']}}));
+    }
+  }, [canKeep, sessionId, playerIndex]);
 
   const handleScore = useCallback(async (cat: YahtzeeCategory) => {
     if (!canScore || myState.scores[cat] !== undefined) return;
@@ -215,7 +225,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
         <div style={bottomBarStyle}>
           {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase + 1}/3)</Button>}
           {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>{hasSel ? `🔒 Hold (${selected.filter(Boolean).length})` : '🎲 Roll All'}</Button>}
-          {canKeep && hasDice && <span style={{color:'#93c5fd',fontSize:11}}>Or tap a category below to score now</span>}
+          {canKeep && <Button variant="primary" size="lg" onClick={handleScoreNow}>Score</Button>}
           {turn.phase === 'WAITING_FOR_CATEGORY' && isMe && <span style={{color:'#fbbf24',fontSize:12}}>Select a category to score</span>}
           {!canRoll && !canKeep && !(turn.phase === 'WAITING_FOR_CATEGORY' && isMe) && sessionId && <span style={{color:'#999',fontSize:14}}>Waiting...</span>}
           <div style={{ alignSelf:'stretch', maxHeight:'45vh', overflowY:'auto' }}>

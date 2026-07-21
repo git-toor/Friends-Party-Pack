@@ -30,7 +30,7 @@ export interface YahtzeeGameState {
 }
 
 export interface GameAction {
-  type: 'ROLL' | 'KEEP' | 'SCORE';
+  type: 'ROLL' | 'KEEP' | 'SCORE' | 'SCORE_NOW';
   payload?: any;
 }
 
@@ -85,6 +85,8 @@ export function handleAction(state: YahtzeeGameState, playerIndex: number, actio
       return handleKeep(state, action.payload?.indices);
     case 'SCORE':
       return handleScore(state, action.payload?.category);
+    case 'SCORE_NOW':
+      return handleScoreNow(state);
     default:
       return { state, valid: false, error: 'Invalid action' };
   }
@@ -145,7 +147,7 @@ function handleScore(state: YahtzeeGameState, category?: YahtzeeCategory): GameR
   const turn = { ...state.turn };
   const newState = { ...state, turn };
 
-  if (turn.phase !== 'WAITING_FOR_CATEGORY' && turn.phase !== 'WAITING_FOR_KEEP') {
+  if (turn.phase !== 'WAITING_FOR_CATEGORY') {
     return { state, valid: false, error: 'Cannot score now' };
   }
 
@@ -182,6 +184,15 @@ function handleScore(state: YahtzeeGameState, category?: YahtzeeCategory): GameR
   advanceTurn(newState);
 
   return { state: newState, valid: true };
+}
+
+function handleScoreNow(state: YahtzeeGameState): GameResult {
+  const turn = { ...state.turn };
+  if (turn.phase !== 'WAITING_FOR_KEEP') {
+    return { state, valid: false, error: 'Cannot score now' };
+  }
+  turn.phase = 'WAITING_FOR_CATEGORY';
+  return { state: { ...state, turn }, valid: true };
 }
 
 function advanceTurn(state: YahtzeeGameState): void {
