@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { createGame, handleAction, getAvailableCategories, getTotalScore } from './YahtzeeEngine.js';
-import type { YahtzeeGameState, GameAction } from './YahtzeeEngine.js';
+import { createGame, handleAction, getAvailableCategories, getTotalScore, calculateWinners } from './YahtzeeEngine.js';
+import type { YahtzeeGameState, GameAction, YahtzeeCategory } from './YahtzeeEngine.js';
 
 const sessions = new Map<string, YahtzeeGameState>();
 const wsBroadcasts = new Map<string, (payload: any) => void>();
@@ -55,6 +55,56 @@ yahtzeeRouter.post('/action', (req, res) => {
     }
 
   res.json({ valid: true, state: sanitized, diceValues: result.diceValues });
+});
+
+yahtzeeRouter.post('/debug/fill', (req, res) => {
+  const { sessionId } = req.body;
+  const state = sessions.get(sessionId);
+  if (!state) return res.status(404).json({ error: 'Session not found' });
+
+  const cats: YahtzeeCategory[] = ['ones','twos','threes','fours','fives','sixes','three_of_a_kind','four_of_a_kind','full_house','small_straight','large_straight','yahtzee','chance'];
+
+  for (let pi = 0; pi < state.players.length; pi++) {
+    const player = { ...state.players[pi] };
+    player.scores = { ...player.scores };
+    for (const cat of cats) {
+      if (player.scores[cat] === undefined) {
+        player.scores[cat] = Math.floor(Math.random() * 50) + 1;
+      }
+    }
+    state.players[pi] = player;
+  }
+
+  state.winners = calculateWinners(state.players);
+  state.started = false;
+
+  const broadcast = wsBroadcasts.get(sessionId);
+  if (broadcast) {
+    for (let i = 0; i < state.players.length; i++) {
+      broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(state, i), _actionPlayer: -1, forPlayerIndex: i } });
+    }
+  }
+
+  res.json({ state: sanitizeState(state, -1) });
+});
+
+yahtzeeRouter.post('/rematch', (req, res) => {
+  const { sessionId } = req.body;
+  const existing = sessions.get(sessionId);
+  if (!existing) return res.status(404).json({ error: 'Session not found' });
+
+  const playerCount = existing.players.length;
+  const newState = createGame(playerCount);
+  sessions.set(sessionId, newState);
+
+  const broadcast = wsBroadcasts.get(sessionId);
+  if (broadcast) {
+    for (let i = 0; i < newState.players.length; i++) {
+      broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(newState, i), _actionPlayer: -1, forPlayerIndex: i } });
+    }
+  }
+
+  res.json({ state: sanitizeState(newState, -1) });
 });
 
 yahtzeeRouter.get('/state/:sessionId', (req, res) => {

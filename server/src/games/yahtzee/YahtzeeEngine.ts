@@ -60,7 +60,7 @@ export function createGame(playerCount: number): YahtzeeGameState {
       rollPhase: 0,
       phase: 'WAITING_FOR_ROLL',
     },
-    currentPlayerIndex: 0,
+    currentPlayerIndex: Math.floor(Math.random() * playerCount),
     round: 1,
     totalRounds: 13,
     winners: [],

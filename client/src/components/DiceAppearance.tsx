@@ -26,8 +26,16 @@ function getGroupedColorSets() {
   return CATEGORY_ORDER.filter(c => groups[c]).map(c => ({ category: c, sets: groups[c] }));
 }
 
-function defaultConfig(): PerDieConfig {
-  return { colorset: 'white', texture: '', material: 'none', textColor: '#000000' };
+const DEFAULT_PRESETS: PerDieConfig[] = [
+  { colorset: 'dragons_17', texture: 'metal', material: 'metal', textColor: '#ffffff' },
+  { colorset: 'glitterparty_3', texture: 'metal', material: 'metal', textColor: '#ffffff' },
+  { colorset: 'dragons_16', texture: 'metal', material: 'metal', textColor: '#ffffff' },
+  { colorset: 'dragons_5', texture: 'metal', material: 'metal', textColor: '#ffffff' },
+  { colorset: 'dragons_1', texture: 'metal', material: 'metal', textColor: '#ffffff' },
+];
+
+function defaultConfigForDie(idx: number): PerDieConfig {
+  return DEFAULT_PRESETS[idx] || DEFAULT_PRESETS[0];
 }
 
 export function loadDiceAppearance(): Record<string, PerDieConfig> {
@@ -46,7 +54,10 @@ export function DiceAppearanceSelector() {
   const [configs, setConfigs] = useState<Record<string, PerDieConfig>>(() => {
     const saved = loadDiceAppearance();
     const out: Record<string, PerDieConfig> = {};
-    for (const k of DICE_KEYS) out[k] = saved[k] || defaultConfig();
+    for (const k of DICE_KEYS) {
+      const idx = parseInt(k.split('_')[1]);
+      out[k] = saved[k] || defaultConfigForDie(idx);
+    }
     return out;
   });
   const [open, setOpen] = useState<string>('dice_0');

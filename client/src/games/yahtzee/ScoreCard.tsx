@@ -7,12 +7,12 @@ const CATEGORIES: { key: YahtzeeCategory; label: string; }[] = [
   { key: 'fours', label: 'Fours' },
   { key: 'fives', label: 'Fives' },
   { key: 'sixes', label: 'Sixes' },
-  { key: 'three_of_a_kind', label: '3K' },
-  { key: 'four_of_a_kind', label: '4K' },
-  { key: 'full_house', label: 'FH' },
-  { key: 'small_straight', label: 'SS' },
-  { key: 'large_straight', label: 'LS' },
-  { key: 'yahtzee', label: 'Y' },
+  { key: 'three_of_a_kind', label: '3 of a Kind' },
+  { key: 'four_of_a_kind', label: '4 of a Kind' },
+  { key: 'full_house', label: 'Full House' },
+  { key: 'small_straight', label: 'Sm. Straight' },
+  { key: 'large_straight', label: 'Lg. Straight' },
+  { key: 'yahtzee', label: 'Yahtzee' },
   { key: 'chance', label: 'Chance' },
 ];
 

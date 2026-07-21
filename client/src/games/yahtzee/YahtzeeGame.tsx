@@ -9,7 +9,13 @@ const EMPTY_TURN: YahtzeeTurn = { dice: [0, 0, 0, 0, 0], kept: [false, false, fa
 const EMPTY_PLAYER = (): YahtzeePlayerState => ({ scores: {}, yahtzeeBonusCount: 0, isCurrentPlayer: false, totalScore: 0, availableCategories: [] });
 
 function createInitialState(playerCount: number): YahtzeeGameState {
-  return { currentPlayerIndex: 0, round: 1, totalRounds: 13, winners: [], started: true, isMyTurn: true, turn: { ...EMPTY_TURN }, players: Array.from({ length: playerCount }, () => EMPTY_PLAYER()) };
+  const startIdx = Math.floor(Math.random() * playerCount);
+  const players = Array.from({ length: playerCount }, (_, i) => {
+    const p = EMPTY_PLAYER();
+    p.isCurrentPlayer = i === startIdx;
+    return p;
+  });
+  return { currentPlayerIndex: startIdx, round: 1, totalRounds: 13, winners: [], started: true, isMyTurn: true, turn: { ...EMPTY_TURN }, players };
 }
 
 interface YahtzeeGameProps {
@@ -25,6 +31,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gs, setGs] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [rolling, setRolling] = useState(false);
+  const [showGameOver, setShowGameOver] = useState(false);
   const [selected, setSelected] = useState<boolean[]>([false,false,false,false,false]);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
 
@@ -196,7 +203,11 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   }, [canScore, myState.scores, turn.dice, playerCount, sessionId, playerIndex]);
 
   useEffect(() => {
-    if (gs.winners.length > 0) setTimeout(() => alert(`Winner: Player ${gs.winners[0]+1}`), 500);
+    if (gs.winners.length > 0) setTimeout(() => setShowGameOver(true), 500);
+  }, [gs.winners]);
+
+  useEffect(() => {
+    if (gs.winners.length === 0 && showGameOver) setShowGameOver(false);
   }, [gs.winners]);
 
   useEffect(() => {
@@ -213,6 +224,16 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     }
   }, [turn.phase, rolling]);
 
+  const handleRematch = useCallback(async () => {
+    if (!sessionId) {
+      setGs(createInitialState(playerCount));
+      setShowGameOver(false);
+      return;
+    }
+    const res = await fetch('/api/games/yahtzee/rematch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId}) });
+    if (res.ok) setShowGameOver(false);
+  }, [sessionId, playerCount]);
+
   const scorePlayers = gs.players.map((p, i) => ({
     name: players?.[i]?.name || `Player ${i+1}`,
     scores: p.scores,
@@ -224,7 +245,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     <div style={{ width:'100%', height:'100%', position:'relative', display:'flex', flexDirection:'column' }}>
       <DiceOverlay ref={diceRef} onDieTap={handleDieTap} />
       {/* Top bar */}
-      <div style={{ padding:'8px 12px', textAlign:'center', background:'rgba(26,26,46,0.85)', zIndex:1 }}>
+      <div style={{ padding:'8px 12px', display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(26,26,46,0.85)', zIndex:1 }}>
         <span style={{ fontSize:12, color:'#999' }}>
           Round {gs.round}/{gs.totalRounds} ·&nbsp;
           {(() => {
@@ -274,6 +295,57 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
           dice={turn.dice} canScore={canScore} onScore={canScore ? handleScore : undefined} />
       </div>
       <style>{`@keyframes chatFadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }`}</style>
+
+      {showGameOver && (
+        <div style={{
+          position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex',
+          flexDirection:'column', alignItems:'center', justifyContent:'center', zIndex:1000,
+        }}>
+          <div style={{
+            background:'#16213e', borderRadius:12, padding:24, maxWidth:420, width:'90%',
+            maxHeight:'80vh', overflow:'auto',
+          }}>
+            <h2 style={{ color:'#e94560', textAlign:'center', margin:'0 0 4px', fontSize:20 }}>
+              Game Over!
+            </h2>
+            <p style={{ color:'#fbbf24', textAlign:'center', margin:'0 0 16px', fontSize:14 }}>
+              {gs.winners.length > 1 ? 'Tie' : 'Winner'}: {gs.winners.map(i => players?.[i]?.name || `Player ${i+1}`).join(', ')}
+            </p>
+            <div style={{ display:'flex', justifyContent:'center', gap:24, flexWrap:'wrap', marginBottom:16 }}>
+              {gs.players.map((p, i) => (
+                <div key={i} style={{
+                  textAlign:'center', padding:'8px 16px', borderRadius:8,
+                  background: gs.winners.includes(i) ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
+                  border: gs.winners.includes(i) ? '1px solid #fbbf24' : '1px solid transparent',
+                }}>
+                  <div style={{ color: gs.winners.includes(i) ? '#fbbf24' : '#aaa', fontSize:13, fontWeight:600 }}>
+                    {players?.[i]?.name || `Player ${i+1}`}
+                  </div>
+                  <div style={{ color:'#fff', fontSize:22, fontWeight:700, marginTop:4 }}>
+                    {p.totalScore}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', justifyContent:'center', gap:12 }}>
+              <button onClick={handleRematch}
+                style={{
+                  padding:'10px 24px', background:'#0f3460', color:'#fff', border:'1px solid #e94560',
+                  borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:600,
+                }}>
+                🔄 Rematch
+              </button>
+              <button onClick={() => window.location.href = '/'}
+                style={{
+                  padding:'10px 24px', background:'#e94560', color:'#fff', border:'none',
+                  borderRadius:6, cursor:'pointer', fontSize:14, fontWeight:600,
+                }}>
+                Back to Lobby
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
