@@ -145,7 +145,7 @@ function handleScore(state: YahtzeeGameState, category?: YahtzeeCategory): GameR
   const turn = { ...state.turn };
   const newState = { ...state, turn };
 
-  if (turn.phase !== 'WAITING_FOR_CATEGORY') {
+  if (turn.phase !== 'WAITING_FOR_CATEGORY' && turn.phase !== 'WAITING_FOR_KEEP') {
     return { state, valid: false, error: 'Cannot score now' };
   }
 
