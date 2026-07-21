@@ -51,64 +51,76 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
     if (!el) return;
     let cancelled = false;
     (async () => {
-      const diceBox = new DiceBox(`#${el.id}`, {
-        assetPath: '/',
-        theme_colorset: 'white',
-        theme_texture: '',
-        theme_material: 'none',
-        baseScale: 90,
-        gravity_multiplier: 400,
-        light_intensity: 0.7,
-        color_spotlight: 0xefdfd5,
-        theme_surface: 'green-felt',
-        sounds: true,
-        volume: 100,
-        strength: 1,
-        iterationLimit: 1000,
-        onDieTap: (index: number) => { if (!cancelled && onDieTapRef.current) onDieTapRef.current(index); },
-        beforeSpawnDie: (type: string, _vec: any, factory: any) => {
-          const cache = texCache.current;
-          const config = configRef.current;
-          const idx = spawnCount.current % 5;
-          spawnCount.current = spawnCount.current + 1;
-          const diceKey = `dice_${idx}`;
-          const c = (config[diceKey] || config[type as DieType] || {}) as PerDieConfig;
-          if (c.colorset && COLORSETS[c.colorset]) {
-            const cs = COLORSETS[c.colorset] as any;
-            const face = c.faceColor || cs.background || '#ffffff';
-            factory.dice_color = face;
-            factory.label_color = c.textColor || cs.foreground || '#000000';
-            factory.label_outline = c.outline || cs.outline || 'none';
-            factory.edge_color = c.edgeColor || cs.edge || face;
-          } else if (c.faceColor) {
-            factory.dice_color = c.faceColor;
-            factory.label_color = c.textColor || '#ffffff';
-            factory.label_outline = c.outline || 'none';
-            factory.edge_color = c.edgeColor || '#888888';
-          }
-          const texObj = cache.get(diceKey);
-          const userMaterial = c.material && c.material !== 'none' ? c.material : null;
-          if (texObj && texObj.texture) {
-            factory.dice_texture = {
-              name: texObj.name,
-              texture: texObj.texture,
-              bump: texObj.bump,
-              composite: texObj.composite,
-              material: userMaterial || texObj.material || 'none',
-            };
-          } else {
-            factory.dice_texture = { name: 'none', texture: null, bump: null, composite: 'source-over', material: userMaterial || 'none' };
-          }
-          factory.dice_material = userMaterial || 'none';
-          factory.setMaterialInfo();
-        },
-        onRollComplete: () => {},
-      });
-      await diceBox.initialize();
-      if (diceBox.renderer) {
-        diceBox.setupDieTap(diceBox.renderer.domElement);
+      try {
+        // Wait for container to have dimensions (iOS sometimes reports 0 initially)
+        for (let i = 0; i < 50; i++) {
+          if (el.clientWidth > 0 && el.clientHeight > 0) break;
+          await new Promise(r => setTimeout(r, 100));
+        }
+        if (el.clientWidth === 0 || el.clientHeight === 0) {
+          console.error('[DiceOverlay] Container has zero dimensions after waiting');
+        }
+        const diceBox = new DiceBox(`#${el.id}`, {
+          assetPath: '/',
+          theme_colorset: 'white',
+          theme_texture: '',
+          theme_material: 'none',
+          baseScale: 90,
+          gravity_multiplier: 400,
+          light_intensity: 0.7,
+          color_spotlight: 0xefdfd5,
+          theme_surface: 'green-felt',
+          sounds: true,
+          volume: 100,
+          strength: 1,
+          iterationLimit: 1000,
+          onDieTap: (index: number) => { if (!cancelled && onDieTapRef.current) onDieTapRef.current(index); },
+          beforeSpawnDie: (type: string, _vec: any, factory: any) => {
+            const cache = texCache.current;
+            const config = configRef.current;
+            const idx = spawnCount.current % 5;
+            spawnCount.current = spawnCount.current + 1;
+            const diceKey = `dice_${idx}`;
+            const c = (config[diceKey] || config[type as DieType] || {}) as PerDieConfig;
+            if (c.colorset && COLORSETS[c.colorset]) {
+              const cs = COLORSETS[c.colorset] as any;
+              const face = c.faceColor || cs.background || '#ffffff';
+              factory.dice_color = face;
+              factory.label_color = c.textColor || cs.foreground || '#000000';
+              factory.label_outline = c.outline || cs.outline || 'none';
+              factory.edge_color = c.edgeColor || cs.edge || face;
+            } else if (c.faceColor) {
+              factory.dice_color = c.faceColor;
+              factory.label_color = c.textColor || '#ffffff';
+              factory.label_outline = c.outline || 'none';
+              factory.edge_color = c.edgeColor || '#888888';
+            }
+            const texObj = cache.get(diceKey);
+            const userMaterial = c.material && c.material !== 'none' ? c.material : null;
+            if (texObj && texObj.texture) {
+              factory.dice_texture = {
+                name: texObj.name,
+                texture: texObj.texture,
+                bump: texObj.bump,
+                composite: texObj.composite,
+                material: userMaterial || texObj.material || 'none',
+              };
+            } else {
+              factory.dice_texture = { name: 'none', texture: null, bump: null, composite: 'source-over', material: userMaterial || 'none' };
+            }
+            factory.dice_material = userMaterial || 'none';
+            factory.setMaterialInfo();
+          },
+          onRollComplete: () => {},
+        });
+        await diceBox.initialize();
+        if (diceBox.renderer) {
+          diceBox.setupDieTap(diceBox.renderer.domElement);
+        }
+        if (!cancelled) box.current = diceBox;
+      } catch(e) {
+        console.error('[DiceOverlay] DiceBox initialization failed:', e);
       }
-      if (!cancelled) box.current = diceBox;
     })();
     return () => {
       cancelled = true;
