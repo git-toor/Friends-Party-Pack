@@ -15,17 +15,7 @@ interface ChatBoxProps {
 }
 
 export default function ChatBox({ sessionId, playerId, playerName }: ChatBoxProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const msg = (e as CustomEvent).detail as ChatMessage;
-      setMessages(prev => [...prev, msg]);
-    };
-    window.addEventListener('chat-message', handler as EventListener);
-    return () => window.removeEventListener('chat-message', handler as EventListener);
-  }, []);
 
   const send = async () => {
     if (!input.trim()) return;
@@ -38,31 +28,8 @@ export default function ChatBox({ sessionId, playerId, playerName }: ChatBoxProp
     });
   };
 
-  const recent = messages.slice(-6);
-  const myself = playerId;
-
   return (
     <>
-      {/* Floating messages over game area */}
-      <div style={{
-        position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 1001, pointerEvents: 'none', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: 2, maxWidth: '70%',
-      }}>
-        {recent.map((m, i) => (
-          <div key={m.id} style={{
-            padding: '3px 10px', borderRadius: 8, fontSize: 12,
-            background: m.playerId === myself ? 'rgba(15,52,96,0.85)' : 'rgba(26,26,46,0.85)',
-            color: '#eee', maxWidth: '100%', textAlign: 'center',
-            animation: i === recent.length - 1 ? 'fadeIn 0.3s ease' : 'none',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }}>
-            <span style={{ color: '#e94560', fontWeight: 600, marginRight: 6 }}>{m.playerName}:</span>
-            {m.text}
-          </div>
-        ))}
-      </div>
-
       {/* Bottom input bar */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1002,

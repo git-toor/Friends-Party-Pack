@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { DiceOverlay, type DiceOverlayHandle, type DieType, type PerDieConfig } from '../../components/DiceOverlay.js';
 import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
+import type { ChatMessage } from '../../components/ChatBox.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
 
 const EMPTY_TURN: YahtzeeTurn = { dice: [0, 0, 0, 0, 0], kept: [false, false, false, false, false], rollPhase: 0, phase: 'WAITING_FOR_ROLL' };
@@ -20,11 +21,20 @@ interface YahtzeeGameProps {
   gameStatePush?: any;
 }
 
-export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance, remoteRoll, remoteVectors, gameStatePush }: YahtzeeGameProps) {
+export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', playerId='', diceAppearance, remoteRoll, remoteVectors, gameStatePush }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gs, setGs] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [rolling, setRolling] = useState(false);
   const [selected, setSelected] = useState<boolean[]>([false,false,false,false,false]);
+  const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setChatMsgs(prev => [...prev, (e as CustomEvent).detail as ChatMessage]);
+    };
+    window.addEventListener('chat-message', handler as EventListener);
+    return () => window.removeEventListener('chat-message', handler as EventListener);
+  }, []);
 
   useEffect(() => {
     if (!diceAppearance || Object.keys(diceAppearance).length === 0) return;
@@ -237,11 +247,26 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
         {!canRoll && !canKeep && !(turn.phase === 'WAITING_FOR_CATEGORY' && isMe) && sessionId && <span style={{color:'#999',fontSize:13}}>Waiting...</span>}
       </div>
 
+      {/* Chat messages above scorecard */}
+      <div style={{ padding:'2px 8px', zIndex:1, display:'flex', flexDirection:'column-reverse', alignItems:'center', gap:1, overflow:'hidden', maxHeight:80 }}>
+        {chatMsgs.slice(-5).map((m, i) => (
+          <div key={m.id} style={{
+            padding:'2px 8px', borderRadius:6, fontSize:11,
+            background: m.playerId === playerId ? 'rgba(15,52,96,0.8)' : 'rgba(26,26,46,0.8)',
+            color:'#ddd', maxWidth:'80%', textAlign:'center',
+            animation: i === chatMsgs.slice(-5).length - 1 ? 'chatFadeIn 0.3s ease' : 'none',
+          }}>
+            <span style={{ color:'#e94560', fontWeight:600, marginRight:4 }}>{m.playerName}:</span>{m.text}
+          </div>
+        ))}
+      </div>
+
       {/* Scorecard */}
       <div style={{ padding:'4px 8px 60px', zIndex:1 }}>
         <ScoreCard players={scorePlayers} currentPlayerIndex={gs.currentPlayerIndex}
           dice={turn.dice} canScore={canScore} onScore={canScore ? handleScore : undefined} />
       </div>
+      <style>{`@keyframes chatFadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }`}</style>
     </div>
   );
 }
