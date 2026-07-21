@@ -20,13 +20,10 @@ interface YahtzeeGameProps {
   gameStatePush?: any;
 }
 
-const bottomBarStyle: React.CSSProperties = { padding:'12px 16px', display:'flex', flexDirection:'column', alignItems:'center', gap:8, marginTop:'auto' };
-
 export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, players, playerName='You', diceAppearance, remoteRoll, remoteVectors, gameStatePush }: YahtzeeGameProps) {
   const diceRef = useRef<DiceOverlayHandle>(null);
   const [gs, setGs] = useState<YahtzeeGameState>(() => createInitialState(playerCount));
   const [rolling, setRolling] = useState(false);
-  const [tab, setTab] = useState(0);
   const [selected, setSelected] = useState<boolean[]>([false,false,false,false,false]);
 
   useEffect(() => {
@@ -66,8 +63,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
       const values = remoteVectors?.values || null;
       if (values && values.length > 0) {
         const p = diceRef.current?.roll('d6', values.length, `@${values.join(',')}`);
-        if (!p) console.warn('[YahtzeeGame] remote roll: diceRef not ready');
-        p?.then(v => { if (v.length === 0) console.warn('[YahtzeeGame] remote roll returned empty'); }).catch(e => console.error('[YahtzeeGame] remote roll error:', e));
+        p?.catch(e => console.error('[YahtzeeGame] remote roll error:', e));
       }
     }
   }, [remoteRoll, remoteVectors]);
@@ -84,7 +80,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
   }, [sessionId, playerIndex]);
 
   const turn = gs.turn;
-  const myState = gs.players[tab] || gs.players[gs.currentPlayerIndex] || EMPTY_PLAYER();
+  const myState = gs.players[gs.currentPlayerIndex] || EMPTY_PLAYER();
   const isMe = gs.isMyTurn || !sessionId;
   const canRoll = turn.phase === 'WAITING_FOR_ROLL' && !rolling && isMe;
   const canKeep = turn.phase === 'WAITING_FOR_KEEP' && !rolling && isMe;
@@ -207,41 +203,44 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     }
   }, [turn.phase, rolling]);
 
+  const scorePlayers = gs.players.map((p, i) => ({
+    name: players?.[i]?.name || `Player ${i+1}`,
+    scores: p.scores,
+    totalScore: p.totalScore,
+    isCurrent: i === gs.currentPlayerIndex,
+  }));
+
   return (
-    <div style={{ width:'100%', height:'100%', position:'relative' }}>
+    <div style={{ width:'100%', height:'100%', position:'relative', display:'flex', flexDirection:'column' }}>
       <DiceOverlay ref={diceRef} onDieTap={handleDieTap} />
-      <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column' }}>
-        <div style={{ padding:12, textAlign:'center', background:'rgba(26,26,46,0.85)' }}>
-          <span style={{ fontSize:13, color:'#999' }}>
-            Round {gs.round}/{gs.totalRounds} ·&nbsp;
-            {(() => {
-              const cn = players?.[gs.currentPlayerIndex]?.name || `Player ${gs.currentPlayerIndex+1}`;
-              if (sessionId) return gs.isMyTurn ? <b style={{color:'#e94560'}}>Your turn</b> : <>{cn}'s turn</>;
-              return `Player ${gs.currentPlayerIndex+1}'s turn (local)`;
-            })()}
-          </span>
-        </div>
-        <div style={{ flex:1, minHeight:0 }} />
-        <div style={bottomBarStyle}>
-          {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase + 1}/3)</Button>}
-          {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>{hasSel ? `🔒 Hold (${selected.filter(Boolean).length})` : '🎲 Roll All'}</Button>}
-          {canKeep && <Button variant="primary" size="lg" onClick={handleScoreNow}>Score</Button>}
-          {turn.phase === 'WAITING_FOR_CATEGORY' && isMe && <span style={{color:'#fbbf24',fontSize:12}}>Select a category to score</span>}
-          {!canRoll && !canKeep && !(turn.phase === 'WAITING_FOR_CATEGORY' && isMe) && sessionId && <span style={{color:'#999',fontSize:14}}>Waiting...</span>}
-          <div style={{ alignSelf:'stretch', maxHeight:'45vh', overflowY:'auto' }}>
-            <div style={{ display:'flex', gap:4, marginBottom:6 }}>
-              {gs.players.map((_:any,i:number) => (
-                <button key={i} onClick={()=>setTab(i)} style={{
-                  padding:'3px 10px', borderRadius:10, border:'none', fontSize:11, fontWeight:600, cursor:'pointer', whiteSpace:'nowrap',
-                  background: tab===i ? '#e94560' : '#0f3460', color:'#fff', opacity: i===gs.currentPlayerIndex ? 1 : 0.6,
-                }}>{players?.[i]?.name||`P${i+1}`}</button>
-              ))}
-            </div>
-            <ScoreCard scores={myState.scores} dice={tab===gs.currentPlayerIndex ? turn.dice : []}
-              canScore={canScore && tab===gs.currentPlayerIndex} onScore={canScore && tab===gs.currentPlayerIndex ? handleScore : undefined}
-              totalScore={myState.totalScore} playerName={players?.[tab]?.name||`Player ${tab+1}`} isCurrentPlayer={tab===gs.currentPlayerIndex} />
-          </div>
-        </div>
+      {/* Top bar */}
+      <div style={{ padding:'8px 12px', textAlign:'center', background:'rgba(26,26,46,0.85)', zIndex:1 }}>
+        <span style={{ fontSize:12, color:'#999' }}>
+          Round {gs.round}/{gs.totalRounds} ·&nbsp;
+          {(() => {
+            const cn = players?.[gs.currentPlayerIndex]?.name || `Player ${gs.currentPlayerIndex+1}`;
+            if (sessionId) return gs.isMyTurn ? <b style={{color:'#e94560'}}>Your turn</b> : <>{cn}'s turn</>;
+            return `Player ${gs.currentPlayerIndex+1}'s turn (local)`;
+          })()}
+        </span>
+      </div>
+
+      {/* Game area (dice + floating chat go here) */}
+      <div style={{ flex:1, minHeight:0 }} />
+
+      {/* Action buttons */}
+      <div style={{ padding:'8px 12px', display:'flex', justifyContent:'center', gap:8, flexWrap:'wrap', zIndex:1 }}>
+        {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase + 1}/3)</Button>}
+        {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>{hasSel ? `🔒 Hold (${selected.filter(Boolean).length})` : '🎲 Roll All'}</Button>}
+        {canKeep && <Button variant="primary" size="lg" onClick={handleScoreNow}>Score</Button>}
+        {turn.phase === 'WAITING_FOR_CATEGORY' && isMe && <span style={{color:'#fbbf24',fontSize:11}}>Select a category to score</span>}
+        {!canRoll && !canKeep && !(turn.phase === 'WAITING_FOR_CATEGORY' && isMe) && sessionId && <span style={{color:'#999',fontSize:13}}>Waiting...</span>}
+      </div>
+
+      {/* Scorecard */}
+      <div style={{ padding:'4px 8px 60px', zIndex:1 }}>
+        <ScoreCard players={scorePlayers} currentPlayerIndex={gs.currentPlayerIndex}
+          dice={turn.dice} canScore={canScore} onScore={canScore ? handleScore : undefined} />
       </div>
     </div>
   );

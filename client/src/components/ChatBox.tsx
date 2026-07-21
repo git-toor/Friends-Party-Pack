@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   playerId: string;
   playerName: string;
@@ -12,21 +12,20 @@ interface ChatBoxProps {
   sessionId: string;
   playerId: string;
   playerName: string;
-  onNewMessage?: (msg: ChatMessage) => void;
 }
 
-export default function ChatBox({ sessionId, playerId, playerName, onNewMessage }: ChatBoxProps) {
-  const [open, setOpen] = useState(false);
+export default function ChatBox({ sessionId, playerId, playerName }: ChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [unread, setUnread] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
 
-  // Listen for CHAT_MESSAGE events on the WS connection
   useEffect(() => {
-    if (!open) return;
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, open]);
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent).detail as ChatMessage;
+      setMessages(prev => [...prev, msg]);
+    };
+    window.addEventListener('chat-message', handler as EventListener);
+    return () => window.removeEventListener('chat-message', handler as EventListener);
+  }, []);
 
   const send = async () => {
     if (!input.trim()) return;
@@ -39,85 +38,60 @@ export default function ChatBox({ sessionId, playerId, playerName, onNewMessage 
     });
   };
 
-  // Exposed for the parent to inject WS messages
-  useEffect(() => {
-    if (onNewMessage) return;
-    const handler = (e: Event) => {
-      const msg = (e as CustomEvent).detail as ChatMessage;
-      setMessages(prev => [...prev, msg]);
-      if (!open) setUnread(u => u + 1);
-    };
-    window.addEventListener('chat-message', handler as EventListener);
-    return () => window.removeEventListener('chat-message', handler as EventListener);
-  }, [open, onNewMessage]);
-
-  const addMessage = (msg: ChatMessage) => {
-    setMessages(prev => [...prev, msg]);
-    if (!open) setUnread(u => u + 1);
-  };
+  const recent = messages.slice(-6);
+  const myself = playerId;
 
   return (
     <>
-      {/* Toggle button */}
-      <button onClick={() => { setOpen(v => !v); setUnread(0); }}
-        style={{
-          position: 'fixed', bottom: 100, left: 12, zIndex: 1001,
-          width: 40, height: 40, borderRadius: 20, border: 'none',
-          background: '#e94560', color: '#fff', fontSize: 18, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+      {/* Floating messages over game area */}
+      <div style={{
+        position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)',
+        zIndex: 1001, pointerEvents: 'none', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', gap: 2, maxWidth: '70%',
+      }}>
+        {recent.map((m, i) => (
+          <div key={m.id} style={{
+            padding: '3px 10px', borderRadius: 8, fontSize: 12,
+            background: m.playerId === myself ? 'rgba(15,52,96,0.85)' : 'rgba(26,26,46,0.85)',
+            color: '#eee', maxWidth: '100%', textAlign: 'center',
+            animation: i === recent.length - 1 ? 'fadeIn 0.3s ease' : 'none',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+          }}>
+            <span style={{ color: '#e94560', fontWeight: 600, marginRight: 6 }}>{m.playerName}:</span>
+            {m.text}
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom input bar */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1002,
+        display: 'flex', alignItems: 'center', gap: 6,
+        padding: '6px 12px', background: 'rgba(15,20,40,0.95)', borderTop: '1px solid #333',
+      }}>
+        <input
+          style={{
+            flex: 1, background: '#0f3460', border: 'none', borderRadius: 6,
+            padding: '8px 12px', color: '#eee', fontSize: 13, outline: 'none',
+          }}
+          placeholder="Chat..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') send(); }}
+        />
+        <button onClick={send} style={{
+          background: '#e94560', color: '#fff', border: 'none', borderRadius: 6,
+          padding: '7px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
         }}>
-        {unread > 0 ? <><span style={{ fontSize: 10, position: 'absolute', top: -2, right: -2, background: '#fff', color: '#e94560', borderRadius: 8, padding: '0 4px' }}>{unread}</span>💬</> : '💬'}
-      </button>
+          Send
+        </button>
+      </div>
 
-      {/* Chat panel */}
-      {open && (
-        <div style={{
-          position: 'fixed', bottom: 148, left: 12, zIndex: 1001,
-          width: 280, maxHeight: 300, background: '#16213e', borderRadius: 10,
-          display: 'flex', flexDirection: 'column', overflow: 'hidden',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.4)', border: '1px solid #333',
-        }}>
-          <div style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#999', borderBottom: '1px solid #333' }}>
-            💬 Chat
-          </div>
-
-          <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {messages.length === 0 && (
-              <span style={{ color: '#555', fontSize: 12, textAlign: 'center', padding: 16 }}>No messages yet</span>
-            )}
-            {messages.map(m => (
-              <div key={m.id} style={{
-                padding: '4px 8px', borderRadius: 6, fontSize: 12,
-                background: m.playerId === playerId ? '#0f3460' : '#1a1a2e',
-                alignSelf: m.playerId === playerId ? 'flex-end' : 'flex-start',
-                maxWidth: '85%',
-              }}>
-                <span style={{ color: '#888', fontSize: 10 }}>{m.playerName}</span>
-                <div style={{ color: '#ddd' }}>{m.text}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', borderTop: '1px solid #333', padding: 6 }}>
-            <input
-              style={{ flex: 1, background: '#0f3460', border: 'none', borderRadius: 4, padding: '6px 10px', color: '#eee', fontSize: 12, outline: 'none' }}
-              placeholder="Type a message..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') send(); }}
-            />
-            <button onClick={send} style={{ background: '#e94560', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', marginLeft: 4, cursor: 'pointer', fontSize: 12 }}>
-              Send
-            </button>
-          </div>
-        </div>
-      )}
+      <style>{`@keyframes fadeIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }`}</style>
     </>
   );
 }
 
-// Helper to dispatch chat messages from WS events (called by GamePage)
 export function dispatchChatMessage(msg: ChatMessage): void {
   window.dispatchEvent(new CustomEvent('chat-message', { detail: msg }));
 }

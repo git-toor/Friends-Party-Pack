@@ -21,6 +21,7 @@ export default function GamePage() {
   const [rollTrigger, setRollTrigger] = useState(0);
   const [remoteVectors, setRemoteVectors] = useState<any>(null);
   const [gameStatePush, setGameStatePush] = useState<any>(null);
+
   useEffect(() => {
     if (!sessionId) {
       setReady(true);
@@ -36,12 +37,10 @@ export default function GamePage() {
       setGameStatePush(msg.payload);
     });
 
-    // Wire CHAT_MESSAGE events from WS to the ChatBox
     const unsubChat = ws.on('CHAT_MESSAGE', (msg) => {
       dispatchChatMessage(msg.payload);
     });
 
-    // Wire DICE_ROLL — animate dice with same result on all clients except the roller
     const unsubDice = ws.on('DICE_ROLL', (msg) => {
       if (msg.payload.playerIndex !== playerIndex) {
         setRemoteVectors(msg.payload);
@@ -56,19 +55,21 @@ export default function GamePage() {
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
 
   return (
-    <>
-      <YahtzeeGame
-        playerCount={playerCount}
-        playerIndex={playerIndex}
-        playerName={playerName}
-        sessionId={sessionId}
-        players={players}
-        playerId={playerId}
-        diceAppearance={diceAppearance}
-        remoteRoll={rollTrigger}
-        remoteVectors={remoteVectors}
-        gameStatePush={gameStatePush}
-      />
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column' }}>
+      <div style={{ flex:1, position:'relative' }}>
+        <YahtzeeGame
+          playerCount={playerCount}
+          playerIndex={playerIndex}
+          playerName={playerName}
+          sessionId={sessionId}
+          players={players}
+          playerId={playerId}
+          diceAppearance={diceAppearance}
+          remoteRoll={rollTrigger}
+          remoteVectors={remoteVectors}
+          gameStatePush={gameStatePush}
+        />
+      </div>
       {sessionId && (
         <ChatBox
           sessionId={sessionId}
@@ -76,6 +77,6 @@ export default function GamePage() {
           playerName={playerName}
         />
       )}
-    </>
+    </div>
   );
 }
