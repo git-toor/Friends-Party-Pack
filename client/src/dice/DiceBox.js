@@ -142,12 +142,9 @@ class DiceBox {
 	async initialize() {
 
 		// this.cannonDebugger = new CannonDebugger(this.scene,this.world)
-		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true })
+		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
 		this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 		this.container.appendChild(this.renderer.domElement);
-		const canvas = this.renderer.domElement;
-		canvas.style.display = 'block';
-		canvas.style.willChange = 'transform';
 		this.renderer.shadowMap.enabled = false;
 		this.renderer.setClearColor(0x000000, 0);
 
@@ -172,12 +169,8 @@ class DiceBox {
 		.catch(e=>{throw new Error("Unable to load theme")})
 
 		if(this.sounds){
-			try {
-				await this.loadSounds()
-			} catch(e) {
-				console.warn('[DiceBox] Sound loading failed (non-fatal):', e);
-				this.sounds = false;
-			}
+			await this.loadSounds()
+			.catch(e=>{throw new Error("Unable to load sounds")})
 		}
 
 		this.initialized = true

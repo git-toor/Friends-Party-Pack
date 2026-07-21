@@ -61,7 +61,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
           console.error('[DiceOverlay] Container has zero dimensions after waiting');
         }
         const diceBox = new DiceBox(`#${el.id}`, {
-          assetPath: '/',
           theme_colorset: 'white',
           theme_texture: '',
           theme_material: 'none',
@@ -70,8 +69,6 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
           light_intensity: 0.7,
           color_spotlight: 0xefdfd5,
           theme_surface: 'green-felt',
-          sounds: true,
-          volume: 100,
           strength: 1,
           iterationLimit: 1000,
           onDieTap: (index: number) => { if (!cancelled && onDieTapRef.current) onDieTapRef.current(index); },
