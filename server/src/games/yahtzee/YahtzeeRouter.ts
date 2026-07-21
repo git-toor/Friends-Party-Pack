@@ -45,7 +45,7 @@ yahtzeeRouter.post('/action', (req, res) => {
     const broadcast = wsBroadcasts.get(sessionId);
     if (broadcast) {
       for (let i = 0; i < result.state.players.length; i++) {
-        broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex } });
+        broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i } });
       }
       // Broadcast DICE_ROLL with dice values so all players show the same result
       if ((action as any).type === 'ROLL') {

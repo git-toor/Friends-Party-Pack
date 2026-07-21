@@ -4,7 +4,7 @@ import { ScoreCard } from './ScoreCard.js';
 import { Button } from '../../components/Button.js';
 import type { YahtzeeCategory, YahtzeeTurn, YahtzeePlayerState, YahtzeeGameState } from './types.js';
 
-const EMPTY_TURN: YahtzeeTurn = { dice: [0, 0, 0, 0, 0], kept: [false, false, false, false, false], rollPhase: 1, phase: 'WAITING_FOR_ROLL' };
+const EMPTY_TURN: YahtzeeTurn = { dice: [0, 0, 0, 0, 0], kept: [false, false, false, false, false], rollPhase: 0, phase: 'WAITING_FOR_ROLL' };
 const EMPTY_PLAYER = (): YahtzeePlayerState => ({ scores: {}, yahtzeeBonusCount: 0, isCurrentPlayer: false, totalScore: 0, availableCategories: [] });
 
 function createInitialState(playerCount: number): YahtzeeGameState {
@@ -96,21 +96,23 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     setRolling(true);
     setSelected([false,false,false,false,false]);
     diceRef.current?.resetDieVisuals();
+    const newPhase = (gs.turn.rollPhase + 1) as 0|1|2|3;
+    const nextTurnPhase: YahtzeeTurn['phase'] = newPhase >= 3 ? 'WAITING_FOR_CATEGORY' : 'WAITING_FOR_KEEP';
     if (sessionId) {
       const res = await fetch('/api/games/yahtzee/action', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sessionId,playerIndex,action:{type:'ROLL'}}) });
       const data = await res.json();
       if (!res.ok || data.error) { console.error('Roll:', data.error); setRolling(false); return; }
       if (data.diceValues) {
         const suffix = '@' + data.diceValues.join(',');
-        setGs(p => ({...p, turn:{...p.turn, dice:data.diceValues, phase:'WAITING_FOR_KEEP' as YahtzeeTurn['phase'], rollPhase: (p.turn.rollPhase+1) as 1|2|3}}));
+        setGs(p => ({...p, turn:{...p.turn, dice:data.diceValues, phase:nextTurnPhase, rollPhase: newPhase}}));
         await diceRef.current?.roll('d6', 5, suffix);
       }
     } else {
       await diceRef.current?.roll('d6', 5);
-      setGs(p => ({...p, turn:{...p.turn, dice:[0,0,0,0,0], phase:'WAITING_FOR_KEEP' as YahtzeeTurn['phase'], rollPhase:(p.turn.rollPhase+1) as 1|2|3}}));
+      setGs(p => ({...p, turn:{...p.turn, dice:[0,0,0,0,0], phase:nextTurnPhase, rollPhase: newPhase}}));
     }
     setRolling(false);
-  }, [canRoll, sessionId, playerIndex]);
+  }, [canRoll, sessionId, playerIndex, gs.turn.rollPhase]);
 
   const handleDieTap = useCallback((index: number) => {
     if (turn.phase !== 'WAITING_FOR_KEEP' || rolling || turn.kept[index]) return;
@@ -138,7 +140,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
     } else {
       setGs(p => {
         const kept=[...p.turn.kept]; for(const i of indices) kept[i]=true;
-        const ph = (p.turn.rollPhase>=3||kept.every(k=>k))?'WAITING_FOR_CATEGORY':'WAITING_FOR_ROLL';
+        const ph = kept.every(k=>k)?'WAITING_FOR_CATEGORY':'WAITING_FOR_ROLL';
         return {...p, turn:{...p.turn, kept, phase:ph as any}};
       });
     }
@@ -210,7 +212,7 @@ export default function YahtzeeGame({ playerCount=2, playerIndex=0, sessionId, p
         </div>
         <div style={{ flex:1, minHeight:0 }} />
         <div style={bottomBarStyle}>
-          {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase}/3)</Button>}
+          {canRoll && <Button size="lg" onClick={handleRoll}>🎲 Roll ({turn.rollPhase + 1}/3)</Button>}
           {canKeep && <Button variant="secondary" size="lg" onClick={handleKeep}>{hasSel ? `🔒 Hold (${selected.filter(Boolean).length})` : '🎲 Roll All'}</Button>}
           {turn.phase === 'WAITING_FOR_CATEGORY' && canScore && <span style={{color:'#fbbf24',fontSize:12}}>Select a category to score</span>}
           {!canRoll && !canKeep && !canScore && sessionId && <span style={{color:'#999',fontSize:14}}>Waiting...</span>}

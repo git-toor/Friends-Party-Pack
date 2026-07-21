@@ -4,7 +4,7 @@ export type YahtzeeCategory =
   | 'three_of_a_kind' | 'four_of_a_kind' | 'full_house'
   | 'small_straight' | 'large_straight' | 'yahtzee' | 'chance';
 
-export type RollPhase = 1 | 2 | 3;
+export type RollPhase = 0 | 1 | 2 | 3;
 export type TurnPhase = 'WAITING_FOR_ROLL' | 'WAITING_FOR_KEEP' | 'WAITING_FOR_CATEGORY' | 'TURN_OVER';
 
 export interface YahtzeeTurn {
@@ -57,7 +57,7 @@ export function createGame(playerCount: number): YahtzeeGameState {
     turn: {
       dice: [0, 0, 0, 0, 0],
       kept: [false, false, false, false, false],
-      rollPhase: 1,
+      rollPhase: 0,
       phase: 'WAITING_FOR_ROLL',
     },
     currentPlayerIndex: 0,
@@ -107,8 +107,8 @@ function handleRoll(state: YahtzeeGameState): GameResult {
   }
 
   turn.dice = newDice;
-  turn.phase = 'WAITING_FOR_KEEP';
   turn.rollPhase = (turn.rollPhase + 1) as RollPhase;
+  turn.phase = turn.rollPhase >= 3 ? 'WAITING_FOR_CATEGORY' : 'WAITING_FOR_KEEP';
 
   return { state: newState, valid: true, diceValues: newDice };
 }
@@ -131,8 +131,8 @@ function handleKeep(state: YahtzeeGameState, indices?: number[]): GameResult {
     turn.kept = newKept;
   }
 
-  // Check if we're out of rolls or all dice are kept
-  if (turn.rollPhase >= 3 || turn.kept.every(k => k)) {
+  // If all dice are kept, go to scoring; otherwise allow another roll
+  if (turn.kept.every(k => k)) {
     turn.phase = 'WAITING_FOR_CATEGORY';
   } else {
     turn.phase = 'WAITING_FOR_ROLL';
@@ -188,7 +188,7 @@ function advanceTurn(state: YahtzeeGameState): void {
   state.turn = {
     dice: [0, 0, 0, 0, 0],
     kept: [false, false, false, false, false],
-    rollPhase: 1,
+    rollPhase: 0,
     phase: 'WAITING_FOR_ROLL',
   };
 

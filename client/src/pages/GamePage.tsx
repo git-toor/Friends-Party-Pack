@@ -31,8 +31,8 @@ export default function GamePage() {
     ws.send('JOIN_GAME', { sessionId, playerIndex });
 
     const unsub = ws.on('GAME_STATE', (msg) => {
-      // Skip if this state update is from the local player's own action
       if (msg.payload?._actionPlayer === playerIndex) return;
+      if (msg.payload?.forPlayerIndex !== playerIndex) return;
       setGameStatePush(msg.payload);
     });
 
