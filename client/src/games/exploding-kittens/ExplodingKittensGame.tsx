@@ -37,6 +37,7 @@ interface EKGameProps {
   playerCount?: number; playerIndex?: number; playerName?: string; sessionId?: string;
   players?: { name: string; index: number; id?: string }[]; playerId?: string;
   gameStatePush?: any;
+  nsfw?: boolean;
 }
 
 const EMPTY_STATE: ClientGameState = {

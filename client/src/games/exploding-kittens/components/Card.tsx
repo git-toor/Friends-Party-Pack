@@ -1,3 +1,5 @@
+import { useCardArt } from '../hooks/useCardArt.js';
+
 export interface CardData {
   id: string;
   type: string;
@@ -71,9 +73,12 @@ interface CardProps {
   disabled?: boolean;
   size?: 'small' | 'medium' | 'large';
   onClick?: () => void;
+  nsfw?: boolean;
 }
 
-export function Card({ card, faceUp = true, selected, disabled, size = 'medium', onClick }: CardProps) {
+export function Card({ card, faceUp = true, selected, disabled, size = 'medium', onClick, nsfw = false }: CardProps) {
+  const { getCardArt } = useCardArt(nsfw);
+  const artUrl = faceUp ? getCardArt(card.type) : undefined;
   const colors = CARD_COLORS[card.type] || { bg: '#888888', border: '#666666', text: '#ffffff' };
   const icon = CARD_ICONS[card.type] || '🃏';
 
@@ -87,17 +92,37 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
     userSelect: 'none', flexShrink: 0, position: 'relative', transition: 'transform 0.2s ease, box-shadow 0.2s ease',
     transform: selected ? 'translateY(-18px) scale(1.08)' : 'none',
     boxShadow: selected ? '0 4px 20px rgba(233,69,96,0.5)' : (disabled ? 'none' : '0 2px 6px rgba(0,0,0,0.3)'),
-    opacity: disabled ? 0.45 : 1,
+    opacity: disabled ? 0.45 : 1, overflow: 'hidden',
   };
 
   if (!faceUp) {
     return (
-      <div style={{ ...baseStyle, background: '#1a1a3e', border: '2px solid #333366' }}>
-        <div style={{ color: '#444488', fontSize: dims.iconSize }}>🎴</div>
+      <div style={{ ...baseStyle, background: nsfw ? 'linear-gradient(135deg, #2a0a0a, #4a1a1a)' : 'linear-gradient(135deg, #1a1a3e, #2a2a5e)', border: nsfw ? '2px solid #661111' : '2px solid #333366' }}>
+        <div style={{ color: nsfw ? '#884444' : '#444488', fontSize: dims.iconSize }}>🎴</div>
       </div>
     );
   }
 
+  // AI art available — show it with procedural fallback
+  if (artUrl) {
+    return (
+      <div onClick={onClick} title={card.name} style={{
+        ...baseStyle, background: colors.bg, border: `2px solid ${selected ? '#e94560' : colors.border}`,
+      }}>
+        <img src={artUrl} alt={card.name} style={{
+          width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0,
+          opacity: 0.85,
+        }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        {card.marked && <div style={{ position: 'absolute', top: -2, left: -2, right: -2, height: 4, background: '#ff0', borderRadius: '2px 2px 0 0', boxShadow: '0 0 8px #ff0', zIndex: 1 }} />}
+        <div style={{ fontSize: dims.iconSize, lineHeight: 1, zIndex: 1, textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>{icon}</div>
+        <div style={{ fontSize: dims.fs, color: '#fff', fontWeight: 700, textAlign: 'center', padding: '0 4px', lineHeight: 1.2, marginTop: 2, zIndex: 1, textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+          {card.name.length > 14 ? card.name.slice(0, 13) + '…' : card.name}
+        </div>
+      </div>
+    );
+  }
+
+  // Procedural SVG fallback
   return (
     <div onClick={onClick} title={card.name} style={{
       ...baseStyle, background: colors.bg, border: `2px solid ${selected ? '#e94560' : colors.border}`,

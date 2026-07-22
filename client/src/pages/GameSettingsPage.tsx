@@ -36,6 +36,7 @@ export default function GameSettingsPage() {
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [preset, setPreset] = useState('classic');
   const [expansions, setExpansions] = useState<string[]>([]);
+  const [nsfw, setNsfw] = useState(false);
 
   const info = GAME_INFO[gameId || ''] || GAME_INFO['yahtzee'];
 
@@ -45,6 +46,7 @@ export default function GameSettingsPage() {
     if (gameId === 'exploding-kittens') {
       settings.expansions = preset === 'chaos' ? ['imploding', 'streaking', 'barking', 'zombie']
         : preset === 'custom' ? expansions : [];
+      settings.nsfw = nsfw;
     }
     const result = await create(gameId, playerName.trim(), maxPlayers, settings);
     if (result) {
@@ -115,6 +117,18 @@ export default function GameSettingsPage() {
               ))}
             </div>
           )}
+
+          <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
+            <label style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+              borderRadius: 6, background: nsfw ? '#2a0a0a' : '#0f3460', cursor: 'pointer',
+              color: nsfw ? '#ff6666' : '#888',
+            }}>
+              <input type="checkbox" checked={nsfw}
+                onChange={() => setNsfw(!nsfw)} />
+              🔞 NSFW Mode (alternative card art)
+            </label>
+          </div>
         </>
       )}
 

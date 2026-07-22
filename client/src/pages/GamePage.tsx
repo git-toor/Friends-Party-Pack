@@ -26,6 +26,7 @@ export default function GamePage() {
   const playerName = myPlayer.name || state?.playerName || 'You';
   const playerId = state?.playerId || players[playerIndex]?.id || '';
   const gameId: string = state?.gameId || state?.lobby?.gameId || 'yahtzee';
+  const nsfw: boolean = state?.nsfw || state?.lobby?.settings?.nsfw || false;
 
   const GameComponent = GAME_COMPONENTS[gameId] || YahtzeeGame;
 
@@ -66,6 +67,7 @@ export default function GamePage() {
             players={players}
             playerId={playerId}
             gameStatePush={gameStatePush}
+            nsfw={nsfw}
           />
         </Suspense>
       </div>
