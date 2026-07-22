@@ -1,4 +1,4 @@
-import { useCardArt } from '../hooks/useCardArt.js';
+import { useState, useEffect, useRef } from 'react';
 
 export interface CardData {
   id: string;
@@ -103,10 +103,10 @@ const CARD_SUBTITLES: Record<string, string> = {
   feed_the_dead: 'Living players give to the dead.',
   grave_robber: 'Dead shuffle cards into draw pile.',
   attack_of_the_dead: 'Dead player attacks.',
-  tacocat: 'Two of a Kind: steal random.',
-  cattermelon: 'Two of a Kind: steal random.',
-  hairy_potato_cat: 'Two of a Kind: steal random.',
-  beard_cat: 'Two of a Kind: steal random.',
+  tacocat: 'Cat combo card.',
+  cattermelon: 'Cat combo card.',
+  hairy_potato_cat: 'Cat combo card.',
+  beard_cat: 'Cat combo card.',
   feral_cat: 'Wildcard cat.',
 };
 
@@ -120,16 +120,41 @@ interface CardProps {
   nsfw?: boolean;
 }
 
+// 1.5x larger dimensions
+const DIMS = {
+  small: { w: 75, h: 112, fs: 7, iconSize: 16, titleFs: 6, subFs: 5, artArea: 50 },
+  medium: { w: 105, h: 158, fs: 9, iconSize: 22, titleFs: 8, subFs: 7, artArea: 75 },
+  large: { w: 135, h: 202, fs: 11, iconSize: 28, titleFs: 10, subFs: 9, artArea: 100 },
+};
+
 export function Card({ card, faceUp = true, selected, disabled, size = 'medium', onClick, nsfw = false }: CardProps) {
-  const { getCardArt } = useCardArt(nsfw);
-  const artUrl = faceUp ? getCardArt(card.type) : undefined;
+  const [artUrl, setArtUrl] = useState<string | null>(null);
+  const dims = DIMS[size];
   const colors = FRAME_COLORS[card.type] || FRAME_COLORS['exploding_kitten'];
   const icon = CARD_ICONS[card.type] || '🃏';
   const subtitle = CARD_SUBTITLES[card.type] || '';
+  const mounted = useRef(true);
 
-  const dims = size === 'small' ? { w: 50, h: 75, fs: 7, iconSize: 14, titleFs: 6, subFs: 5, artArea: 35 }
-    : size === 'large' ? { w: 90, h: 135, fs: 10, iconSize: 24, titleFs: 9, subFs: 8, artArea: 65 }
-    : { w: 70, h: 105, fs: 8, iconSize: 18, titleFs: 7, subFs: 6, artArea: 50 };
+  useEffect(() => {
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!faceUp || !card.type) return;
+    // Load art from manifest
+    const manifest = (window as any).__CARD_MANIFEST__;
+    const url = manifest?.cards?.[card.type]?.[nsfw ? 'nsfw' : 'base'];
+    if (url) { setArtUrl(url); return; }
+    // Fetch manifest if not loaded
+    fetch('/cards/manifest.json').then(r => r.ok ? r.json() : null).then(data => {
+      if (!mounted.current) return;
+      if (data) {
+        (window as any).__CARD_MANIFEST__ = data;
+        const u = data.cards?.[card.type]?.[nsfw ? 'nsfw' : 'base'];
+        if (u) setArtUrl(u);
+      }
+    }).catch(() => {});
+  }, [card.type, faceUp, nsfw]);
 
   if (!faceUp) {
     return (
@@ -138,7 +163,9 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         background: nsfw ? 'linear-gradient(135deg, #2a0a0a, #4a1a1a)' : 'linear-gradient(135deg, #1a1a3e, #2a2a5e)',
         border: nsfw ? '2px solid #661111' : '2px solid #333366',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+        boxShadow: selected ? '0 6px 30px rgba(233,69,96,0.5)' : '0 2px 6px rgba(0,0,0,0.3)',
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        transform: selected ? 'translateY(-24px) scale(1.1)' : 'none',
       }}>
         <svg width={dims.w * 0.4} height={dims.h * 0.3} viewBox="0 0 40 40">
           <circle cx="20" cy="20" r="8" fill={nsfw ? '#884444' : '#444488'} />
@@ -148,62 +175,56 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
     );
   }
 
-  // Full card frame with AI artwork composited in the center
   return (
     <div onClick={onClick} title={card.name} style={{
       width: dims.w, height: dims.h, borderRadius: 6, cursor: onClick ? 'pointer' : 'default',
       display: 'flex', flexDirection: 'column',
       userSelect: 'none', flexShrink: 0, position: 'relative', overflow: 'hidden',
       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      transform: selected ? 'translateY(-18px) scale(1.08)' : 'none',
-      boxShadow: selected ? '0 4px 20px rgba(233,69,96,0.5)' : (disabled ? 'none' : '0 2px 6px rgba(0,0,0,0.3)'),
+      transform: selected ? 'translateY(-24px) scale(1.1)' : 'none',
+      boxShadow: selected ? '0 6px 30px rgba(233,69,96,0.5)' : (disabled ? 'none' : '0 2px 6px rgba(0,0,0,0.3)'),
       opacity: disabled ? 0.45 : 1,
       background: colors.bg,
-      border: `2px solid ${selected ? '#e94560' : colors.border}`,
+      border: 'none', // no border overlay, just the card background
     }}>
       {/* Card Title Bar */}
       <div style={{
         padding: `${dims.titleFs * 0.3}px ${dims.titleFs * 0.5}px`,
         background: 'rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: 3,
+        zIndex: 2,
       }}>
         <span style={{ fontSize: dims.iconSize, lineHeight: 1 }}>{icon}</span>
         <span style={{
           fontSize: dims.titleFs, fontWeight: 700, color: colors.text,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>
-          {card.name.length > 12 ? card.name.slice(0, 11) + '…' : card.name}
+          {card.name}
         </span>
       </div>
 
-      {/* Artwork Area — AI art composited here */}
+      {/* Artwork Area */}
       <div style={{
         flex: 1, position: 'relative', overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {artUrl ? (
-          <img src={artUrl} alt={card.name} loading="lazy" style={{
-            width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0,
-          }} onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-            // Show fallback icon
-            const parent = (e.target as HTMLImageElement).parentElement;
-            if (parent) {
-              const fallback = document.createElement('span');
-              fallback.textContent = icon;
-              fallback.style.cssText = `font-size:${dims.iconSize * 2}px;opacity:0.3;`;
-              parent.appendChild(fallback);
-            }
-          }} />
-        ) : (
-          <span style={{ fontSize: dims.iconSize * 2, opacity: 0.3 }}>{icon}</span>
-        )}
+          <picture>
+            <source srcSet={artUrl} type="image/webp" />
+            <img src={artUrl} alt="" loading="lazy" style={{
+              width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0,
+            }} onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} />
+          </picture>
+        ) : null}
+        <span style={{ fontSize: dims.iconSize * 3, opacity: 0.25 }}>{icon}</span>
         {card.marked && <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-          background: '#ff0', boxShadow: '0 0 8px #ff0',
+          background: '#ff0', boxShadow: '0 0 8px #ff0', zIndex: 3,
         }} />}
       </div>
 
-      {/* Subtitle / Description Bar */}
+      {/* Subtitle bar */}
       {subtitle && size !== 'small' && (
         <div style={{
           padding: `${dims.subFs * 0.3}px ${dims.subFs * 0.5}px`,
@@ -211,8 +232,7 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         }}>
           <span style={{
             fontSize: dims.subFs, color: colors.subtitle, lineHeight: 1.2,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {subtitle}
           </span>

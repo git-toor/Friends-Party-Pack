@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Card, type CardData } from './Card.js';
 
 interface HandProps {
@@ -9,6 +10,19 @@ interface HandProps {
 }
 
 export function Hand({ cards, selectedCardIds = [], onSelectCard, disabled, markedCardIds }: HandProps) {
+  // Calculate overlap based on screen width and card count
+  const overlap = useMemo(() => {
+    const screenW = typeof window !== 'undefined' ? window.innerWidth : 400;
+    const cardW = 105; // medium card width
+    const totalW = cards.length * cardW;
+    // If cards don't fit, overlap them
+    if (totalW > screenW - 20) {
+      const available = screenW - 20 - cardW; // keep one card full width
+      return Math.max(30, available / (cards.length - 1)); // at least 30px overlap
+    }
+    return cardW; // no overlap needed
+  }, [cards.length]);
+
   if (cards.length === 0) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 100, color: '#555', fontSize: 12 }}>
@@ -17,23 +31,19 @@ export function Hand({ cards, selectedCardIds = [], onSelectCard, disabled, mark
     );
   }
 
-  const totalWidth = Math.min(cards.length * 55, window.innerWidth - 40);
-  const overlap = cards.length > 5 ? (totalWidth - 70) / (cards.length - 1) : 55;
-
   return (
     <div style={{
-      display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 0,
-      padding: '8px 4px', minHeight: 120, overflowX: 'auto',
-      position: 'relative',
+      display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+      padding: '8px 4px', minHeight: 180, overflowX: 'auto', overflowY: 'visible',
+      position: 'relative', width: '100%',
     }}>
       {cards.map((card, i) => {
         const isSelected = selectedCardIds.includes(card.id);
         return (
           <div key={card.id} style={{
-            marginLeft: i === 0 ? 0 : `${-overlap + 55}px`,
+            marginLeft: i === 0 ? 0 : `${-(105 - overlap)}px`,
             zIndex: isSelected ? 10 : i,
             transition: 'transform 0.2s ease, margin 0.2s ease',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
           }}>
             <Card
               card={card}
@@ -42,7 +52,7 @@ export function Hand({ cards, selectedCardIds = [], onSelectCard, disabled, mark
               onClick={disabled ? undefined : () => onSelectCard?.(card.id)}
             />
             {card.marked && (
-              <div style={{ fontSize: 9, color: '#ff0', marginTop: 2 }}>📍 Marked</div>
+              <div style={{ fontSize: 9, color: '#ff0', marginTop: 2, textAlign: 'center' }}>📍</div>
             )}
           </div>
         );

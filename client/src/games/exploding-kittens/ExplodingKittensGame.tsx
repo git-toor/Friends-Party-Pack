@@ -347,11 +347,11 @@ export default function ExplodingKittensGame({
         nsfw={nsfw}
       />
 
-      {/* Chat messages floating above action bar */}
+      {/* Chat messages floating in PlayArea */}
       <div style={{
-        position: 'absolute', bottom: 180, left: 0, right: 0,
+        position: 'absolute', top: '30%', left: 0, right: 0,
         display: 'flex', flexDirection: 'column-reverse', alignItems: 'center',
-        gap: 2, pointerEvents: 'none', zIndex: 100,
+        gap: 2, pointerEvents: 'none', zIndex: 100, padding: '0 20px',
       }}>
         {chatMsgs.slice(-4).map((m, i) => {
           const isMe = m.playerId === playerId;
@@ -359,10 +359,11 @@ export default function ExplodingKittensGame({
           const isNewest = i === msgs.length - 1;
           return (
             <div key={m.id} style={{
-              padding: '3px 12px', borderRadius: 6, fontSize: 11,
-              background: isMe ? 'rgba(15,52,96,0.85)' : 'rgba(26,26,46,0.85)',
-              color: '#ddd', maxWidth: '80%', textAlign: 'center',
+              padding: '4px 14px', borderRadius: 8, fontSize: 12,
+              background: isMe ? 'rgba(15,52,96,0.9)' : 'rgba(26,26,46,0.9)',
+              color: '#eee', maxWidth: '85%', textAlign: 'center',
               animation: isNewest ? 'chatFadeIn 0.3s ease' : 'none',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}>
               <span style={{ color: '#e94560', fontWeight: 600, marginRight: 4 }}>
                 {isMe ? 'You' : m.playerName}:
