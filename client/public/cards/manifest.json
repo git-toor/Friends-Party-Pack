@@ -3,7 +3,22 @@
   "cards": {
     "exploding_kitten": {
       "base": "/cards/base/exploding_kitten.base.webp"
+    },
+    "defuse": {
+      "base": "/cards/base/defuse.base.webp"
+    },
+    "attack": {
+      "base": "/cards/base/attack.base.webp"
+    },
+    "nope": {
+      "base": "/cards/base/nope.base.webp"
+    },
+    "skip": {
+      "base": "/cards/base/skip.base.webp"
     }
   },
-  "card_back": {}
+  "card_back": {
+    "base": "/cards/card_back.base.webp",
+    "nsfw": "/cards/card_back.nsfw.webp"
+  }
 }

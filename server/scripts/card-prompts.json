@@ -11,12 +11,41 @@
   },
   "card_back": {
     "base": {
-      "prompt": "cat face geometric pattern, symmetrical design, playful kitten silhouette, party card game back design, thick black outlines, flat colors, repeating diamond pattern, transparent background, centered"
+      "id": "option_a",
+      "prompt": "repeating cat paw print pattern arranged in a spiral, card game back design, playful kitten paw shapes, thick black outlines, flat vibrant colors, symmetrical mandala-like design, transparent background, centered"
     },
     "nsfw": {
-      "prompt": "sexy cat face geometric pattern, sultry eyes, symmetrical design, adult party card game back design, thick black outlines, dark red and black colors, transparent background"
+      "id": "option_a_nsfw",
+      "prompt": "repeating cat paw print pattern arranged in a spiral, card game back design, playful kitten paw shapes, thick black outlines, dark red and black colors, symmetrical mandala-like design, transparent background, centered"
     }
   },
+  "card_back_options": [
+    {
+      "id": "option_a",
+      "name": "Option A — Cat Face Pattern",
+      "prompt": "cat face geometric pattern, symmetrical design, playful kitten silhouette, party card game back design, thick black outlines, flat colors, repeating diamond pattern, transparent background, centered"
+    },
+    {
+      "id": "option_b",
+      "name": "Option B — Paw Print Spiral",
+      "prompt": "repeating cat paw print pattern arranged in a spiral, card game back design, playful kitten paw shapes, thick black outlines, flat vibrant colors, symmetrical mandala-like design, transparent background, centered, card back typical pattern"
+    },
+    {
+      "id": "option_c",
+      "name": "Option C — Comic Stars & Sparkles",
+      "prompt": "retro comic book style card back, cartoon stars and sparkles pattern, boing shapes, action lines radiating from center, 1960s pop art inspired, thick black outlines, flat bold colors, party game aesthetic, transparent background"
+    },
+    {
+      "id": "option_d",
+      "name": "Option D — Playing Card Elegant",
+      "prompt": "elegant filigree card back design with cat ear motifs, ornate symmetrical pattern, playing card inspired, royal blue and gold accents, thin white lines on colored background, sophisticated game card back, transparent background"
+    },
+    {
+      "id": "option_e",
+      "name": "Option E — Minimalist Modern",
+      "prompt": "minimalist modern card back design, simple repeating cat silhouette pattern, clean lines, geometric abstract, scandinavian design inspired, pastel colors, subtle pattern, modern card game aesthetic, transparent background"
+    }
+  ],
   "cards": [
     {
       "id": "exploding_kitten",

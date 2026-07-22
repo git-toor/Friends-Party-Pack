@@ -44,18 +44,18 @@ except ImportError:
 
 def load_prompts():
     script_dir = Path(__file__).parent
-    with open(script_dir / PROMPTS_FILE) as f:
+    with open(script_dir / PROMPTS_FILE, encoding='utf-8') as f:
         return json.load(f)
 
 def load_manifest():
     if os.path.exists(MANIFEST_FILE):
-        with open(MANIFEST_FILE) as f:
+        with open(MANIFEST_FILE, encoding='utf-8') as f:
             return json.load(f)
     return {"version": "2.0", "cards": {}, "card_back": {}}
 
 def save_manifest(manifest):
     os.makedirs(os.path.dirname(MANIFEST_FILE), exist_ok=True)
-    with open(MANIFEST_FILE, "w") as f:
+    with open(MANIFEST_FILE, "w", encoding='utf-8') as f:
         json.dump(manifest, f, indent=2)
 
 def build_full_prompt(prompts, card_data, variant="base"):
