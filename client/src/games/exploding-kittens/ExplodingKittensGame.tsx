@@ -40,6 +40,8 @@ interface EKGameProps {
   nsfw?: boolean;
 }
 
+
+
 const EMPTY_STATE: ClientGameState = {
   myHand: [], myStash: [], opponents: [], deckSize: 0, discardCount: 0,
   turn: { currentPlayerIndex: 0, direction: 1, phase: 'playing', attackCount: 0 },
@@ -49,7 +51,7 @@ const EMPTY_STATE: ClientGameState = {
 
 export default function ExplodingKittensGame({
   playerCount = 2, playerIndex = 0, sessionId, players, playerName = 'You', playerId = '',
-  gameStatePush,
+  gameStatePush, nsfw = false,
 }: EKGameProps) {
   const [gs, setGs] = useState<ClientGameState>(EMPTY_STATE);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
@@ -342,6 +344,7 @@ export default function ExplodingKittensGame({
         implodingKittenFaceUp={gs.implodingKittenFaceUp}
         nopeWindow={gs.nopeWindow}
         lastNotification={lastNotification}
+        nsfw={nsfw}
       />
 
       {/* Chat messages floating above action bar */}

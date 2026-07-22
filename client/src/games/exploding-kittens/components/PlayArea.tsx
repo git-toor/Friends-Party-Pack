@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CardBack } from '../../../components/CardBack.js';
 
 interface PlayAreaProps {
   deckSize: number;
@@ -7,9 +8,10 @@ interface PlayAreaProps {
   implodingKittenFaceUp: boolean;
   nopeWindow: { expiresAt: number; chain: { playerIndex: number }[] } | null;
   lastNotification?: string | null;
+  nsfw?: boolean;
 }
 
-export function PlayArea({ deckSize, discardCount, turnInfo, implodingKittenFaceUp, nopeWindow, lastNotification }: PlayAreaProps) {
+export function PlayArea({ deckSize, discardCount, turnInfo, implodingKittenFaceUp, nopeWindow, lastNotification, nsfw }: PlayAreaProps) {
   const [nopeRemaining, setNopeRemaining] = useState<number>(0);
   const nopeLength = 3000;
 
@@ -36,15 +38,23 @@ export function PlayArea({ deckSize, discardCount, turnInfo, implodingKittenFace
 
       {/* Center area: deck + discard */}
       <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+        {/* Draw pile with card back art */}
         <div style={{
-          width: 60, height: 84, borderRadius: 6,
-          background: 'linear-gradient(135deg, #1a1a3e, #2a2a5e)',
-          border: implodingKittenFaceUp ? '2px solid #ff4444' : '2px solid #444488',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+          position: 'relative', borderRadius: 6, overflow: 'hidden',
+          border: implodingKittenFaceUp ? '2px solid #ff4444' : '2px solid transparent',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
         }}>
-          <div style={{ fontSize: 20, color: '#666' }}>🎴</div>
-          <div style={{ fontSize: 10, color: '#888', marginTop: 2 }}>{deckSize}</div>
+          <CardBack nsfw={nsfw} size="medium" />
+          {/* Deck count badge */}
+          <div style={{
+            position: 'absolute', bottom: -4, right: -4,
+            background: implodingKittenFaceUp ? '#ff4444' : '#e94560',
+            color: '#fff', borderRadius: 8, minWidth: 18, height: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 9, fontWeight: 700, padding: '0 4px',
+          }}>
+            {deckSize}
+          </div>
           {implodingKittenFaceUp && (
             <div style={{ position: 'absolute', top: -6, right: -6, fontSize: 14, animation: 'pulse 1s infinite' }}>🌀</div>
           )}
@@ -56,6 +66,7 @@ export function PlayArea({ deckSize, discardCount, turnInfo, implodingKittenFace
           width: 60, height: 84, borderRadius: 6,
           background: 'rgba(255,255,255,0.05)', border: '2px solid #333',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          position: 'relative',
         }}>
           <div style={{ fontSize: 20, color: '#555' }}>🗑️</div>
           <div style={{ fontSize: 10, color: '#666', marginTop: 2 }}>{discardCount}</div>
