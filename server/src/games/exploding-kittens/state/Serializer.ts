@@ -85,6 +85,10 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
       type: a.type,
       playerIndex: a.playerIndex,
       status: a.status,
+      payload: a.payload ? {
+        cardIds: a.payload.cardIds,
+        deadPlayerIndices: a.payload.deadPlayerIndices,
+      } : undefined,
     })),
     nopeWindow: state.nopeWindow
       ? {

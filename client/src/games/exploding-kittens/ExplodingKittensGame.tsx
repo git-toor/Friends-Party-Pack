@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Hand } from './components/Hand.js';
 import { OpponentBar } from './components/OpponentBar.js';
 import { ActionBar } from './components/ActionBar.js';
@@ -25,7 +25,7 @@ interface ClientGameState {
   opponents: ClientPlayerView[];
   deckSize: number; discardCount: number;
   turn: { currentPlayerIndex: number; direction: number; phase: string; attackCount: number };
-  actionStack: { type: string; playerIndex: number; status: string }[];
+  actionStack: { type: string; playerIndex: number; status: string; payload?: any }[];
   nopeWindow: { expiresAt: number; chain: { playerIndex: number }[] } | null;
   settings: { playerCount: number; expansions?: string[] };
   winner: number | null;
@@ -55,7 +55,9 @@ export default function ExplodingKittensGame({
   const [showDefuse, setShowDefuse] = useState<{ deckSize: number; hasZombie: boolean } | null>(null);
   const [showZombieRevive, setShowZombieRevive] = useState<{ deadPlayers: { index: number; name: string }[] } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
+  const [showFuture, setShowFuture] = useState<{ cards: { id: string; type: string }[] } | null>(null);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
+  const nopeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -67,12 +69,34 @@ export default function ExplodingKittensGame({
 
   useEffect(() => {
     if (gameStatePush) {
-      setGs(gameStatePush as ClientGameState);
-      if ((gameStatePush as ClientGameState).winner !== null) {
-        setShowGameOver(true);
-      }
+      setGs((prev: ClientGameState) => {
+        const next = gameStatePush as ClientGameState;
+        if (next.winner !== null) {
+          setShowGameOver(true);
+        } else if (prev.winner !== null && next.winner === null) {
+          setShowGameOver(false);
+        }
+        return next;
+      });
     }
   }, [gameStatePush]);
+
+  // Nope window auto-timeout
+  useEffect(() => {
+    if (nopeTimerRef.current) {
+      clearTimeout(nopeTimerRef.current);
+      nopeTimerRef.current = null;
+    }
+    if (gs.nopeWindow) {
+      const remaining = Math.max(0, gs.nopeWindow.expiresAt - Date.now()) + 500;
+      nopeTimerRef.current = setTimeout(() => {
+        sendAction('RESOLVE_NOPE_TIMEOUT');
+      }, remaining);
+    }
+    return () => {
+      if (nopeTimerRef.current) clearTimeout(nopeTimerRef.current);
+    };
+  }, [gs.nopeWindow?.expiresAt, gs.nopeWindow?.chain.length]);
 
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
     if (!sessionId) return;
@@ -82,8 +106,10 @@ export default function ExplodingKittensGame({
         body: JSON.stringify({ sessionId, playerIndex, action: { type: actionType, payload } }),
       });
       const data = await res.json();
-      if (data.state) setGs(data.state);
-      if (data.state?.winner !== null) setShowGameOver(true);
+      if (data.state) {
+        setGs(data.state);
+        if (data.state.winner !== null) setShowGameOver(true);
+      }
       return data;
     } catch { return null; }
   }, [sessionId, playerIndex]);
@@ -100,7 +126,10 @@ export default function ExplodingKittensGame({
     try {
       const res = await fetch(`/api/games/exploding-kittens/state/${sessionId}?playerIndex=${playerIndex}`);
       const data = await res.json();
-      if (data) setGs(data);
+      if (data) setGs((prev: ClientGameState) => {
+        if (prev.winner !== null && data.winner === null) setShowGameOver(false);
+        return data;
+      });
     } catch {}
   }, [sessionId, playerIndex]);
 
@@ -128,37 +157,34 @@ export default function ExplodingKittensGame({
   const handlePlayCard = useCallback(async () => {
     if (!selectedCardId) return;
     setSelectedCardId(null);
-    await sendAction('PLAY_CARD', { cardId: selectedCardId, targetIndex: gs.turn.attackCount > 0 ? gs.turn.currentPlayerIndex : (gs.turn.currentPlayerIndex + 1) % playerCount });
-  }, [selectedCardId, sendAction, gs.turn, playerCount]);
+    const sel = gs.myHand.find(c => c.id === selectedCardId);
+    const targetIndex = sel?.type === 'favor' || sel?.type === 'targeted_attack' || sel?.type === 'barking_kitten'
+      ? gs.opponents.find(o => o.alive)?.index ?? (gs.turn.currentPlayerIndex + 1) % playerCount
+      : undefined;
+    await sendAction('PLAY_CARD', { cardId: selectedCardId, targetIndex });
+  }, [selectedCardId, sendAction, gs.myHand, gs.opponents, gs.turn.currentPlayerIndex, playerCount]);
 
   const handleNope = useCallback(async () => {
-    await sendAction('PLAY_CARD', {
-      // Find a nope card in hand
-      cardId: gs.myHand.find(c => c.type === 'nope')?.id,
-    });
-  }, [sendAction, gs.myHand]);
-
-  // Handle favor selection
-  const handleFavorChoose = useCallback(async (cardId: string) => {
-    setShowFavor(null);
-    await sendAction('RESOLVE_FAVOR', { cardId });
+    await sendAction('RESOLVE_NOPE');
   }, [sendAction]);
 
-  // Handle defuse
+  const handleFavorChoose = useCallback(async (cardId: string) => {
+    setShowFavor(null);
+    await sendAction('RESOLVE_FAVOR', { cardId, victimIndex: playerIndex });
+  }, [sendAction, playerIndex]);
+
   const handleDefuseInsert = useCallback(async (insertIndex: number) => {
     setShowDefuse(null);
     await sendAction('RESOLVE_DEFUSE', { insertIndex });
     fetchState();
   }, [sendAction, fetchState]);
 
-  // Handle zombie revive
   const handleZombieRevive = useCallback(async (targetIndex: number) => {
     setShowZombieRevive(null);
     await sendAction('RESOLVE_ZOMBIE_REVIVE', { targetIndex });
     fetchState();
   }, [sendAction, fetchState]);
 
-  // Handle rematch
   const handleRematch = useCallback(async () => {
     if (!sessionId) return;
     const res = await fetch('/api/games/exploding-kittens/rematch', {
@@ -181,15 +207,41 @@ export default function ExplodingKittensGame({
     ...gs.opponents.map(o => ({ name: o.name, index: o.index, score: o.cardCount + o.stashCount })),
   ].filter(p => p.index >= 0);
 
-  // Check if we need to show favor modal (from gameStatePush)
   useEffect(() => {
-    const pendingFavor = gs.actionStack.find(a => a.type === 'RESOLVE_FAVOR' && (a as any).cardIds);
-    if (pendingFavor && (pendingFavor as any).cardIds) {
-      const cardIds = (pendingFavor as any).cardIds as string[];
-      const cards = gs.myHand.filter(c => cardIds.includes(c.id));
+    const pendingFavor = gs.actionStack.find(a => a.type === 'RESOLVE_FAVOR');
+    if (pendingFavor && pendingFavor.playerIndex === playerIndex) {
+      const cards = gs.myHand.map(c => ({ id: c.id, type: c.type, name: c.name }));
       if (cards.length > 0) setShowFavor(cards);
     }
-  }, [gs.actionStack, gs.myHand]);
+  }, [gs.actionStack, gs.myHand, playerIndex]);
+
+  useEffect(() => {
+    const pendingDefuse = gs.actionStack.find(a => a.type === 'RESOLVE_DEFUSE');
+    if (pendingDefuse && pendingDefuse.playerIndex === playerIndex) {
+      setShowDefuse({ deckSize: gs.deckSize, hasZombie: gs.myHand.some(c => c.type === 'zombie_kitten') });
+    } else if (!pendingDefuse) {
+      setShowDefuse(null);
+    }
+  }, [gs.actionStack, gs.myHand, playerIndex, gs.deckSize]);
+
+  useEffect(() => {
+    const pendingZombie = gs.actionStack.find(a => a.type === 'RESOLVE_ZOMBIE_REVIVE');
+    if (pendingZombie && pendingZombie.playerIndex === playerIndex) {
+      const deadPlayers = gs.opponents.filter(o => o.dead).map(o => ({ index: o.index, name: o.name }));
+      if (deadPlayers.length > 0) setShowZombieRevive({ deadPlayers });
+    } else if (!pendingZombie) {
+      setShowZombieRevive(null);
+    }
+  }, [gs.actionStack, gs.opponents, playerIndex]);
+
+  // See the Future detection
+  useEffect(() => {
+    const futureAction = gs.actionStack.find(a => a.type === 'PLAY_CARD' && a.payload?.cardId &&
+      (a.payload as any)._futureCards);
+    if (futureAction && (futureAction.payload as any)._futureCards) {
+      setShowFuture({ cards: (futureAction.payload as any)._futureCards });
+    }
+  }, [gs.actionStack]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -218,16 +270,20 @@ export default function ExplodingKittensGame({
         nopeWindow={gs.nopeWindow}
       />
 
-      {/* Chat messages above hand */}
-      <div style={{ padding: '2px 12px', display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: 1, overflow: 'hidden', maxHeight: 60 }}>
-        {chatMsgs.slice(-3).map((m, i) => {
+      {/* Chat messages floating above action bar */}
+      <div style={{
+        position: 'absolute', bottom: 180, left: 0, right: 0,
+        display: 'flex', flexDirection: 'column-reverse', alignItems: 'center',
+        gap: 2, pointerEvents: 'none', zIndex: 100,
+      }}>
+        {chatMsgs.slice(-4).map((m, i) => {
           const isMe = m.playerId === playerId;
-          const msgs = chatMsgs.slice(-3);
+          const msgs = chatMsgs.slice(-4);
           const isNewest = i === msgs.length - 1;
           return (
             <div key={m.id} style={{
-              padding: '2px 10px', borderRadius: 6, fontSize: 11,
-              background: isMe ? 'rgba(15,52,96,0.8)' : 'rgba(26,26,46,0.8)',
+              padding: '3px 12px', borderRadius: 6, fontSize: 11,
+              background: isMe ? 'rgba(15,52,96,0.85)' : 'rgba(26,26,46,0.85)',
               color: '#ddd', maxWidth: '80%', textAlign: 'center',
               animation: isNewest ? 'chatFadeIn 0.3s ease' : 'none',
             }}>
@@ -263,14 +319,12 @@ export default function ExplodingKittensGame({
         />
       </div>
 
-      {/* Tower of Power stash */}
       {gs.myStash.length > 0 && (
         <div style={{ padding: '4px 12px', fontSize: 10, color: '#888', textAlign: 'center' }}>
           👑 Stash: {gs.myStash.length} cards
         </div>
       )}
 
-      {/* Modals */}
       {showGameOver && (
         <GameOverOverlay
           winner={gs.winner}
@@ -297,6 +351,29 @@ export default function ExplodingKittensGame({
           deadPlayers={showZombieRevive.deadPlayers}
           onRevive={handleZombieRevive}
         />
+      )}
+
+      {showFuture && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 800,
+        }} onClick={() => setShowFuture(null)}>
+          <div style={{ background: '#16213e', borderRadius: 12, padding: 16, textAlign: 'center' }}>
+            <h3 style={{ color: '#fbbf24', margin: '0 0 8px', fontSize: 14 }}>🔮 Top Cards</h3>
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+              {showFuture.cards.map((c, i) => (
+                <div key={i} style={{
+                  padding: '8px 12px', borderRadius: 6,
+                  background: '#0f3460', fontSize: 11, color: '#ccc',
+                }}>{c.type.replace(/_/g, ' ')}</div>
+              ))}
+            </div>
+            <button onClick={() => setShowFuture(null)} style={{
+              marginTop: 10, padding: '6px 20px', background: '#e94560',
+              color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12,
+            }}>OK</button>
+          </div>
+        </div>
       )}
 
       <style>{`@keyframes chatFadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }`}</style>

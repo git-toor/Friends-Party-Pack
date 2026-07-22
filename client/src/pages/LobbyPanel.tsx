@@ -119,9 +119,11 @@ export default function LobbyPanel() {
         ))}
       </div>
 
-      <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
-        <DiceAppearanceSelector />
-      </div>
+      {lobby?.gameId === 'yahtzee' && (
+        <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
+          <DiceAppearanceSelector />
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 360, alignItems: 'stretch' }}>
         <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
