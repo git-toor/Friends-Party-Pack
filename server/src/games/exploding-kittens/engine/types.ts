@@ -132,7 +132,7 @@ export interface GameState {
   settings: GameSettings;
   winner: number | null;
   implodingKittenFaceUp: boolean;
-  pendingCardView: { cards: { id: string; type: string }[] } | null;
+  pendingCardView: { cards: { id: string; type: string }[]; forPlayerIndex: number } | null;
 }
 
 export interface GameResult {

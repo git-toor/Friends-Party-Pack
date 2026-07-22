@@ -100,6 +100,8 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
     settings: { playerCount: state.settings.playerCount, expansions: state.settings.expansions },
     winner: state.winner,
     implodingKittenFaceUp: state.implodingKittenFaceUp,
-    pendingCardView: state.pendingCardView,
+    pendingCardView: state.pendingCardView?.forPlayerIndex === playerIndex
+      ? { cards: state.pendingCardView.cards }
+      : null,
   };
 }
