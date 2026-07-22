@@ -20,7 +20,7 @@ export type EffectType =
   | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT'
   | 'BARKING_KITTEN' | 'TOWER_OF_POWER' | 'POTLUCK' | 'BURY' | 'SHARE_FUTURE'
   | 'ZOMBIE_KITTEN' | 'DIG_DEEPER' | 'FEED_THE_DEAD' | 'GRAVE_ROBBER' | 'ATTACK_OF_THE_DEAD'
-  | 'CAT_COMBO';
+  | 'CAT_COMBO' | 'CLONE';
 
 export interface EffectDefinition {
   type: EffectType;

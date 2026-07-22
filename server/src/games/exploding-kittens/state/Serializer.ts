@@ -27,6 +27,7 @@ export interface ClientGameState {
   opponents: ClientPlayerView[];
   deckSize: number;
   discardCount: number;
+  discardPileCards?: { id: string; type: string; name: string }[];
   turn: {
     currentPlayerIndex: number;
     direction: number;
@@ -76,6 +77,9 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
       })),
     deckSize: state.deck.length,
     discardCount: state.discardPile.length,
+    discardPileCards: playerIndex === state.turn.currentPlayerIndex
+      ? state.discardPile.map(c => ({ id: c.id, type: c.type, name: c.definition.name }))
+      : undefined,
     turn: {
       currentPlayerIndex: state.turn.currentPlayerIndex,
       direction: state.turn.direction,

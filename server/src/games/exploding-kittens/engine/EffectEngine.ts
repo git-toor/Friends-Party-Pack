@@ -1,4 +1,5 @@
 import type { GameState, GameAction, EffectDefinition, Card, CardType, PlayerState } from './types.js';
+import { createCard } from '../cards/registry.js';
 
 export type EffectHandler = (
   state: GameState,
@@ -302,6 +303,23 @@ registerEffect('CAT_COMBO', (state, _effect, action, callbacks) => {
     default:
       return { success: false };
   }
+});
+
+// ─── CLONE ────────────────────────────────────────────
+registerEffect('CLONE', (state, _effect, action, callbacks) => {
+  if (state.deck.length === 0) return { success: false, error: 'Deck is empty' };
+  const topCard = state.deck[0];
+  const player = state.players[action.playerIndex];
+  // Show the top card to the player
+  state.pendingCardView = {
+    cards: [{ id: topCard.id, type: topCard.type }],
+    forPlayerIndex: action.playerIndex,
+  };
+  // Clone becomes a copy of the top card — add it to player's hand
+  const clonedCard = createCard(topCard.type);
+  player.hand.push(clonedCard);
+  callbacks.broadcast('CLONE_RESULT', { clonedCardType: topCard.type });
+  return { success: true, nopeable: true };
 });
 
 // ─── NONE (placeholder for future expansion cards) ────

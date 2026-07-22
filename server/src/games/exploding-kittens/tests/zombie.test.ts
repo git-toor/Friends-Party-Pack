@@ -120,4 +120,32 @@ describe('Zombie Kittens Expansion', () => {
       expect(result.valid).toBe(true);
     });
   });
+
+  describe('Clone', () => {
+    it('adds a copy of the top deck card to hand', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      const clone = findCardByType(game.players[current].hand, 'clone');
+      if (!clone) return;
+      const topDeckType = game.deck[0]?.type;
+      if (!topDeckType) return;
+      const handBefore = game.players[current].hand.length;
+      handleAction(game, current, 'PLAY_CARD', { cardId: clone });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      expect(game.players[current].hand.length).toBe(handBefore + 1);
+      expect(game.players[current].hand.some(c => c.type === topDeckType)).toBe(true);
+    });
+
+    it('sets pendingCardView with top card', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      const clone = findCardByType(game.players[current].hand, 'clone');
+      if (!clone) return;
+      const topDeckType = game.deck[0]?.type;
+      handleAction(game, current, 'PLAY_CARD', { cardId: clone });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      // pendingCardView was set during clone effect
+      expect(game.pendingCardView).not.toBeNull();
+    });
+  });
 });

@@ -12,14 +12,14 @@ export const zombieCards: CardDefinition[] = [
     id: 'clone', name: 'Clone', expansion: 'zombie',
     copies: 2,
     playable: {},
-    effect: { type: 'NONE' },
+    effect: { type: 'CLONE' },
     category: 'action',
   },
   {
     id: 'clairvoyance', name: 'Clairvoyance', expansion: 'zombie',
     copies: 2,
     playable: {},
-    effect: { type: 'NONE' },
+    effect: { type: 'SEE_FUTURE', amount: 3 },
     category: 'action',
   },
   {

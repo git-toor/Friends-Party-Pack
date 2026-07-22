@@ -23,7 +23,7 @@ interface ClientGameState {
   myHand: ClientCardRef[];
   myStash: ClientCardRef[];
   opponents: ClientPlayerView[];
-  deckSize: number; discardCount: number;
+  deckSize: number; discardCount: number; discardPileCards?: { id: string; type: string; name: string }[];
   turn: { currentPlayerIndex: number; direction: number; phase: string; attackCount: number };
   actionStack: { type: string; playerIndex: number; status: string; payload?: any }[];
   nopeWindow: { expiresAt: number; chain: { playerIndex: number }[] } | null;
@@ -219,16 +219,31 @@ export default function ExplodingKittensGame({
     if (comboType === 'pair' || comboType === 'triple') {
       const target = gs.opponents.find(o => o.alive);
       if (target) payload.targetIndex = target.index;
+      if (comboType === 'triple') {
+        // For triple, show the name-a-card modal
+        const oppCards = target ? gs.opponents.filter(o => o.alive).flatMap(o => [o.cardCount]) : [];
+        setShowFuture({ cards: [{ id: 'prompt', type: 'tap to name' }] });
+        alert('Three of a Kind: Tap the card you want to name from your hand selection');
+        return;
+      }
     }
     if (comboType === 'five') {
-      // Open discard picker modal
-      const discardCards = gs.myHand.filter(c => selectedCardIds.includes(c.id)).map(c => ({ id: c.id, type: c.type, name: c.name }));
-      setShowDiscardPicker({ cards: discardCards.map(c => ({ id: c.id, type: c.type, name: c.name })) });
-      return; // Wait for discard picker to return
+      // Show discard pile for picking
+      if (gs.discardPileCards && gs.discardPileCards.length > 0) {
+        setShowDiscardPicker({ cards: gs.discardPileCards });
+        return;
+      }
     }
     setSelectedCardIds([]);
     await sendAction('PLAY_COMBO', payload);
-  }, [comboInfo, sendAction, gs.opponents, gs.myHand, selectedCardIds]);
+  }, [comboInfo, sendAction, gs.opponents, gs.myHand, selectedCardIds, gs.discardPileCards]);
+
+  // Handle discard pile selection for Five Different Cards
+  const handleDiscardPick = useCallback(async (cardId: string) => {
+    setShowDiscardPicker(null);
+    setSelectedCardIds([]);
+    await sendAction('PLAY_COMBO', { ...comboInfo, comboType: 'five', chosenCardId: cardId });
+  }, [comboInfo, sendAction]);
 
   const handleNope = useCallback(async () => {
     await sendAction('RESOLVE_NOPE');
@@ -419,7 +434,7 @@ export default function ExplodingKittensGame({
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', zIndex: 900,
         }}>
-          <div style={{ background: '#16213e', borderRadius: 12, padding: 20, maxWidth: 380, width: '90%' }}>
+          <div style={{ background: '#16213e', borderRadius: 12, padding: 20, maxWidth: 380, width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
             <h3 style={{ color: '#fbbf24', textAlign: 'center', margin: '0 0 12px', fontSize: 16 }}>
               🃏 Search Discard Pile
             </h3>
@@ -428,16 +443,21 @@ export default function ExplodingKittensGame({
             </p>
             <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
               {showDiscardPicker.cards.map((c, i) => (
-                <div key={i} style={{
-                  padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
-                  background: '#0f3460', border: '1px solid #444', color: '#ccc', fontSize: 11,
-                }}>{c.name}</div>
+                <div key={c.id || i} onClick={() => handleDiscardPick(c.id)}
+                  style={{
+                    padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
+                    background: '#0f3460', border: '1px solid #444', color: '#ccc', fontSize: 11,
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#e94560')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#0f3460')}
+                >{c.name}</div>
               ))}
             </div>
             <button onClick={() => { setShowDiscardPicker(null); setSelectedCardIds([]); }}
               style={{ display: 'block', margin: '12px auto 0', padding: '6px 20px',
-                background: '#e94560', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
-              Done
+                background: '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+              Cancel
             </button>
           </div>
         </div>
