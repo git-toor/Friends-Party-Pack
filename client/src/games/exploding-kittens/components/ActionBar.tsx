@@ -7,6 +7,7 @@ interface ActionBarProps {
   nopeWindow: boolean;
   canPlay: boolean;
   deadPlayer: boolean;
+  hasNopeCard: boolean;
   onDrawCard: () => void;
   onEndTurn: () => void;
   onNope: () => void;
@@ -15,7 +16,7 @@ interface ActionBarProps {
 
 export function ActionBar({
   isMyTurn, turnPhase, hasSelection, nopeWindow, canPlay,
-  deadPlayer, onDrawCard, onEndTurn, onNope, onPlaySelected,
+  deadPlayer, hasNopeCard, onDrawCard, onEndTurn, onNope, onPlaySelected,
 }: ActionBarProps) {
   if (!isMyTurn && !nopeWindow) {
     return (
@@ -37,10 +38,15 @@ export function ActionBar({
     <div style={{
       padding: '8px 12px', display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap',
     }}>
-      {nopeWindow && (
+      {nopeWindow && hasNopeCard && (
         <Button variant="primary" size="lg" onClick={onNope} style={{ animation: 'nopePulse 0.8s infinite' }}>
           🚫 Nope!
         </Button>
+      )}
+      {nopeWindow && !hasNopeCard && (
+        <div style={{ padding: '8px 12px', textAlign: 'center', color: '#ff8888', fontSize: 12 }}>
+          Nope window active… (you have no Nope card)
+        </div>
       )}
       {isMyTurn && turnPhase === 'playing' && (
         <>

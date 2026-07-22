@@ -41,10 +41,11 @@ export function resolveEffect(
 }
 
 // ─── ADD_TURNS ────────────────────────────────────────
-registerEffect('ADD_TURNS', (state, effect, _action, _callbacks) => {
+registerEffect('ADD_TURNS', (state, effect, _action, callbacks) => {
   const amount = effect.amount ?? 2;
   const targetIdx = effect.selfTarget ? state.turn.currentPlayerIndex : nextPlayerIndex(state);
-  state.players[targetIdx].pendingTurns += amount;
+  state.players[targetIdx].pendingTurns += amount + 1; // +1 because advanceTurn decrements immediately
+  callbacks.endTurn();
   return { success: true, nopeable: true };
 });
 

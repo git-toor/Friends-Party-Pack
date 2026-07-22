@@ -85,6 +85,7 @@ describe('Barking Kittens Expansion', () => {
       const pa = findCardByType(game.players[current].hand, 'personal_attack');
       if (!pa) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: pa });
+      // Personal Attack adds 4 (3+1), endTurn decrements by 1, net = 3 pending draws
       expect(game.players[current].pendingTurns).toBe(3);
     });
   });

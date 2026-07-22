@@ -314,6 +314,7 @@ export default function ExplodingKittensGame({
         nopeWindow={gs.nopeWindow !== null}
         canPlay={canPlay}
         deadPlayer={isDead}
+        hasNopeCard={gs.myHand.some(c => c.type === 'nope')}
         onDrawCard={handleDrawCard}
         onEndTurn={handleEndTurn}
         onNope={handleNope}

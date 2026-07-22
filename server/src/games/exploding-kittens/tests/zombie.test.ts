@@ -70,13 +70,14 @@ describe('Zombie Kittens Expansion', () => {
       const game = createGameWithZombie(2);
       const current = game.turn.currentPlayerIndex;
       const handSize = game.players[current].hand.length;
-      game.players[current].hand = game.players[current].hand.filter(c => c.type !== 'defuse');
+      game.players[current].hand = game.players[current].hand.filter(c => c.type !== 'defuse' && c.type !== 'zombie_kitten');
+      const afterFilter = game.players[current].hand.length;
       const ek = game.deck.find(c => c.type === 'exploding_kitten');
       if (!ek) return;
       game.deck = game.deck.filter(c => c.type !== 'exploding_kitten');
       game.deck.unshift(ek);
       handleAction(game, current, 'DRAW_CARD');
-      expect(game.players[current].hand.length).toBe(handSize + 1); // EK was drawn and stays in hand
+      expect(game.players[current].hand.length).toBe(afterFilter + 1); // EK was drawn and stays in hand
     });
   });
 
