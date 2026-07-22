@@ -496,8 +496,10 @@ describe('Integration: Full Card Flows', () => {
       }
       if (cardIds.length < 5) return;
 
-      // Pop one card to discard for us to steal back
-      const discCard = game.players[p0].hand.shift()!;
+      // Put a DIFFERENT card in the discard pile for us to steal
+      const discCard = game.players[p0].hand.find(c => !cardIds.includes(c.id))
+        || game.deck.pop()!;
+      if (!discCard) return;
       game.discardPile.push(discCard);
 
       const result = handleAction(game, p0, 'PLAY_COMBO', {

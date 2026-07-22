@@ -6,7 +6,83 @@ A full-featured **Exploding Kittens** multiplayer card game with all expansions,
 
 ---
 
-## Table of Contents
+## Current Status (July 2026)
+
+### ✅ Fully Implemented — Server Engine
+
+| Area | Details |
+|------|---------|
+| **Base Game** | All 12 base cards: Exploding Kitten, Defuse, Attack, Skip, Favor, Shuffle, See the Future, Nope, TacoCat, Cattermelon, Hairy Potato Cat, Beard Cat |
+| **Imploding Kittens** | Imploding Kitten (two-phase face-up/face-down), Alter the Future 3x, Draw from the Bottom, Reverse, Targeted Attack, Feral Cat |
+| **Streaking Kittens** | Streaking Kitten (safe EK hold via `player.streakingKitten` flag), Super Skip, See/Alter Future 5x, Swap Top & Bottom, Garbage Collection, Catomic Bomb, Mark, Curse of the Cat Butt |
+| **Barking Kittens** | Barking Kitten (chicken duel), Tower of Power stash (`player.stash`), Potluck, Bury, Personal Attack, Share the Future |
+| **Zombie Kittens** | Zombie Kitten (defuse + revive), Clone (copies top deck card), Clairvoyance (view top 3), Dig Deeper, Feed the Dead, Grave Robber, Attack of the Dead, Shuffle Now |
+| **Core Architecture** | Data-driven card definitions (44 types, no effect classes), EffectEngine with 24+ effect type handlers, Deferred execution system (effects execute AFTER nope window closes), ActionStack with pendingCard tracking, Per-player state serializer |
+
+### ✅ Fully Implemented — Game Mechanics
+
+| Mechanic | Details |
+|----------|---------|
+| **Deferred Effects** | All nopeable cards execute AFTER 3-second nope window. Effect is skipped if noped. |
+| **Nope Chain** | Real-time LIFO chain. Single nope cancels action. Double nope (counter-nope) lets action through. |
+| **Cat Combos** | Two of a Kind (2 matching → steal random), Three of a Kind (3 matching → name a card), Five Different Cards (5 different cats → search discard). All nopeable via deferred execution. |
+| **Turn System** | Attack stacking, turn direction (Reverse), dead player skip, attack count tracking. |
+| **Defuse/Explosion** | Defuse/Defuse window with numbered deck slots. Streaking Kitten protection. Imploding Kitten two-phase. Zombie Kitten revive. |
+| **Favor** | Victim selects card via modal, card transfers to attacker. Works with actionStack payload. |
+
+### ✅ Fully Implemented — Client UI
+
+| Component | Details |
+|-----------|---------|
+| **Card.tsx** | Procedural SVG with 44 card type color/icon mappings |
+| **Hand.tsx** | Fan layout with multi-select support for cat combos |
+| **OpponentBar.tsx** | Card count, alive/dead status, Streaking Kitten, cursed, stash indicators |
+| **ActionBar.tsx** | Context-sensitive: Play Card, Draw, End Turn, Nope (pulse), combo buttons (Pair/Triple/Five) |
+| **PlayArea.tsx** | Deck/discard display, nope countdown timer, imploding kitten indicator |
+| **DefuseModal.tsx** | Numbered deck slot picker |
+| **FavorModal.tsx** | Victim card selection |
+| **ZombieReviveModal.tsx** | Dead player picker |
+| **GameOverOverlay.tsx** | Winner + Rematch + Back to Lobby |
+| **See the Future modal** | Shows top cards via `pendingCardView` |
+| **Discard Picker modal** | For Five Different Cards combo — shows discard pile contents |
+| **Game Settings** | EK presets (Classic/Chaos/Custom) with expansion checkboxes |
+| **Lobby Integration** | Dynamic game loading by gameId, EK registered in gameRegistry |
+
+### ✅ Test Coverage — 85 Tests
+
+| File | Tests | What It Covers |
+|------|-------|----------------|
+| `engine.test.ts` | 21 | Base actions: play card, draw, attack, skip, favor, shuffle, nope, defuse, end turn, win condition |
+| `imploding.test.ts` | 13 | IK two-phase, reverse, targeted attack, draw from bottom, feral cat |
+| `streaking.test.ts` | 12 | Streaking Kitten protection, super skip, swap, garbage, catomic, mark, curse |
+| `barking.test.ts` | 9 | Barking Kitten duel, personal attack, potluck, bury, tower of power |
+| `zombie.test.ts` | 9 | Zombie Kitten revive, dead state (keep hand), dig deeper, feed the dead, grave robber, clone |
+| `integration.test.ts` | 21 | Full flow: Attack (nope/no-nope), Skip, Favor, Shuffle, See Future, Nope chain (single/nope-a-nope), Defuse, Draw, Personal Attack, Reverse, IK two-phase, Streaking Kitten, multi-card turns, nope timeout, Cat combos (pair/triple/five) |
+
+### ⚠️ Known Gaps
+
+| Gap | Priority | Description |
+|-----|----------|-------------|
+| **Three of a Kind client UI** | Medium | Server handles triple combos, but client needs a "name the card you want" modal. Currently shows an alert. |
+| **Tower of Power stash management** | Medium | Server tracks `player.stash` and serializes it, but client has no "move card to stash" / "take from stash" UI. |
+| **Feral Cat wildcard display** | Low | Feral Cat works server-side (acts as any cat type for combos), but client combo detection doesn't handle the wildcard properly. |
+| **NSFW mode** | Low | Toggle in settings works, but no NSFW card art generated yet. |
+| **AI Art Pipeline** | Low | ComfyUI workflows exist but no automated generation script ported. |
+| **Framer Motion animations** | Low | Card draw/play/discard transitions are instant. No animation library added yet. |
+| **Sound effects** | Low | Placeholder hooks only. Disabled by default. |
+| **Replay system** | Low | `eventLog` exists in GameState but isn't exposed or persisted. |
+| **Spectator mode** | Future | No support for read-only game joins. |
+| **9-player support** | Future | Currently limited to 6 (max for Barking + Imploding). Party Pack recipe not implemented. |
+
+### 📊 Test Summary
+
+```bash
+cd server && npx vitest run src/games/exploding-kittens/tests/
+# 6 files, 85 tests, all passing
+# Runs in ~400ms
+```
+
+---
 
 1. [Architecture & Data Model](#1-architecture--data-model)
 2. [Card Definitions (Data-Driven)](#2-card-definitions)

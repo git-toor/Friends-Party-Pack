@@ -315,7 +315,11 @@ registerEffect('CLONE', (state, _effect, action, callbacks) => {
     cards: [{ id: topCard.id, type: topCard.type }],
     forPlayerIndex: action.playerIndex,
   };
-  // Clone becomes a copy of the top card — add it to player's hand
+  // Clone transforms into a copy of the top card — remove clone from discard, add copy to hand
+  const cloneIdx = state.discardPile.findIndex(c => c.type === 'clone');
+  if (cloneIdx !== -1) {
+    state.discardPile.splice(cloneIdx, 1); // remove clone from discard
+  }
   const clonedCard = createCard(topCard.type);
   player.hand.push(clonedCard);
   callbacks.broadcast('CLONE_RESULT', { clonedCardType: topCard.type });
