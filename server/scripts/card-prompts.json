@@ -172,7 +172,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 1009,
-      "base": { "prompt": "A cartoon taco with cat features, cat ears on a taco shell, yellow and orange palette, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon taco-cat hybrid dancing with maracas, sombrero on cat ears, funny fiesta pose, yellow and orange palette, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy taco with cat features, coming on to a regular taco, suggestive, thick black outlines, flat vector style" }
     },
     {
@@ -256,7 +256,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 2004,
-      "base": { "prompt": "A cartoon cat doing a 180 turn, arrows curving around, confused expression, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon cat sliding on a banana peel doing a 180, paws flailing, surprised expression, motion lines showing reverse trajectory, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines" }
     },
     {
@@ -268,7 +268,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 2005,
-      "base": { "prompt": "A cartoon cat taking aim with a bow and arrow, target in background, focused expression, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon cat aiming a laser cannon with a target reticle on its chest, glowing red laser beam, determined squint, action pose, sci-fi style, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat archer in a leather corset, drawing a bow, seductive aim, thick black outlines" }
     },
     {
@@ -340,7 +340,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 3005,
-      "base": { "prompt": "A cartoon cat swapping the top and bottom cards of a tall deck, reaching high and low, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon cat juggling cards with top and bottom cards highlighted, balancing act, dizzy spiral eyes, card flying everywhere, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat stretching to reach top and bottom cards simultaneously, yoga pose, thick black outlines" }
     },
     {
@@ -364,7 +364,7 @@
       "rarity": "rare",
       "size": [768, 1024],
       "seed_base": 3007,
-      "base": { "prompt": "A cartoon mushroom cloud with cat ears, atomic symbol, orange and yellow palette, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon cat wearing a giant bomb suit with a lit fuse on its tail, running in panic, explosion shadow on wall behind it, dramatic comedy, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy pin-up cat riding an atomic bomb like a horse, 50s style, thick black outlines" }
     },
     {
@@ -376,7 +376,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 3008,
-      "base": { "prompt": "A cartoon cat with a giant red X marked on its forehead, embarrassed expression, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon cat covered in colorful marker doodles, stars and X marks all over its face and fur, embarrassed blush, friends holding markers behind it, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat wearing a collar with a tag, marked as owned, submissive pose, thick black outlines" }
     },
     {
@@ -472,7 +472,7 @@
       "rarity": "special",
       "size": [768, 1024],
       "seed_base": 5001,
-      "base": { "prompt": "A cute cartoon zombie kitten, green skin, stitched up, one eye dangling, still cute, thick black outlines, flat vector style" },
+      "base": { "prompt": "An adorable cartoon zombie kitten with glowing green eyes, bandages wrapped around its body, one paw raised in a playful shambling pose, cute undead vibe, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy zombie kitten with stitched up torn clothes, one eye seductive wink, green skin, thick black outlines" }
     },
     {
@@ -532,7 +532,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 5006,
-      "base": { "prompt": "A cartoon cat stealing cards from a grave, spooky cemetery night, shovel, sneaky expression, thick black outlines, flat vector style" },
+      "base": { "prompt": "A cartoon cat in a tiny top hat and monocle robbing a graveyard at midnight, bag of cards over shoulder, sneaky tiptoe, moonlit cemetery, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat burglar stealing from a grave at night, skin-tight black outfit, thick black outlines" }
     },
     {
