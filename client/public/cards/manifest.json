@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "cards": {
+    "exploding_kitten": {
+      "base": "/cards/base/exploding_kitten.base.webp"
+    }
+  },
+  "card_back": {}
+}

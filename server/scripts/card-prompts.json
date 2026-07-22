@@ -1,341 +1,102 @@
 {
-  "style": {
-    "base": "Thick black outlines, flat vector colors, humorous cartoon style, white background, simple shapes, inspired by The Oatmeal webcomic",
-    "negative": "realistic, 3D, shaded, photorealistic, intricate details, dark, scary, horror, anime, watercolor, oil painting",
-    "nsfw_negative": "realistic, 3D, photorealistic, dark, scary, horror, anime, watercolor, oil painting"
+  "master_style": {
+    "base": {
+      "positive": "cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors, absurd humor, whimsical animal characters, professional tabletop card artwork, centered composition, isolated character, transparent background, high detail, SDXL quality",
+      "negative": "text, letters, words, numbers, logos, watermark, signature, photorealistic, 3d render, bad anatomy, extra limbs, blurry, low quality, duplicate character, dark horror"
+    },
+    "nsfw": {
+      "positive": "adult humor party card game illustration, cheeky mischievous animal character, playful suggestive comedy, naughty but humorous expression, sassy confident pose, absurd adult party humor, pinup inspired cartoon style, thick comic outlines, bright colors, satirical magazine cartoon style, over-the-top parody, funny not serious, professional card artwork, centered character, transparent background, clean illustration, high detail, SDXL quality",
+      "negative": "explicit sexual content, nudity, genitals, pornographic, real people, photorealistic, text, letters, words, numbers, logos, watermark, bad anatomy, blurry, low quality"
+    }
   },
   "card_back": {
-    "base_prompt": "A cute cartoon cat face on a red background with black outlines, simple flat vector style, white whiskers, yellow eyes, playful expression",
-    "nsfw_prompt": "A sexy cartoon cat face on a dark red background, sultry eyes, black outlines, flat vector style, tongue out, playful naughty expression"
+    "base": {
+      "prompt": "cat face geometric pattern, symmetrical design, playful kitten silhouette, party card game back design, thick black outlines, flat colors, repeating diamond pattern, transparent background, centered"
+    },
+    "nsfw": {
+      "prompt": "sexy cat face geometric pattern, sultry eyes, symmetrical design, adult party card game back design, thick black outlines, dark red and black colors, transparent background"
+    }
   },
   "cards": [
     {
       "id": "exploding_kitten",
-      "expansion": "base",
-      "size": [512, 768],
+      "name": "Exploding Kitten",
+      "subtitle": "You lose. Unless you have a Defuse.",
+      "frame_color": "red",
+      "icon": "💥",
+      "rarity": "special",
+      "size": [768, 1024],
       "seed_base": 1001,
-      "base_prompt": "A cute cartoon kitten with a lit stick of dynamite tied to its tail, cartoon explosion lines, bright red and orange palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cartoon devil cat holding a lit stick of dynamite, red lingerie, sultry expression, thick black outlines, flat vector style, suggestive pose"
+      "base": {
+        "prompt": "A hilarious cartoon orange kitten exploding from a magical cardboard box, shocked expression, flames and confetti around it, funny chaotic energy, oversized eyes, playful comedy style"
+      },
+      "nsfw": {
+        "prompt": "A mischievous adult party kitten wearing a ridiculous casino outfit, holding a tiny bomb shaped like a cocktail, dramatic comedy explosion, cheeky expression, adult party joke aesthetic"
+      }
     },
     {
       "id": "defuse",
-      "expansion": "base",
-      "size": [512, 768],
+      "name": "Defuse",
+      "subtitle": "Play when you draw an Exploding Kitten to survive.",
+      "frame_color": "green",
+      "icon": "🛡️",
+      "rarity": "common",
+      "size": [768, 1024],
       "seed_base": 1002,
-      "base_prompt": "A cartoon laser pointer being used to defuse a bomb, green laser beam, tense cat face watching, thick black outlines, flat vector style",
-      "nsfw_prompt": "A cartoon cat in bondage gear holding a laser pointer, suggestive defusal scene, thick black outlines, flat vector style"
+      "base": {
+        "prompt": "A clever cartoon cat holding a giant pair of scissors about to cut a red wire, bomb defusal vest, focused expression, sweat drop, tense comedy scene"
+      },
+      "nsfw": {
+        "prompt": "A sassy adult party cat wearing a leather bomb defusal vest, holding wire cutters seductively, bomb behind it, winking at viewer, playful danger"
+      }
     },
     {
       "id": "attack",
-      "expansion": "base",
-      "size": [512, 768],
+      "name": "Attack",
+      "subtitle": "Force the next player to take 2 turns.",
+      "frame_color": "orange",
+      "icon": "⚔️",
+      "rarity": "common",
+      "size": [768, 1024],
       "seed_base": 1003,
-      "base_prompt": "A cartoon cat wielding a wooden sword, battle cry, action lines, orange and red palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cartoon cat with a whip, dominatrix pose, leather outfit, thick black outlines, flat vector style"
-    },
-    {
-      "id": "skip",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1004,
-      "base_prompt": "A cartoon cat fast asleep on a cloud zzz, blue and white palette, peaceful expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A cartoon cat in bed with a lover, sheet pulled up, sleepy satisfied smile, thick black outlines, flat vector style"
-    },
-    {
-      "id": "favor",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1005,
-      "base_prompt": "A cartoon cat reluctantly handing over a fish to another cat, pink and purple palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A cartoon cat blowing a kiss to another cat, hearts floating, seductive pose, pink palette, thick black outlines"
-    },
-    {
-      "id": "shuffle",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1006,
-      "base_prompt": "A cartoon cat shuffling a deck of cards with its paws, motion lines, blue and purple palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A cartoon cat in a casino outfit shuffling cards, low-cut top, wink, thick black outlines, flat vector style"
-    },
-    {
-      "id": "see_future_3x",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1007,
-      "base_prompt": "A cartoon cat looking into a crystal ball, mystical swirls, purple and blue palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy fortune teller cat with a crystal ball, cleavage, mysterious smile, thick black outlines, flat vector style"
+      "base": {
+        "prompt": "A furious kitten wearing a tiny general uniform commanding an army of cats, dramatic pointing pose, battle cries, cartoon chaos, raised paw"
+      },
+      "nsfw": {
+        "prompt": "A dominatrix kitten in a general uniform cracking a whip, commanding pose, army of toy cats behind it, adult party comedy"
+      }
     },
     {
       "id": "nope",
-      "expansion": "base",
-      "size": [512, 768],
+      "name": "Nope",
+      "subtitle": "Cancel any action except Exploding Kittens and Defuses.",
+      "frame_color": "red",
+      "icon": "🚫",
+      "rarity": "common",
+      "size": [768, 1024],
       "seed_base": 1008,
-      "base_prompt": "A cartoon cat holding up a red stop sign with NOPE written on it, angry expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A cartoon cat in a dominatrix outfit holding a STOP paddle, stern expression, thick black outlines, flat vector style"
+      "base": {
+        "prompt": "A cartoon cat with both paws up yelling NOOO, dramatic freeze-frame pose, sweat drops, wide eyes, comedy interruption style, cartoon rejection"
+      },
+      "nsfw": {
+        "prompt": "A sassy adult party cat with hand out in STOP gesture, other hand on hip, unimpressed expression, red lighting, adult comedy vibes"
+      }
     },
     {
-      "id": "tacocat",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1009,
-      "base_prompt": "A cartoon taco with cat features, cat ears on a taco shell, yellow and orange palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy taco with cat features, coming on to a regular taco, suggestive, thick black outlines, flat vector style"
-    },
-    {
-      "id": "cattermelon",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1010,
-      "base_prompt": "A cartoon watermelon with cat features, cat ears on a watermelon slice, green and pink palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy watermelon slice with cat features, juicy dripping, suggestive pose, thick black outlines, flat vector style"
-    },
-    {
-      "id": "hairy_potato_cat",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1011,
-      "base_prompt": "A cartoon hairy potato with cat features, fuzzy brown potato with cat ears, silly expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy hairy potato with cat features, come-hither look with a potato eye, thick black outlines, flat vector style"
-    },
-    {
-      "id": "beard_cat",
-      "expansion": "base",
-      "size": [512, 768],
-      "seed_base": 1012,
-      "base_prompt": "A cartoon cat with a big bushy beard, lumberjack style, flannel pattern, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy bearded cat with shirt partially unbuttoned, chest hair, rugged look, thick black outlines, flat vector style"
-    },
-    {
-      "id": "imploding_kitten",
-      "expansion": "imploding",
-      "size": [512, 768],
-      "seed_base": 2001,
-      "base_prompt": "A cartoon kitten being sucked into a black hole, spiral effect, purple and black palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cartoon cat doing a strip tease while being sucked into a black hole, unfazed, thick black outlines"
-    },
-    {
-      "id": "alter_future_3x",
-      "expansion": "imploding",
-      "size": [512, 768],
-      "seed_base": 2002,
-      "base_prompt": "A cartoon cat with a magic wand, rearranging stars in the sky, cosmic background, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy witch cat casting a spell with a wand, low-cut robe, magical swirls, thick black outlines"
-    },
-    {
-      "id": "draw_from_bottom",
-      "expansion": "imploding",
-      "size": [512, 768],
-      "seed_base": 2003,
-      "base_prompt": "A cartoon cat pulling a card from the bottom of a deck, upside down, surprised expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat bending over to pick up a card from the bottom, cheeky grin, thick black outlines"
-    },
-    {
-      "id": "reverse",
-      "expansion": "imploding",
-      "size": [512, 768],
-      "seed_base": 2004,
-      "base_prompt": "A cartoon cat doing a 180 turn, arrows curving around, confused expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines"
-    },
-    {
-      "id": "targeted_attack",
-      "expansion": "imploding",
-      "size": [512, 768],
-      "seed_base": 2005,
-      "base_prompt": "A cartoon cat taking aim with a bow and arrow, target in background, focused expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat archer in a leather corset, drawing a bow, seductive aim, thick black outlines"
-    },
-    {
-      "id": "feral_cat",
-      "expansion": "imploding",
-      "size": [512, 768],
-      "seed_base": 2006,
-      "base_prompt": "A wild cartoon cat, messy fur, sharp claws, crazy eyes, green and brown palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A wild sexy cat with torn clothes, wild hair, feral expression, thick black outlines"
-    },
-    {
-      "id": "streaking_kitten",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3001,
-      "base_prompt": "A cartoon cat streaking naked with a blur effect, tiny paws covering privates, shocked onlookers, thick black outlines, flat vector style",
-      "nsfw_prompt": "A cartoon cat fully naked and proud, hands on hips, confident nude strut, thick black outlines"
-    },
-    {
-      "id": "super_skip",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3002,
-      "base_prompt": "A cartoon cat with a superhero cape flying past multiple turn signs, speed lines, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy superhero cat in a skin-tight suit, cape flowing, flying pose, thick black outlines"
-    },
-    {
-      "id": "see_future_5x",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3003,
-      "base_prompt": "A cartoon cat looking through a telescope at 5 cards in the distance, stars, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy astronomer cat in a short lab coat, looking through a telescope, thick black outlines"
-    },
-    {
-      "id": "alter_future_5x",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3004,
-      "base_prompt": "A cartoon cat rearranging 5 cards floating in the air, magic sparkles, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy magician cat with a wand, rearranging cards in the air, cleavage, thick black outlines"
-    },
-    {
-      "id": "swap_top_bottom",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3005,
-      "base_prompt": "A cartoon cat swapping the top and bottom cards of a tall deck, reaching high and low, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat stretching to reach top and bottom cards simultaneously, yoga pose, thick black outlines"
-    },
-    {
-      "id": "garbage_collection",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3006,
-      "base_prompt": "A cartoon cat taking out the trash, garbage truck in background, disgusted expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy garbage collector cat in a tight uniform, holding trash bags seductively, thick black outlines"
-    },
-    {
-      "id": "catomic_bomb",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3007,
-      "base_prompt": "A cartoon mushroom cloud with cat ears, atomic symbol, orange and yellow palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy pin-up cat riding an atomic bomb like a horse, 50s style, thick black outlines"
-    },
-    {
-      "id": "mark",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3008,
-      "base_prompt": "A cartoon cat with a giant red X marked on its forehead, embarrassed expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat wearing a collar with a tag, marked as owned, submissive pose, thick black outlines"
-    },
-    {
-      "id": "curse_cat_butt",
-      "expansion": "streaking",
-      "size": [512, 768],
-      "seed_base": 3009,
-      "base_prompt": "A cartoon cat butt with a cursed aura, green smoke, angry face on the butt, thick black outlines, flat vector style",
-      "nsfw_prompt": "A close-up cartoon cat butt with a devilish face, winking, cheeky, thick black outlines"
-    },
-    {
-      "id": "barking_kitten",
-      "expansion": "barking",
-      "size": [512, 768],
-      "seed_base": 4001,
-      "base_prompt": "A cartoon kitten barking like a dog with a woof bubble, confused expression, orange palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat barking like a dog on all fours wearing a collar, playful, thick black outlines"
-    },
-    {
-      "id": "tower_of_power",
-      "expansion": "barking",
-      "size": [512, 768],
-      "seed_base": 4002,
-      "base_prompt": "A cartoon cat wearing a tall tower crown on its head, royal expression, gold and purple palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy queen cat wearing a tall crown and nothing else, royal seductive pose, thick black outlines"
-    },
-    {
-      "id": "potluck",
-      "expansion": "barking",
-      "size": [512, 768],
-      "seed_base": 4003,
-      "base_prompt": "Multiple cartoon cats each throwing a card into a pot in the center, steaming, thick black outlines, flat vector style",
-      "nsfw_prompt": "Sexy cartoon cats in a hot tub, each throwing a card into the center, bubbles covering bits, thick black outlines"
-    },
-    {
-      "id": "bury",
-      "expansion": "barking",
-      "size": [512, 768],
-      "seed_base": 4004,
-      "base_prompt": "A cartoon cat burying a card in a pile of cards like sand, shovel in hand, beach background, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat burying a card in the sand at the beach, wearing a bikini, thick black outlines"
-    },
-    {
-      "id": "personal_attack",
-      "expansion": "barking",
-      "size": [512, 768],
-      "seed_base": 4005,
-      "base_prompt": "A cartoon cat attacking itself with a mirror, multiple arms holding weapons, confused, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat pleasuring itself with multiple hands, mirrors reflecting every angle, thick black outlines"
-    },
-    {
-      "id": "share_future_3x",
-      "expansion": "barking",
-      "size": [512, 768],
-      "seed_base": 4006,
-      "base_prompt": "Two cartoon cats looking at cards together, one showing the other, sharing secret, thick black outlines, flat vector style",
-      "nsfw_prompt": "Two sexy cats sharing a intimate moment while looking at cards together, close embrace, thick black outlines"
-    },
-    {
-      "id": "clone",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5001,
-      "base_prompt": "Two identical cartoon cats in a cloning machine, sci-fi lab, sparkles, thick black outlines, flat vector style",
-      "nsfw_prompt": "Two identical sexy cats in a cloning machine touching each other, sci-fi lab, thick black outlines"
-    },
-    {
-      "id": "clairvoyance",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5002,
-      "base_prompt": "A cartoon cat with glowing third eye on forehead, psychic aura, purple swirls, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy psychic cat with glowing third eye, skimpy robe, floating in meditation pose, thick black outlines"
-    },
-    {
-      "id": "dig_deeper",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5003,
-      "base_prompt": "A cartoon cat digging through a pile of cards with a shovel, determination, sweat drops, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat digging through cards wearing only a hard hat and boots, sweaty, thick black outlines"
-    },
-    {
-      "id": "feed_the_dead",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5004,
-      "base_prompt": "Living cartoon cats throwing food to a zombie cat behind a fence, green skin, tattered clothes, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy zombie cat being fed grapes by living cats, reclining, tattered sexy clothes, thick black outlines"
-    },
-    {
-      "id": "grave_robber",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5005,
-      "base_prompt": "A cartoon cat stealing cards from a grave, spooky cemetery night, shovel, sneaky expression, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy cat burglar stealing from a grave at night, skin-tight black outfit, thick black outlines"
-    },
-    {
-      "id": "attack_of_the_dead",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5006,
-      "base_prompt": "Zombie cartoon cats rising from graves and attacking, arms reaching out, green and black palette, thick black outlines, flat vector style",
-      "nsfw_prompt": "Sexy zombie cats rising from graves in tattered sexy clothes, reaching out suggestively, thick black outlines"
-    },
-    {
-      "id": "shuffle_now",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5007,
-      "base_prompt": "A zombie cartoon cat aggressively shuffling cards with rotting paws, urgency, motion blur lines, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy zombie cat quickly shuffling cards, urgency, torn fishnets, thick black outlines"
-    },
-    {
-      "id": "zombie_kitten",
-      "expansion": "zombie",
-      "size": [512, 768],
-      "seed_base": 5008,
-      "base_prompt": "A cute cartoon zombie kitten, green skin, stitched up, one eye dangling, still cute, thick black outlines, flat vector style",
-      "nsfw_prompt": "A sexy zombie kitten with stitched up torn clothes, one eye seductive wink, green skin, thick black outlines"
+      "id": "skip",
+      "name": "Skip",
+      "subtitle": "End your turn without drawing a card.",
+      "frame_color": "blue",
+      "icon": "⏭️",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 1004,
+      "base": {
+        "prompt": "A cartoon cat fast asleep on a fluffy cloud, zzz bubbles floating, peaceful blissful expression, blue and white dreamy scene, lazy relaxation"
+      },
+      "nsfw": {
+        "prompt": "A cartoon cat in bed after a wild night, messy sheets, satisfied grin, empty wine glasses, morning after comedy, pillow and blanket"
+      }
     }
   ]
 }
