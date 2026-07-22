@@ -11,7 +11,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  createLobby: (body: { gameId: string; playerName: string; maxPlayers: number }) =>
+  createLobby: (body: { gameId: string; playerName: string; maxPlayers: number; settings?: Record<string, unknown> }) =>
     request<{ lobby: any; playerId: string }>('/lobby/create', { method: 'POST', body: JSON.stringify(body) }),
 
   joinLobby: (code: string, playerName: string) =>

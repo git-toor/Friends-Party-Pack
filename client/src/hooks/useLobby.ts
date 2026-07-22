@@ -8,11 +8,11 @@ export function useLobby() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const create = useCallback(async (gameId: string, playerName: string, maxPlayers: number) => {
+  const create = useCallback(async (gameId: string, playerName: string, maxPlayers: number, settings?: Record<string, unknown>) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await api.createLobby({ gameId, playerName, maxPlayers });
+      const result = await api.createLobby({ gameId, playerName, maxPlayers, settings });
       setLobby(result.lobby);
       setPlayerId(result.playerId);
       // Retrieve existing players or just host

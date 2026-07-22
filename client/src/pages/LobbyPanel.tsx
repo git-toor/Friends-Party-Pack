@@ -41,7 +41,7 @@ export default function LobbyPanel() {
       if (payload.players) setPlayers(payload.players);
     },
     GAME_STARTED: (payload: any) => {
-      navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: payload.players?.findIndex((p: any) => p.id === playerId), playerName, lobby: payload.lobby } });
+      navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: payload.players?.findIndex((p: any) => p.id === playerId), playerName, lobby: payload.lobby, gameId: payload.lobby?.gameId } });
     },
   });
 

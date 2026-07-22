@@ -1,14 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import YahtzeeGame from '../games/yahtzee/YahtzeeGame.js';
 import ChatBox, { dispatchChatMessage } from '../components/ChatBox.js';
 import { getWs } from '../api/ws.js';
+
+const YahtzeeGame = lazy(() => import('../games/yahtzee/YahtzeeGame.js'));
+const ExplodingKittensGame = lazy(() => import('../games/exploding-kittens/ExplodingKittensGame.js'));
+
+const GAME_COMPONENTS: Record<string, any> = {
+  yahtzee: YahtzeeGame,
+  'exploding-kittens': ExplodingKittensGame,
+};
 
 export default function GamePage() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>();
   const location = useLocation();
   const state = location.state as any;
   const [ready, setReady] = useState(false);
+  const [gameStatePush, setGameStatePush] = useState<any>(null);
 
   const sessionId = state?.sessionId || sessionIdParam;
   const playerCount = state?.players?.length || 2;
@@ -17,10 +25,9 @@ export default function GamePage() {
   const myPlayer = players[playerIndex] || { name: 'You' };
   const playerName = myPlayer.name || state?.playerName || 'You';
   const playerId = state?.playerId || players[playerIndex]?.id || '';
-  const diceAppearance = (() => { try { return JSON.parse(localStorage.getItem('fpp_dice_appearance') || '{}'); } catch { return {}; } })();
-  const [rollTrigger, setRollTrigger] = useState(0);
-  const [remoteVectors, setRemoteVectors] = useState<any>(null);
-  const [gameStatePush, setGameStatePush] = useState<any>(null);
+  const gameId: string = state?.gameId || state?.lobby?.gameId || 'yahtzee';
+
+  const GameComponent = GAME_COMPONENTS[gameId] || YahtzeeGame;
 
   useEffect(() => {
     if (!sessionId) {
@@ -41,34 +48,26 @@ export default function GamePage() {
       dispatchChatMessage(msg.payload);
     });
 
-    const unsubDice = ws.on('DICE_ROLL', (msg) => {
-      if (msg.payload.playerIndex !== playerIndex) {
-        setRemoteVectors(msg.payload);
-        setRollTrigger(n => n + 1);
-      }
-    });
-
     setReady(true);
-    return () => { unsub(); unsubChat(); unsubDice(); };
+    return () => { unsub(); unsubChat(); };
   }, [sessionId, playerIndex]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
 
   return (
-    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column' }}>
-      <div style={{ flex:1, position:'relative' }}>
-        <YahtzeeGame
-          playerCount={playerCount}
-          playerIndex={playerIndex}
-          playerName={playerName}
-          sessionId={sessionId}
-          players={players}
-          playerId={playerId}
-          diceAppearance={diceAppearance}
-          remoteRoll={rollTrigger}
-          remoteVectors={remoteVectors}
-          gameStatePush={gameStatePush}
-        />
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, position: 'relative' }}>
+        <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading…</div>}>
+          <GameComponent
+            playerCount={playerCount}
+            playerIndex={playerIndex}
+            playerName={playerName}
+            sessionId={sessionId}
+            players={players}
+            playerId={playerId}
+            gameStatePush={gameStatePush}
+          />
+        </Suspense>
       </div>
       {sessionId && (
         <ChatBox

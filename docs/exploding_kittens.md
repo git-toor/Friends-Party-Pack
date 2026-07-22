@@ -477,29 +477,51 @@ games/
 
 **Deliverable:** A single `games/registry.ts` that maps `gameId → { engine, router, lobbySettings }`. Adding a new game becomes a 1-line registration.
 
-### Phase 1 — Base Exploding Kittens Only (20h)
+### Phase 0 — Framework Extraction (8h) ✅ DONE
 
-Implement only the core deck:
+Extracted shared game infrastructure from Yahtzee:
+- `games/shared/GameServer.ts` — Generic game server interface
+- `games/shared/GameRegistry.ts` — Singleton registry with session→gameId tracking, mountRouters
+- `games/yahtzee/YahtzeeServer.ts` — Adapter for GameServer interface
+- Refactored `index.ts` and `ws/handlers.ts` to use registry
+- Adding a new game: `gameRegistry.register('game-id', server)` + `gameRegistry.mountRouters(app)`
 
-- ✅ Exploding Kitten
-- ✅ Defuse
-- ✅ Attack
-- ✅ Skip
-- ✅ Favor
-- ✅ Shuffle
-- ✅ See the Future (3x)
-- ✅ Nope
-- ✅ TacoCat, Cattermelon, Hairy Potato Cat, Beard Cat (cat pairs)
+### Phase 1 — Base Exploding Kittens Only (20h) ✅ DONE (committed 01b3503)
 
-**Rules of this phase:**
-- No expansions
-- No NSFW
-- No AI art (SVG placeholders)
-- 2–5 players only
-- Full game loop: play cards → draw → explode/defuse → win condition
-- Multiplayer sync via WS (follow Yahtzee pattern)
+- 12 card definitions (data-driven, 0 effect classes)
+- EffectEngine with 9 effect handlers
+- ActionEngine + GameEngine + StateSerializer + Router
+- 21 passing tests
 
-**Tests:** All cards playable, Nope chain works, Defuse works, attacks stack.
+### Phase 2 — Imploding Kittens ✅ DONE (committed 6581811)
+
+- Imploding Kitten (two-phase face-up/face-down)
+- Alter the Future 3x, Draw from Bottom, Reverse, Targeted Attack, Feral Cat
+- Expansion filtering in deck builder
+- 13 tests
+
+### Phase 3 — Streaking Kittens ✅ DONE (committed 1002234)
+
+- Streaking Kitten (safe EK hold via player.streakingKitten flag)
+- Super Skip, See/Alter Future 5x, Swap Top/Bottom
+- Garbage Collection, Catomic Bomb, Mark, Curse of Cat Butt
+- 12 tests
+
+### Phase 4 — Barking Kittens ✅ DONE (committed a5914f0)
+
+- Barking Kitten chicken duel (check target for pair)
+- Tower of Power stash support
+- Potluck, Bury, Personal Attack (selfTarget ADD_TURNS)
+- Share the Future
+- 9 tests
+
+### Phase 5 — Zombie Kittens ✅ DONE (committed d87f15f)
+
+- Dead player state (alive=false, dead=true, keeps hand)
+- Zombie Kitten (alternative to Defuse with revive)
+- Dig Deeper, Feed the Dead, Grave Robber, Attack of the Dead, Shuffle Now
+- All elimination points updated for zombie mode
+- 7 tests
 
 ### Phase 2 — Expansion Engine (10h)
 
