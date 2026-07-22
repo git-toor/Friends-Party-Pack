@@ -3,6 +3,7 @@ import { baseCards } from './definitions/base.js';
 import { implodingCards } from './definitions/imploding.js';
 import { streakingCards } from './definitions/streaking.js';
 import { barkingCards } from './definitions/barking.js';
+import { zombieCards } from './definitions/zombie.js';
 
 const registry = new Map<CardType, CardDefinition>();
 const allExpansions: CardDefinition[] = [];
@@ -35,3 +36,4 @@ registerDefinitions(baseCards);
 registerDefinitions(implodingCards);
 registerDefinitions(streakingCards);
 registerDefinitions(barkingCards);
+registerDefinitions(zombieCards);

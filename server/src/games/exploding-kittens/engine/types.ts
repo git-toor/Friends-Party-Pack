@@ -7,7 +7,9 @@ export type CardType =
   | 'streaking_kitten' | 'super_skip' | 'see_future_5x' | 'alter_future_5x'
   | 'swap_top_bottom' | 'garbage_collection' | 'catomic_bomb' | 'mark' | 'curse_cat_butt'
   | 'barking_kitten' | 'tower_of_power' | 'potluck' | 'bury'
-  | 'personal_attack' | 'share_future_3x';
+  | 'personal_attack' | 'share_future_3x'
+  | 'zombie_kitten' | 'clone' | 'clairvoyance' | 'dig_deeper'
+  | 'feed_the_dead' | 'grave_robber' | 'attack_of_the_dead' | 'shuffle_now';
 
 export type EffectType =
   | 'ADD_TURNS' | 'SKIP_TURNS' | 'FORCE_GIVE' | 'SHUFFLE_DECK'
@@ -16,7 +18,21 @@ export type EffectType =
   | 'TARGETED_ATTACK' | 'FERAL_CAT'
   | 'STREAKING_KITTEN' | 'SUPER_SKIP' | 'SWAP_TOP_BOTTOM' | 'GARBAGE_COLLECTION'
   | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT'
-  | 'BARKING_KITTEN' | 'TOWER_OF_POWER' | 'POTLUCK' | 'BURY' | 'SHARE_FUTURE';
+  | 'BARKING_KITTEN' | 'TOWER_OF_POWER' | 'POTLUCK' | 'BURY' | 'SHARE_FUTURE'
+  | 'ZOMBIE_KITTEN' | 'DIG_DEEPER' | 'FEED_THE_DEAD' | 'GRAVE_ROBBER' | 'ATTACK_OF_THE_DEAD';
+
+export interface EffectDefinition {
+  type: EffectType;
+  amount?: number;
+  stackable?: boolean;
+  selfTarget?: boolean;
+  defusable?: boolean;
+  reviveTarget?: boolean;
+  insert?: 'face_up' | 'face_down';
+  requiresResponse?: string;
+  responseWindowMs?: number;
+  drawCount?: number;
+}
 
 export interface EffectDefinition {
   type: EffectType;
@@ -56,6 +72,7 @@ export interface PlayerState {
   index: number;
   hand: Card[];
   alive: boolean;
+  dead: boolean;
   pendingTurns: number;
   pendingDrawFromBottom?: boolean;
   streakingKitten?: boolean;
@@ -68,7 +85,8 @@ export type ActionType =
   | 'PLAY_CARD' | 'DRAW_CARD' | 'END_TURN'
   | 'RESOLVE_DEFUSE' | 'RESOLVE_FAVOR' | 'RESOLVE_NOPE'
   | 'RESOLVE_NOPE_TIMEOUT' | 'RESOLVE_ALTER_FUTURE'
-  | 'RESOLVE_GARBAGE_COLLECTION';
+  | 'RESOLVE_GARBAGE_COLLECTION'
+  | 'RESOLVE_ZOMBIE_REVIVE';
 
 export interface GameAction {
   id: string;
@@ -79,6 +97,8 @@ export interface GameAction {
     targetIndex?: number;
     insertIndex?: number;
     cardIds?: string[];
+    deadPlayerIndices?: number[];
+    hasZombieOption?: boolean;
   };
   status: 'pending' | 'awaiting_response' | 'resolving' | 'resolved' | 'noped';
   createdAt: number;

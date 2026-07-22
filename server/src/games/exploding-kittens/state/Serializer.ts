@@ -6,6 +6,7 @@ export interface ClientPlayerView {
   index: number;
   cardCount: number;
   alive: boolean;
+  dead: boolean;
   pendingTurns: number;
   streakingKitten?: boolean;
   cursed: boolean;
@@ -65,6 +66,7 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
         index: p.index,
         cardCount: p.hand.length,
         alive: p.alive,
+        dead: p.dead,
         pendingTurns: p.pendingTurns,
         streakingKitten: p.streakingKitten,
         cursed: p.cursed,

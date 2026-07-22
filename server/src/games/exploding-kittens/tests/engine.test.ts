@@ -196,7 +196,7 @@ describe('Exploding Kittens Engine', () => {
       player.hand = player.hand.filter(c => c.type !== 'defuse');
       const result = handleAction(game, game.turn.currentPlayerIndex, 'RESOLVE_DEFUSE', {});
       expect(result.valid).toBe(false);
-      expect(result.error).toBe('No Defuse card');
+      expect(result.error).toBe('No Defuse or Zombie Kitten card');
     });
   });
 

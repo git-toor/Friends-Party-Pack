@@ -114,7 +114,8 @@ describe('Streaking Kittens Expansion', () => {
       handleAction(game, current, 'PLAY_CARD', { cardId: gc });
       for (let i = 0; i < game.players.length; i++) {
         if (game.players[i].alive) {
-          expect(game.players[i].hand.length).toBe(handSizes[i] - 1);
+          const expectedDiff = i === current ? 2 : 1; // Player who played Garbage Collection also lost the GC card
+          expect(game.players[i].hand.length).toBe(handSizes[i] - expectedDiff);
         }
       }
     });

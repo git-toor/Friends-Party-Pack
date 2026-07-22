@@ -99,7 +99,8 @@ describe('Barking Kittens Expansion', () => {
       handleAction(game, current, 'PLAY_CARD', { cardId: pl });
       for (let i = 0; i < game.players.length; i++) {
         if (game.players[i].alive) {
-          expect(game.players[i].hand.length).toBe(handSizes[i] - 1);
+          const expectedDiff = i === current ? 2 : 1; // Player who played Potluck also lost the Potluck card
+          expect(game.players[i].hand.length).toBe(handSizes[i] - expectedDiff);
         }
       }
     });

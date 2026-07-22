@@ -105,9 +105,11 @@ registerEffect('IMPLODING_KITTEN', (state, _effect, _action, callbacks) => {
   }
   // Already face-up: instant elimination (cannot defuse)
   current.alive = false;
+  const isZombie = (state.settings.expansions || []).includes('zombie');
+  current.dead = isZombie;
   callbacks.broadcast('PLAYER_ELIMINATED', {
     playerIndex: state.turn.currentPlayerIndex,
-    isZombie: false,
+    isZombie,
   });
   checkWinCondition(state);
   return { success: true, eliminated: [state.turn.currentPlayerIndex] };
@@ -174,12 +176,20 @@ registerEffect('NOPE', (state, _effect, _action, callbacks) => {
 registerEffect('EXPLODE', (state, effect, _action, callbacks) => {
   const defusable = effect.defusable ?? true;
   const current = state.players[state.turn.currentPlayerIndex];
-  if (defusable && hasDefuse(current)) {
+  const hasDef = hasDefuse(current);
+  const hasZombie = current.hand.some(c => c.type === 'zombie_kitten');
+  if (defusable && (hasDef || hasZombie)) {
     const defuseAction: GameAction = {
       id: crypto.randomUUID(),
       playerIndex: state.turn.currentPlayerIndex,
       type: 'RESOLVE_DEFUSE',
-      payload: { cardIds: current.hand.filter(c => c.type === 'defuse').map(c => c.id) },
+      payload: {
+        cardIds: [
+          ...current.hand.filter(c => c.type === 'defuse').map(c => c.id),
+          ...current.hand.filter(c => c.type === 'zombie_kitten').map(c => c.id),
+        ],
+        hasZombieOption: hasZombie,
+      },
       status: 'awaiting_response',
       createdAt: Date.now(),
     };
@@ -187,14 +197,17 @@ registerEffect('EXPLODE', (state, effect, _action, callbacks) => {
     callbacks.broadcast('DEFUSE_WINDOW', {
       playerIndex: state.turn.currentPlayerIndex,
       deckSize: state.deck.length,
+      hasZombieOption: hasZombie,
     });
     return { success: true, requiresResponse: true };
   }
   // Player is eliminated
   current.alive = false;
+  const isZombie = (state.settings.expansions || []).includes('zombie');
+  current.dead = isZombie;
   callbacks.broadcast('PLAYER_ELIMINATED', {
     playerIndex: state.turn.currentPlayerIndex,
-    isZombie: false,
+    isZombie,
   });
   checkWinCondition(state);
   return { success: true, eliminated: [state.turn.currentPlayerIndex] };
@@ -389,7 +402,9 @@ registerEffect('BARKING_KITTEN', (state, _effect, action, callbacks) => {
     } else if (ekInHand) {
       // No defuse — eliminated
       target.alive = false;
-      callbacks.broadcast('PLAYER_ELIMINATED', { playerIndex: targetIdx, isZombie: false });
+      const isZombieTarget = (state.settings.expansions || []).includes('zombie');
+      target.dead = isZombieTarget;
+      callbacks.broadcast('PLAYER_ELIMINATED', { playerIndex: targetIdx, isZombie: isZombieTarget });
       checkWinCondition(state);
     }
     // Remove the other Barking Kitten from target's hand
@@ -452,6 +467,98 @@ registerEffect('SHARE_FUTURE', (state, effect, _action, callbacks) => {
     nextPlayerIndex: nextPlayer,
     cards: topCards,
   });
+  return { success: true, nopeable: true };
+});
+
+// ─── ZOMBIE_KITTEN ─────────────────────────────────────
+registerEffect('ZOMBIE_KITTEN', (state, effect, action, callbacks) => {
+  const player = state.players[action.playerIndex];
+  if (!effect.reviveTarget) {
+    // Used like a Defuse — put EK back, no revival
+    const ekIdx = player.hand.findIndex(c => c.type === 'exploding_kitten');
+    if (ekIdx !== -1) {
+      const [ek] = player.hand.splice(ekIdx, 1);
+      state.deck.splice(Math.floor(Math.random() * state.deck.length), 0, ek);
+    }
+    return { success: true, requiresResponse: false };
+  }
+  // Zombie Kitten with revival: player must choose a dead player to revive
+  const deadPlayers = state.players.filter(p => p.dead);
+  if (deadPlayers.length === 0) return { success: false, error: 'No dead players to revive' };
+  const reviveAction: GameAction = {
+    id: crypto.randomUUID(),
+    playerIndex: action.playerIndex,
+    type: 'RESOLVE_ZOMBIE_REVIVE',
+    payload: { deadPlayerIndices: deadPlayers.map(p => p.index) },
+    status: 'awaiting_response',
+    createdAt: Date.now(),
+  };
+  callbacks.pushAction(reviveAction);
+  callbacks.broadcast('ZOMBIE_REVIVE_OPEN', {
+    playerIndex: action.playerIndex,
+    deadPlayers: deadPlayers.map(p => ({ index: p.index, name: p.name })),
+  });
+  return { success: true, requiresResponse: true };
+});
+
+// ─── DIG_DEEPER ────────────────────────────────────────
+registerEffect('DIG_DEEPER', (state, _effect, _action, callbacks) => {
+  if (state.deck.length === 0) return { success: false };
+  const card = state.deck.shift()!;
+  const player = state.players[state.turn.currentPlayerIndex];
+  player.hand.push(card);
+  callbacks.broadcast('DIG_DEEPER_RESULT', {
+    playerIndex: state.turn.currentPlayerIndex,
+    card: { id: card.id, type: card.type },
+  });
+  return { success: true, nopeable: true };
+});
+
+// ─── FEED_THE_DEAD ─────────────────────────────────────
+registerEffect('FEED_THE_DEAD', (state, _effect, _action, callbacks) => {
+  const deadPlayers = state.players.filter(p => p.dead);
+  if (deadPlayers.length === 0) return { success: false };
+  const deadIdx = deadPlayers[Math.floor(Math.random() * deadPlayers.length)].index;
+  const living = state.players.filter(p => p.alive && p.index !== state.turn.currentPlayerIndex);
+  let cardsFed = 0;
+  for (const lp of living) {
+    if (lp.hand.length > 0) {
+      const ci = Math.floor(Math.random() * lp.hand.length);
+      const card = lp.hand.splice(ci, 1)[0];
+      state.players[deadIdx].hand.push(card);
+      cardsFed++;
+    }
+  }
+  callbacks.broadcast('FEED_THE_DEAD_DONE', { playerIndex: deadIdx, count: cardsFed });
+  return { success: true, nopeable: true };
+});
+
+// ─── GRAVE_ROBBER ──────────────────────────────────────
+registerEffect('GRAVE_ROBBER', (state, _effect, _action, callbacks) => {
+  let cardsMoved = 0;
+  for (const p of state.players) {
+    if (!p.dead) continue;
+    if (p.hand.length > 0) {
+      const ci = Math.floor(Math.random() * p.hand.length);
+      const card = p.hand.splice(ci, 1)[0];
+      state.deck.push(card);
+      cardsMoved++;
+    }
+  }
+  if (cardsMoved > 0) shuffleArray(state.deck);
+  callbacks.broadcast('GRAVE_ROBBER_DONE', { count: cardsMoved });
+  return { success: true, nopeable: true };
+});
+
+// ─── ATTACK_OF_THE_DEAD ────────────────────────────────
+registerEffect('ATTACK_OF_THE_DEAD', (state, effect, action, callbacks) => {
+  // Can only be played by dead players
+  const player = state.players[action.playerIndex];
+  if (!player.dead) return { success: false, error: 'Only dead players can play Attack of the Dead' };
+  const amount = effect.amount ?? 2;
+  const targetIdx = state.turn.currentPlayerIndex;
+  state.players[targetIdx].pendingTurns += amount;
+  callbacks.broadcast('ATTACK_OF_THE_DEAD', { from: action.playerIndex, to: targetIdx, turns: amount });
   return { success: true, nopeable: true };
 });
 

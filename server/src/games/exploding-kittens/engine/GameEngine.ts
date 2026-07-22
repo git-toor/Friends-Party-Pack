@@ -15,6 +15,7 @@ export function createGame(settings: GameSettings): GameState {
       index: i,
       hand: [],
       alive: true,
+      dead: false,
       pendingTurns: 0,
       markedCardIds: [],
       cursed: false,
@@ -147,9 +148,13 @@ export function handleAction(
         return { state, valid: false, error: 'Not your turn' };
       }
       const player = state.players[playerIndex];
+      // Check for either defuse or zombie kitten
       const defuseIdx = player.hand.findIndex(c => c.type === 'defuse');
-      if (defuseIdx === -1) return { state, valid: false, error: 'No Defuse card' };
-      player.hand.splice(defuseIdx, 1)[0];
+      const zombieIdx = player.hand.findIndex(c => c.type === 'zombie_kitten');
+      const usingZombie = defuseIdx === -1 && zombieIdx !== -1;
+      const cardIdx = usingZombie ? zombieIdx : defuseIdx;
+      if (cardIdx === -1) return { state, valid: false, error: 'No Defuse or Zombie Kitten card' };
+      player.hand.splice(cardIdx, 1)[0];
       const explodingKitten: Card = {
         id: crypto.randomUUID(),
         type: 'exploding_kitten',
@@ -157,6 +162,36 @@ export function handleAction(
       };
       const insertIdx = payload?.insertIndex ?? Math.floor(Math.random() * (state.deck.length + 1));
       state.deck.splice(insertIdx, 0, explodingKitten);
+      // If using Zombie Kitten, trigger revive
+      if (usingZombie) {
+        const deadPlayers = state.players.filter(p => p.dead);
+        if (deadPlayers.length > 0) {
+          const reviveTarget = deadPlayers[Math.floor(Math.random() * deadPlayers.length)];
+          reviveTarget.alive = true;
+          reviveTarget.dead = false;
+        }
+      }
+      advanceTurn(state);
+      return { state, valid: true };
+    }
+
+    case 'RESOLVE_ZOMBIE_REVIVE': {
+      const player = state.players[playerIndex];
+      const deadPlayers = state.players.filter(p => p.dead);
+      if (deadPlayers.length === 0) return { state, valid: false, error: 'No dead players' };
+      const targetIdx = payload?.targetIndex ?? deadPlayers[0].index;
+      const target = state.players.find(p => p.index === targetIdx);
+      if (!target || !target.dead) return { state, valid: false, error: 'Invalid revive target' };
+      target.alive = true;
+      target.dead = false;
+      const revCallbacks = makeCallbacks();
+      revCallbacks.broadcast('PLAYER_REVIVED', { playerIndex: targetIdx });
+      // Put EK back in deck
+      const ekIdx = player.hand.findIndex(c => c.type === 'exploding_kitten');
+      if (ekIdx !== -1) {
+        const [ek] = player.hand.splice(ekIdx, 1);
+        state.deck.splice(Math.floor(Math.random() * state.deck.length), 0, ek);
+      }
       advanceTurn(state);
       return { state, valid: true };
     }
