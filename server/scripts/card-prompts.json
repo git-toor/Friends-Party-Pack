@@ -256,7 +256,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 2004,
-      "base": { "prompt": "Side view of a small red car being driven in reverse, a cartoon cat driver inside with its head twisted completely backwards looking out the rear window, both paws on the steering wheel but turned backwards, motion lines behind the car showing reverse direction, exhaust coming from front instead of back, rear lights glowing, thick black outlines, flat vector style" },
+      "base": { "prompt": "cartoon cat driving car in reverse, cat head turned looking backwards through rear window, car moving backwards motion lines, side view of car, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines" }
     },
     {
@@ -340,7 +340,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 3005,
-      "base": { "prompt": "A cartoon cat doing a perfect handstand upside down on two front paws, hind legs straight up in the air, cards falling out of its pockets with TOP and BOTTOM cards clearly labeled and swapped, dizzy spiral eyes, comical acrobatic pose, thick black outlines, flat vector style" },
+      "base": { "prompt": "upside down cartoon cat handstand on paws, two legs in air, cards falling out, dizzy eyes, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat stretching to reach top and bottom cards simultaneously, yoga pose, thick black outlines" }
     },
     {
@@ -376,7 +376,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 3008,
-      "base": { "prompt": "A cartoon cat standing on three legs with its back right leg lifted high up, a visible yellow pee stream spraying onto a fire hydrant shaped like a card, mischievous smug squinting face, naughty humor, clear spraying arc, thick black outlines, flat vector style" },
+      "base": { "prompt": "cartoon cat lifting leg peeing on fire hydrant, three legs on ground one leg raised, yellow pee stream arc, mischievous expression, thick black outlines, flat vector style" },
       "nsfw": { "prompt": "A sexy cat wearing a collar with a tag, marked as owned, submissive pose, thick black outlines" }
     },
     {
