@@ -73,7 +73,7 @@ registerEffect('FORCE_GIVE', (state, _effect, action, callbacks) => {
     id: crypto.randomUUID(),
     playerIndex: targetIdx,
     type: 'RESOLVE_FAVOR',
-    payload: { cardIds: target.hand.map(c => c.id) },
+    payload: { cardIds: target.hand.map(c => c.id), fromPlayerIndex: action.playerIndex },
     status: 'awaiting_response',
     createdAt: Date.now(),
   };
@@ -235,7 +235,7 @@ registerEffect('CAT_PAIR_SHUFFLE', (state, _effect, action, callbacks) => {
     id: crypto.randomUUID(),
     playerIndex: targetIdx,
     type: 'RESOLVE_FAVOR',
-    payload: { cardIds: target.hand.map(c => c.id) },
+    payload: { cardIds: target.hand.map(c => c.id), fromPlayerIndex: action.playerIndex },
     status: 'awaiting_response',
     createdAt: Date.now(),
   };

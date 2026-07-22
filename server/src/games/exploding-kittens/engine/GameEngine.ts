@@ -201,15 +201,17 @@ export function handleAction(
     }
 
     case 'RESOLVE_FAVOR': {
-      const victimIdx = payload?.victimIndex ?? state.actionStack.find(a => a.type === 'RESOLVE_FAVOR')?.playerIndex;
-      if (victimIdx === undefined) return { state, valid: false, error: 'No favor pending' };
+      const favorAction = state.actionStack.find(a => a.type === 'RESOLVE_FAVOR');
+      const victimIdx = payload?.victimIndex ?? favorAction?.playerIndex;
+      const attackerIdx = favorAction?.payload?.fromPlayerIndex;
+      if (victimIdx === undefined || attackerIdx === undefined) return { state, valid: false, error: 'No favor pending' };
       const victim = state.players[victimIdx];
       if (!victim.alive) return { state, valid: false, error: 'Victim is eliminated' };
       const cardId = payload?.cardId;
       const cardIndex = victim.hand.findIndex(c => c.id === cardId);
       if (cardIndex === -1) return { state, valid: false, error: 'Card not found in victim hand' };
       const stolenCard = victim.hand.splice(cardIndex, 1)[0];
-      state.players[playerIndex].hand.push(stolenCard);
+      state.players[attackerIdx].hand.push(stolenCard);
       const favorActions = state.actionStack.filter(a => a.type === 'RESOLVE_FAVOR');
       for (const fa of favorActions) {
         fa.status = 'resolved';

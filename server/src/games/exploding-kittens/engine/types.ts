@@ -99,6 +99,7 @@ export interface GameAction {
     cardIds?: string[];
     deadPlayerIndices?: number[];
     hasZombieOption?: boolean;
+    fromPlayerIndex?: number;
   };
   status: 'pending' | 'awaiting_response' | 'resolving' | 'resolved' | 'noped';
   createdAt: number;
