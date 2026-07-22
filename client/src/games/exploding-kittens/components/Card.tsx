@@ -163,9 +163,9 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         background: nsfw ? 'linear-gradient(135deg, #2a0a0a, #4a1a1a)' : 'linear-gradient(135deg, #1a1a3e, #2a2a5e)',
         border: nsfw ? '2px solid #661111' : '2px solid #333366',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        boxShadow: selected ? '0 6px 30px rgba(233,69,96,0.5)' : '0 2px 6px rgba(0,0,0,0.3)',
+        boxShadow: selected ? '0 8px 32px rgba(233,69,96,0.6)' : '0 2px 6px rgba(0,0,0,0.3)',
         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        transform: selected ? 'translateY(-24px) scale(1.1)' : 'none',
+        transform: selected ? 'translateY(-24px)' : 'none',
       }}>
         <svg width={dims.w * 0.4} height={dims.h * 0.3} viewBox="0 0 40 40">
           <circle cx="20" cy="20" r="8" fill={nsfw ? '#884444' : '#444488'} />
@@ -179,13 +179,13 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
     <div onClick={onClick} title={card.name} style={{
       width: dims.w, height: dims.h, borderRadius: 6, cursor: onClick ? 'pointer' : 'default',
       display: 'flex', flexDirection: 'column',
-      userSelect: 'none', flexShrink: 0, position: 'relative', overflow: 'hidden',
+      userSelect: 'none', flexShrink: 0, position: 'relative',
       transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      transform: selected ? 'translateY(-24px) scale(1.1)' : 'none',
-      boxShadow: selected ? '0 6px 30px rgba(233,69,96,0.5)' : (disabled ? 'none' : '0 2px 6px rgba(0,0,0,0.3)'),
+      transform: selected ? 'translateY(-24px)' : 'none',
+      boxShadow: selected ? '0 8px 32px rgba(233,69,96,0.6)' : (disabled ? 'none' : '0 2px 6px rgba(0,0,0,0.3)'),
       opacity: disabled ? 0.45 : 1,
       background: colors.bg,
-      border: 'none', // no border overlay, just the card background
+      border: 'none',
     }}>
       {/* Card Title Bar */}
       <div style={{
