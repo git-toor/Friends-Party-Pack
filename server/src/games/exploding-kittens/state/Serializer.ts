@@ -25,8 +25,9 @@ export interface ClientGameState {
     expiresAt: number;
     chain: { playerIndex: number }[];
   } | null;
-  settings: { playerCount: number };
+  settings: { playerCount: number; expansions?: string[] };
   winner: number | null;
+  implodingKittenFaceUp: boolean;
 }
 
 export function serializeState(state: GameState, playerIndex: number): ClientGameState {
@@ -66,7 +67,8 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
           chain: state.nopeWindow.chain.map(c => ({ playerIndex: c.playerIndex })),
         }
       : null,
-    settings: { playerCount: state.settings.playerCount },
+    settings: { playerCount: state.settings.playerCount, expansions: state.settings.expansions },
     winner: state.winner,
+    implodingKittenFaceUp: state.implodingKittenFaceUp,
   };
 }

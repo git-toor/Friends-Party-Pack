@@ -29,16 +29,17 @@ export function createGame(settings: GameSettings): GameState {
     nopeWindow: null,
     settings,
     winner: null,
+    implodingKittenFaceUp: false,
   };
 
-  state.deck = buildDeck(playerCount);
+  state.deck = buildDeck(playerCount, settings.expansions);
   dealCards(state, playerCount);
   return state;
 }
 
-function buildDeck(playerCount: number): Card[] {
+function buildDeck(playerCount: number, expansions?: string[]): Card[] {
   const deck: Card[] = [];
-  const defs = getAllDefinitions();
+  const defs = getAllDefinitions(expansions);
   for (const def of defs) {
     const count = typeof def.copies === 'function' ? def.copies(playerCount) : def.copies;
     for (let i = 0; i < count; i++) {

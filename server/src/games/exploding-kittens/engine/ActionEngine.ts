@@ -12,6 +12,7 @@ export function canPlayCard(state: GameState, playerIndex: number, cardId: strin
   const card = player.hand.find(c => c.id === cardId);
   if (!card) return 'Card not in hand';
   if (card.type === 'exploding_kitten') return 'Cannot play Exploding Kitten';
+  if (card.type === 'imploding_kitten') return 'Cannot play Imploding Kitten';
   if (card.type === 'defuse') return 'Cannot play Defuse outside of explosion';
   const def = getDefinition(card.type);
   if (!def) return 'Unknown card type';
@@ -74,15 +75,28 @@ export function resolveDrawCard(state: GameState, playerIndex: number, callbacks
   if (state.deck.length === 0) {
     return { state, valid: false, error: 'Deck is empty' };
   }
-  const card = state.deck.shift()!;
   const player = state.players[playerIndex];
+  const drawFromBottom = player.pendingDrawFromBottom;
+  player.pendingDrawFromBottom = false;
+
+  const card = drawFromBottom ? state.deck.pop()! : state.deck.shift()!;
   player.hand.push(card);
   callbacks.broadcast('CARD_DRAWN', { playerIndex, hasCard: true, cardType: card.type });
+
   if (card.type === 'exploding_kitten') {
     const effect = getDefinition('exploding_kitten')?.effect;
     if (effect) {
       const explodeAction = createAction('DRAW_CARD', playerIndex);
       const result = resolveEffect(state, effect, explodeAction, callbacks);
+      if (result.eliminated && result.eliminated.length > 0) {
+        checkWinCondition(state);
+        if (state.turn.phase === 'game_over') return { state, valid: true };
+      }
+    }
+  } else if (card.type === 'imploding_kitten') {
+    const effect = getDefinition('imploding_kitten')?.effect;
+    if (effect) {
+      const result = resolveEffect(state, effect, createAction('DRAW_CARD', playerIndex), callbacks);
       if (result.eliminated && result.eliminated.length > 0) {
         checkWinCondition(state);
         if (state.turn.phase === 'game_over') return { state, valid: true };

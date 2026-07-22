@@ -1,11 +1,15 @@
 export type CardType =
   | 'exploding_kitten' | 'defuse' | 'attack' | 'skip' | 'favor'
   | 'shuffle' | 'see_future_3x' | 'nope'
-  | 'tacocat' | 'cattermelon' | 'hairy_potato_cat' | 'beard_cat';
+  | 'tacocat' | 'cattermelon' | 'hairy_potato_cat' | 'beard_cat'
+  | 'imploding_kitten' | 'alter_future_3x' | 'draw_from_bottom'
+  | 'reverse' | 'targeted_attack' | 'feral_cat';
 
 export type EffectType =
   | 'ADD_TURNS' | 'SKIP_TURNS' | 'FORCE_GIVE' | 'SHUFFLE_DECK'
-  | 'SEE_FUTURE' | 'NOPE' | 'EXPLODE' | 'DEFUSE_AND_INSERT' | 'CAT_PAIR_SHUFFLE' | 'NONE';
+  | 'SEE_FUTURE' | 'NOPE' | 'EXPLODE' | 'DEFUSE_AND_INSERT' | 'CAT_PAIR_SHUFFLE' | 'NONE'
+  | 'IMPLODING_KITTEN' | 'ALTER_FUTURE' | 'DRAW_FROM_BOTTOM' | 'REVERSE_DIRECTION'
+  | 'TARGETED_ATTACK' | 'FERAL_CAT';
 
 export interface EffectDefinition {
   type: EffectType;
@@ -13,6 +17,7 @@ export interface EffectDefinition {
   stackable?: boolean;
   selfTarget?: boolean;
   defusable?: boolean;
+  insert?: 'face_up' | 'face_down';
   requiresResponse?: string;
   responseWindowMs?: number;
   drawCount?: number;
@@ -45,11 +50,13 @@ export interface PlayerState {
   hand: Card[];
   alive: boolean;
   pendingTurns: number;
+  pendingDrawFromBottom?: boolean;
 }
 
 export type ActionType =
   | 'PLAY_CARD' | 'DRAW_CARD' | 'END_TURN'
-  | 'RESOLVE_DEFUSE' | 'RESOLVE_FAVOR' | 'RESOLVE_NOPE';
+  | 'RESOLVE_DEFUSE' | 'RESOLVE_FAVOR' | 'RESOLVE_NOPE'
+  | 'RESOLVE_NOPE_TIMEOUT' | 'RESOLVE_ALTER_FUTURE';
 
 export interface GameAction {
   id: string;
@@ -68,6 +75,7 @@ export interface GameAction {
 
 export interface GameSettings {
   playerCount: number;
+  expansions?: string[];
 }
 
 export interface TurnState {
@@ -91,6 +99,7 @@ export interface GameState {
   } | null;
   settings: GameSettings;
   winner: number | null;
+  implodingKittenFaceUp: boolean;
 }
 
 export interface GameResult {

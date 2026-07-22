@@ -31,8 +31,8 @@ export function setWsBroadcast(sessionId: string, fn: (payload: any) => void): v
 
 explodingKittensRouter.post('/create', (req, res) => {
   const { sessionId, playerCount } = req.body;
-  if (playerCount < 2 || playerCount > 9) {
-    return res.status(400).json({ error: 'Player count must be 2-9' });
+  if (playerCount < 2 || playerCount > 6) {
+    return res.status(400).json({ error: 'Player count must be 2-6' });
   }
   createExplodingKittensSession(sessionId, playerCount);
   res.json({ sessionId, state: serializeState(gameStateBySession.get(sessionId)!, -1) });

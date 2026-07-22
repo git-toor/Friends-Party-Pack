@@ -1,5 +1,6 @@
 import type { CardDefinition, Card, CardType } from '../engine/types.js';
 import { baseCards } from './definitions/base.js';
+import { implodingCards } from './definitions/imploding.js';
 
 const registry = new Map<CardType, CardDefinition>();
 const allExpansions: CardDefinition[] = [];
@@ -15,8 +16,11 @@ export function getDefinition(type: CardType): CardDefinition | undefined {
   return registry.get(type);
 }
 
-export function getAllDefinitions(): CardDefinition[] {
-  return [...allExpansions];
+export function getAllDefinitions(expansions?: string[]): CardDefinition[] {
+  if (!expansions || expansions.length === 0) {
+    return [...allExpansions.filter(d => d.expansion === 'base')];
+  }
+  return [...allExpansions.filter(d => expansions.includes(d.expansion) || d.expansion === 'base')];
 }
 
 export function createCard(type: CardType, id?: string): Card {
@@ -26,3 +30,4 @@ export function createCard(type: CardType, id?: string): Card {
 }
 
 registerDefinitions(baseCards);
+registerDefinitions(implodingCards);

@@ -85,6 +85,70 @@ registerEffect('FORCE_GIVE', (state, _effect, action, callbacks) => {
   return { success: true, nopeable: true, requiresResponse: true };
 });
 
+// ─── IMPLODING_KITTEN ──────────────────────────────────
+registerEffect('IMPLODING_KITTEN', (state, _effect, _action, callbacks) => {
+  const current = state.players[state.turn.currentPlayerIndex];
+  if (!state.implodingKittenFaceUp) {
+    // First draw: remove from hand, put back face-up in deck at random position
+    state.implodingKittenFaceUp = true;
+    const ikIdx = current.hand.findIndex(c => c.type === 'imploding_kitten');
+    if (ikIdx !== -1) {
+      const [ik] = current.hand.splice(ikIdx, 1);
+      const pos = Math.floor(Math.random() * state.deck.length);
+      state.deck.splice(pos, 0, ik);
+    }
+    callbacks.broadcast('IMPLODING_KITTEN_DRAWN', {
+      playerIndex: state.turn.currentPlayerIndex,
+      faceUp: false,
+    });
+    return { success: true, requiresResponse: false };
+  }
+  // Already face-up: instant elimination (cannot defuse)
+  current.alive = false;
+  callbacks.broadcast('PLAYER_ELIMINATED', {
+    playerIndex: state.turn.currentPlayerIndex,
+    isZombie: false,
+  });
+  checkWinCondition(state);
+  return { success: true, eliminated: [state.turn.currentPlayerIndex] };
+});
+
+// ─── ALTER_FUTURE ──────────────────────────────────────
+registerEffect('ALTER_FUTURE', (state, effect, _action, callbacks) => {
+  const count = effect.amount ?? 3;
+  const topCards = state.deck.slice(0, count).map(c => ({ id: c.id, type: c.type }));
+  callbacks.broadcast('ALTER_FUTURE_RESULT', { cards: topCards });
+  return { success: true, nopeable: true };
+});
+
+// ─── DRAW_FROM_BOTTOM ──────────────────────────────────
+registerEffect('DRAW_FROM_BOTTOM', (state, _effect, _action, _callbacks) => {
+  const current = state.players[state.turn.currentPlayerIndex];
+  current.pendingDrawFromBottom = true;
+  return { success: true, nopeable: true };
+});
+
+// ─── REVERSE_DIRECTION ─────────────────────────────────
+registerEffect('REVERSE_DIRECTION', (state, _effect, _action, callbacks) => {
+  state.turn.direction *= -1;
+  callbacks.broadcast('TURN_DIRECTION_REVERSED', { direction: state.turn.direction });
+  callbacks.endTurn();
+  return { success: true, nopeable: true };
+});
+
+// ─── TARGETED_ATTACK ───────────────────────────────────
+registerEffect('TARGETED_ATTACK', (state, effect, action, _callbacks) => {
+  const targetIdx = action.payload?.targetIndex;
+  if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
+    return { success: false };
+  }
+  const target = state.players[targetIdx];
+  if (!target.alive) return { success: false };
+  const amount = effect.amount ?? 2;
+  target.pendingTurns += amount;
+  return { success: true, nopeable: true };
+});
+
 // ─── SHUFFLE_DECK ─────────────────────────────────────
 registerEffect('SHUFFLE_DECK', (state, _effect, _action, callbacks) => {
   shuffleArray(state.deck);
