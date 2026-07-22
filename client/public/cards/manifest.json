@@ -15,6 +15,114 @@
     },
     "skip": {
       "base": "/cards/base/skip.base.webp"
+    },
+    "favor": {
+      "base": "/cards/base/favor.base.webp"
+    },
+    "shuffle": {
+      "base": "/cards/base/shuffle.base.webp"
+    },
+    "see_future_3x": {
+      "base": "/cards/base/see_future_3x.base.webp"
+    },
+    "tacocat": {
+      "base": "/cards/base/tacocat.base.webp"
+    },
+    "cattermelon": {
+      "base": "/cards/base/cattermelon.base.webp"
+    },
+    "hairy_potato_cat": {
+      "base": "/cards/base/hairy_potato_cat.base.webp"
+    },
+    "beard_cat": {
+      "base": "/cards/base/beard_cat.base.webp"
+    },
+    "imploding_kitten": {
+      "base": "/cards/base/imploding_kitten.base.webp"
+    },
+    "alter_future_3x": {
+      "base": "/cards/base/alter_future_3x.base.webp"
+    },
+    "draw_from_bottom": {
+      "base": "/cards/base/draw_from_bottom.base.webp"
+    },
+    "reverse": {
+      "base": "/cards/base/reverse.base.webp"
+    },
+    "targeted_attack": {
+      "base": "/cards/base/targeted_attack.base.webp"
+    },
+    "feral_cat": {
+      "base": "/cards/base/feral_cat.base.webp"
+    },
+    "streaking_kitten": {
+      "base": "/cards/base/streaking_kitten.base.webp"
+    },
+    "super_skip": {
+      "base": "/cards/base/super_skip.base.webp"
+    },
+    "see_future_5x": {
+      "base": "/cards/base/see_future_5x.base.webp"
+    },
+    "alter_future_5x": {
+      "base": "/cards/base/alter_future_5x.base.webp"
+    },
+    "swap_top_bottom": {
+      "base": "/cards/base/swap_top_bottom.base.webp"
+    },
+    "garbage_collection": {
+      "base": "/cards/base/garbage_collection.base.webp"
+    },
+    "catomic_bomb": {
+      "base": "/cards/base/catomic_bomb.base.webp"
+    },
+    "mark": {
+      "base": "/cards/base/mark.base.webp"
+    },
+    "curse_cat_butt": {
+      "base": "/cards/base/curse_cat_butt.base.webp"
+    },
+    "barking_kitten": {
+      "base": "/cards/base/barking_kitten.base.webp"
+    },
+    "tower_of_power": {
+      "base": "/cards/base/tower_of_power.base.webp"
+    },
+    "potluck": {
+      "base": "/cards/base/potluck.base.webp"
+    },
+    "bury": {
+      "base": "/cards/base/bury.base.webp"
+    },
+    "personal_attack": {
+      "base": "/cards/base/personal_attack.base.webp"
+    },
+    "share_future_3x": {
+      "base": "/cards/base/share_future_3x.base.webp"
+    },
+    "zombie_kitten": {
+      "base": "/cards/base/zombie_kitten.base.webp"
+    },
+    "clone": {
+      "base": "/cards/base/clone.base.webp"
+    },
+    "clairvoyance": {
+      "base": "/cards/base/clairvoyance.base.webp"
+    },
+    "dig_deeper": {
+      "base": "/cards/base/dig_deeper.base.webp"
+    },
+    "feed_the_dead": {
+      "base": "/cards/base/feed_the_dead.base.webp"
+    },
+    "grave_robber": {
+      "base": "/cards/base/grave_robber.base.webp"
+    },
+    "attack_of_the_dead": {
+      "base": "/cards/base/attack_of_the_dead.base.webp"
+    },
+    "shuffle_now": {
+      "base": "/cards/base/shuffle_now.base.webp"
     }
   },
   "card_back": {
