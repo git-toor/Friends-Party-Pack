@@ -349,7 +349,7 @@ export default function ExplodingKittensGame({
 
       {/* Chat messages floating in PlayArea */}
       <div style={{
-        position: 'absolute', top: '30%', left: 0, right: 0,
+        position: 'absolute', top: '8%', left: 0, right: 0,
         display: 'flex', flexDirection: 'column-reverse', alignItems: 'center',
         gap: 2, pointerEvents: 'none', zIndex: 100, padding: '0 20px',
       }}>
