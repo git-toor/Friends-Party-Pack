@@ -7,10 +7,20 @@ export interface ClientPlayerView {
   cardCount: number;
   alive: boolean;
   pendingTurns: number;
+  streakingKitten?: boolean;
+  cursed: boolean;
+  markedCardCount: number;
+}
+
+export interface ClientCardRef {
+  id: string;
+  type: string;
+  name: string;
+  marked?: boolean;
 }
 
 export interface ClientGameState {
-  myHand: { id: string; type: string; name: string }[];
+  myHand: ClientCardRef[];
   opponents: ClientPlayerView[];
   deckSize: number;
   discardCount: number;
@@ -37,6 +47,7 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
       id: c.id,
       type: c.type,
       name: c.definition.name,
+      marked: player.markedCardIds.includes(c.id),
     })),
     opponents: state.players
       .filter(p => p.index !== playerIndex)
@@ -47,6 +58,9 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
         cardCount: p.hand.length,
         alive: p.alive,
         pendingTurns: p.pendingTurns,
+        streakingKitten: p.streakingKitten,
+        cursed: p.cursed,
+        markedCardCount: p.markedCardIds.length,
       })),
     deckSize: state.deck.length,
     discardCount: state.discardPile.length,

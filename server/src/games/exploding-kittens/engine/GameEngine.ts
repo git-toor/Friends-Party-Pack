@@ -16,6 +16,8 @@ export function createGame(settings: GameSettings): GameState {
       hand: [],
       alive: true,
       pendingTurns: 0,
+      markedCardIds: [],
+      cursed: false,
     })),
     deck: [],
     discardPile: [],
@@ -111,12 +113,17 @@ export function handleAction(
 
       const action = createAction('PLAY_CARD', playerIndex, payload);
       const callbacks = makeCallbacks();
-      const effectResult = resolveEffect(state, card.definition.effect, action, callbacks);
+      const effectResult = resolveEffect(state, card.definition.effect, { ...action, payload: { ...payload, cardId: card.id } }, callbacks);
 
       if (!effectResult.success) {
         player.hand.push(card); // Put the card back
         state.discardPile.pop();
         return { state, valid: false, error: 'Card effect failed' };
+      }
+
+      // Streaking Kitten stays "on table" — remove from discard
+      if (card.type === 'streaking_kitten') {
+        state.discardPile.pop();
       }
 
       if (effectResult.nopeable && isNopeable(action)) {

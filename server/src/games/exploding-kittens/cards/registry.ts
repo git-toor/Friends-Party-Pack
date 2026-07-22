@@ -1,6 +1,7 @@
 import type { CardDefinition, Card, CardType } from '../engine/types.js';
 import { baseCards } from './definitions/base.js';
 import { implodingCards } from './definitions/imploding.js';
+import { streakingCards } from './definitions/streaking.js';
 
 const registry = new Map<CardType, CardDefinition>();
 const allExpansions: CardDefinition[] = [];
@@ -31,3 +32,4 @@ export function createCard(type: CardType, id?: string): Card {
 
 registerDefinitions(baseCards);
 registerDefinitions(implodingCards);
+registerDefinitions(streakingCards);

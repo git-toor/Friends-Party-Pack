@@ -3,13 +3,17 @@ export type CardType =
   | 'shuffle' | 'see_future_3x' | 'nope'
   | 'tacocat' | 'cattermelon' | 'hairy_potato_cat' | 'beard_cat'
   | 'imploding_kitten' | 'alter_future_3x' | 'draw_from_bottom'
-  | 'reverse' | 'targeted_attack' | 'feral_cat';
+  | 'reverse' | 'targeted_attack' | 'feral_cat'
+  | 'streaking_kitten' | 'super_skip' | 'see_future_5x' | 'alter_future_5x'
+  | 'swap_top_bottom' | 'garbage_collection' | 'catomic_bomb' | 'mark' | 'curse_cat_butt';
 
 export type EffectType =
   | 'ADD_TURNS' | 'SKIP_TURNS' | 'FORCE_GIVE' | 'SHUFFLE_DECK'
   | 'SEE_FUTURE' | 'NOPE' | 'EXPLODE' | 'DEFUSE_AND_INSERT' | 'CAT_PAIR_SHUFFLE' | 'NONE'
   | 'IMPLODING_KITTEN' | 'ALTER_FUTURE' | 'DRAW_FROM_BOTTOM' | 'REVERSE_DIRECTION'
-  | 'TARGETED_ATTACK' | 'FERAL_CAT';
+  | 'TARGETED_ATTACK' | 'FERAL_CAT'
+  | 'STREAKING_KITTEN' | 'SUPER_SKIP' | 'SWAP_TOP_BOTTOM' | 'GARBAGE_COLLECTION'
+  | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT';
 
 export interface EffectDefinition {
   type: EffectType;
@@ -51,12 +55,16 @@ export interface PlayerState {
   alive: boolean;
   pendingTurns: number;
   pendingDrawFromBottom?: boolean;
+  streakingKitten?: boolean;
+  markedCardIds: string[];
+  cursed: boolean;
 }
 
 export type ActionType =
   | 'PLAY_CARD' | 'DRAW_CARD' | 'END_TURN'
   | 'RESOLVE_DEFUSE' | 'RESOLVE_FAVOR' | 'RESOLVE_NOPE'
-  | 'RESOLVE_NOPE_TIMEOUT' | 'RESOLVE_ALTER_FUTURE';
+  | 'RESOLVE_NOPE_TIMEOUT' | 'RESOLVE_ALTER_FUTURE'
+  | 'RESOLVE_GARBAGE_COLLECTION';
 
 export interface GameAction {
   id: string;

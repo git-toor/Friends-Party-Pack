@@ -255,6 +255,111 @@ function hasDefuse(player: PlayerState): boolean {
   return player.hand.some(c => c.type === 'defuse');
 }
 
+// ─── STREAKING_KITTEN ──────────────────────────────────
+registerEffect('STREAKING_KITTEN', (state, _effect, action, callbacks) => {
+  const player = state.players[action.playerIndex];
+  const cardId = action.payload?.cardId;
+  player.streakingKitten = true;
+  // Remove from hand instead — card is now "in front of player"
+  const handIdx = player.hand.findIndex(c => c.id === cardId);
+  if (handIdx !== -1) {
+    player.hand.splice(handIdx, 1);
+  }
+  callbacks.broadcast('STREAKING_KITTEN_ACTIVATED', { playerIndex: action.playerIndex });
+  // Don't add to discard — card is on table
+  return { success: true, nopeable: true };
+});
+
+// ─── SUPER_SKIP ────────────────────────────────────────
+registerEffect('SUPER_SKIP', (state, _effect, _action, callbacks) => {
+  const current = state.players[state.turn.currentPlayerIndex];
+  current.pendingTurns = 0;
+  callbacks.endTurn();
+  return { success: true, nopeable: true };
+});
+
+// ─── SWAP_TOP_BOTTOM ───────────────────────────────────
+registerEffect('SWAP_TOP_BOTTOM', (state, _effect, _action, callbacks) => {
+  if (state.deck.length < 2) return { success: true, nopeable: true };
+  const last = state.deck.length - 1;
+  [state.deck[0], state.deck[last]] = [state.deck[last], state.deck[0]];
+  callbacks.broadcast('DECK_SHUFFLED', { type: 'swap' });
+  return { success: true, nopeable: true };
+});
+
+// ─── GARBAGE_COLLECTION ────────────────────────────────
+registerEffect('GARBAGE_COLLECTION', (state, _effect, _action, _callbacks) => {
+  const collected: Card[] = [];
+  for (const player of state.players) {
+    if (!player.alive) continue;
+    if (player.hand.length > 0) {
+      const chosen = player.hand.splice(Math.floor(Math.random() * player.hand.length), 1)[0];
+      collected.push(chosen);
+    }
+  }
+  state.deck.push(...collected);
+  shuffleArray(state.deck);
+  return { success: true, nopeable: true };
+});
+
+// ─── CATOMIC_BOMB ──────────────────────────────────────
+registerEffect('CATOMIC_BOMB', (state, _effect, _action, callbacks) => {
+  const allEKs: Card[] = [];
+  const remainingDeck: Card[] = [];
+  for (const c of state.deck) {
+    if (c.type === 'exploding_kitten' || c.type === 'imploding_kitten') {
+      allEKs.push(c);
+    } else {
+      remainingDeck.push(c);
+    }
+  }
+  // Also check discard pile
+  const remainingDiscard: Card[] = [];
+  for (const c of state.discardPile) {
+    if (c.type === 'exploding_kitten' || c.type === 'imploding_kitten') {
+      allEKs.push(c);
+    } else {
+      remainingDiscard.push(c);
+    }
+  }
+  state.deck = [...allEKs, ...remainingDeck];
+  state.discardPile = remainingDiscard;
+  callbacks.broadcast('DECK_SHUFFLED', { type: 'catomic' });
+  return { success: true, nopeable: true };
+});
+
+// ─── MARK ──────────────────────────────────────────────
+registerEffect('MARK', (state, _effect, action, callbacks) => {
+  const targetIdx = action.payload?.targetIndex;
+  if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
+    return { success: false };
+  }
+  const target = state.players[targetIdx];
+  if (!target.alive || target.hand.length === 0) return { success: false };
+  const randomCard = target.hand[Math.floor(Math.random() * target.hand.length)];
+  if (!target.markedCardIds.includes(randomCard.id)) {
+    target.markedCardIds.push(randomCard.id);
+  }
+  callbacks.broadcast('MARKED_CARD', {
+    playerIndex: targetIdx,
+    card: { id: randomCard.id, type: randomCard.type },
+  });
+  return { success: true, nopeable: true };
+});
+
+// ─── CURSE_CAT_BUTT ────────────────────────────────────
+registerEffect('CURSE_CAT_BUTT', (state, _effect, action, callbacks) => {
+  const targetIdx = action.payload?.targetIndex;
+  if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
+    return { success: false };
+  }
+  const target = state.players[targetIdx];
+  if (!target.alive) return { success: false };
+  target.cursed = true;
+  callbacks.broadcast('PLAYER_CURSED', { playerIndex: targetIdx });
+  return { success: true, nopeable: true };
+});
+
 export function shuffleArray<T>(arr: T[]): void {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

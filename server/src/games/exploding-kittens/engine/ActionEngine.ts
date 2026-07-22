@@ -84,13 +84,18 @@ export function resolveDrawCard(state: GameState, playerIndex: number, callbacks
   callbacks.broadcast('CARD_DRAWN', { playerIndex, hasCard: true, cardType: card.type });
 
   if (card.type === 'exploding_kitten') {
-    const effect = getDefinition('exploding_kitten')?.effect;
-    if (effect) {
-      const explodeAction = createAction('DRAW_CARD', playerIndex);
-      const result = resolveEffect(state, effect, explodeAction, callbacks);
-      if (result.eliminated && result.eliminated.length > 0) {
-        checkWinCondition(state);
-        if (state.turn.phase === 'game_over') return { state, valid: true };
+    if (player.streakingKitten) {
+      // Streaking Kitten protects — safe to hold EK in hand
+      callbacks.broadcast('STREAKING_KITTEN_SAVED', { playerIndex });
+    } else {
+      const effect = getDefinition('exploding_kitten')?.effect;
+      if (effect) {
+        const explodeAction = createAction('DRAW_CARD', playerIndex);
+        const result = resolveEffect(state, effect, explodeAction, callbacks);
+        if (result.eliminated && result.eliminated.length > 0) {
+          checkWinCondition(state);
+          if (state.turn.phase === 'game_over') return { state, valid: true };
+        }
       }
     }
   } else if (card.type === 'imploding_kitten') {
