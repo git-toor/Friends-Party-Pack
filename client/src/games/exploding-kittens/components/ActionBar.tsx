@@ -8,15 +8,18 @@ interface ActionBarProps {
   canPlay: boolean;
   deadPlayer: boolean;
   hasNopeCard: boolean;
+  comboInfo: { type: 'pair' | 'triple' | 'five'; cardIds: string[] } | null;
   onDrawCard: () => void;
   onEndTurn: () => void;
   onNope: () => void;
   onPlaySelected: () => void;
+  onPlayCombo: (comboType: 'pair' | 'triple' | 'five') => void;
 }
 
 export function ActionBar({
   isMyTurn, turnPhase, hasSelection, nopeWindow, canPlay,
-  deadPlayer, hasNopeCard, onDrawCard, onEndTurn, onNope, onPlaySelected,
+  deadPlayer, hasNopeCard, comboInfo,
+  onDrawCard, onEndTurn, onNope, onPlaySelected, onPlayCombo,
 }: ActionBarProps) {
   if (!isMyTurn && !nopeWindow) {
     return (
@@ -50,6 +53,23 @@ export function ActionBar({
       )}
       {isMyTurn && turnPhase === 'playing' && (
         <>
+          {/* Cat combos */}
+          {comboInfo?.type === 'pair' && (
+            <Button size="lg" onClick={() => onPlayCombo('pair')}>
+              🐱 Steal Random (Pair)
+            </Button>
+          )}
+          {comboInfo?.type === 'triple' && (
+            <Button size="lg" onClick={() => onPlayCombo('triple')}>
+              🐱🐱 Name Card (Triple)
+            </Button>
+          )}
+          {comboInfo?.type === 'five' && (
+            <Button size="lg" onClick={() => onPlayCombo('five')}>
+              🐱🐱🐱 Search Discard (Five)
+            </Button>
+          )}
+          {/* Single card play */}
           {hasSelection && canPlay && (
             <Button size="lg" onClick={onPlaySelected}>
               ▶ Play Card

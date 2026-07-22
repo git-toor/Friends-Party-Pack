@@ -51,13 +51,15 @@ export default function ExplodingKittensGame({
   gameStatePush,
 }: EKGameProps) {
   const [gs, setGs] = useState<ClientGameState>(EMPTY_STATE);
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [showFavor, setShowFavor] = useState<ClientCardRef[] | null>(null);
   const [showDefuse, setShowDefuse] = useState<{ deckSize: number; hasZombie: boolean } | null>(null);
   const [showZombieRevive, setShowZombieRevive] = useState<{ deadPlayers: { index: number; name: string }[] } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
   const [showFuture, setShowFuture] = useState<{ cards: { id: string; type: string }[] } | null>(null);
+  const [showDiscardPicker, setShowDiscardPicker] = useState<{ cards: ClientCardRef[] } | null>(null);
   const [lastNotification, setLastNotification] = useState<string | null>(null);
+  const [comboMode, setComboMode] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
   const nopeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastHandSize = useRef(0);
@@ -135,10 +137,28 @@ export default function ExplodingKittensGame({
 
   const isMyTurn = gs.turn.currentPlayerIndex === playerIndex;
   const turnPhase = gs.turn.phase;
-  const hasSelection = selectedCardId !== null;
-  const selectedCard = gs.myHand.find(c => c.id === selectedCardId);
-  const canPlay = hasSelection && selectedCard !== undefined && selectedCard.type !== 'defuse' && selectedCard.type !== 'exploding_kitten' && selectedCard.type !== 'imploding_kitten';
+  const hasSelection = selectedCardIds.length > 0;
+  const selectedCard = selectedCardIds.length === 1 ? gs.myHand.find(c => c.id === selectedCardIds[0]) : undefined;
+  const canPlay = hasSelection && selectedCardIds.length === 1 && selectedCard !== undefined
+    && selectedCard.type !== 'defuse' && selectedCard.type !== 'exploding_kitten' && selectedCard.type !== 'imploding_kitten';
   const isDead = gs.opponents.find(o => o.index === playerIndex)?.dead ?? false;
+
+  // Cat combo detection
+  const CAT_TYPES = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'feral_cat'];
+  const selectedCats = gs.myHand.filter(c => selectedCardIds.includes(c.id) && CAT_TYPES.includes(c.type));
+  const comboInfo = (() => {
+    if (selectedCats.length < 2) return null;
+    const types = [...new Set(selectedCats.map(c => c.type))];
+    const hasFeral = selectedCats.some(c => c.type === 'feral_cat');
+    if (types.length === 1 || (types.length === 2 && hasFeral)) {
+      return selectedCats.length === 2 ? { type: 'pair' as const, cardIds: selectedCardIds }
+        : { type: 'triple' as const, cardIds: selectedCardIds };
+    }
+    if (types.length >= 5 || (types.length >= 4 && hasFeral)) {
+      return { type: 'five' as const, cardIds: selectedCardIds };
+    }
+    return null;
+  })();
 
   const fetchState = useCallback(async () => {
     if (!sessionId) return;
@@ -160,28 +180,55 @@ export default function ExplodingKittensGame({
   }, [sessionId, fetchState]);
 
   const handleSelectCard = useCallback((cardId: string) => {
-    setSelectedCardId(prev => prev === cardId ? null : cardId);
-  }, []);
+    setSelectedCardIds(prev => {
+      // If the card is a cat type, toggle multi-select
+      const card = gs.myHand.find(c => c.id === cardId);
+      if (card && CAT_TYPES.includes(card.type)) {
+        if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
+        return [...prev, cardId];
+      }
+      // Single select for non-cat cards
+      return prev.length === 1 && prev[0] === cardId ? [] : [cardId];
+    });
+  }, [gs.myHand]);
 
   const handleDrawCard = useCallback(async () => {
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
     await sendAction('DRAW_CARD');
   }, [sendAction]);
 
   const handleEndTurn = useCallback(async () => {
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
     await sendAction('END_TURN');
   }, [sendAction]);
 
   const handlePlayCard = useCallback(async () => {
-    if (!selectedCardId) return;
-    setSelectedCardId(null);
-    const sel = gs.myHand.find(c => c.id === selectedCardId);
+    if (selectedCardIds.length !== 1) return;
+    const cardId = selectedCardIds[0];
+    setSelectedCardIds([]);
+    const sel = gs.myHand.find(c => c.id === cardId);
     const targetIndex = sel?.type === 'favor' || sel?.type === 'targeted_attack' || sel?.type === 'barking_kitten'
       ? gs.opponents.find(o => o.alive)?.index ?? (gs.turn.currentPlayerIndex + 1) % playerCount
       : undefined;
-    await sendAction('PLAY_CARD', { cardId: selectedCardId, targetIndex });
-  }, [selectedCardId, sendAction, gs.myHand, gs.opponents, gs.turn.currentPlayerIndex, playerCount]);
+    await sendAction('PLAY_CARD', { cardId, targetIndex });
+  }, [selectedCardIds, sendAction, gs.myHand, gs.opponents, gs.turn.currentPlayerIndex, playerCount]);
+
+  const handlePlayCombo = useCallback(async (comboType: 'pair' | 'triple' | 'five') => {
+    if (!comboInfo) return;
+    const payload: any = { cardIds: comboInfo.cardIds, comboType };
+    if (comboType === 'pair' || comboType === 'triple') {
+      const target = gs.opponents.find(o => o.alive);
+      if (target) payload.targetIndex = target.index;
+    }
+    if (comboType === 'five') {
+      // Open discard picker modal
+      const discardCards = gs.myHand.filter(c => selectedCardIds.includes(c.id)).map(c => ({ id: c.id, type: c.type, name: c.name }));
+      setShowDiscardPicker({ cards: discardCards.map(c => ({ id: c.id, type: c.type, name: c.name })) });
+      return; // Wait for discard picker to return
+    }
+    setSelectedCardIds([]);
+    await sendAction('PLAY_COMBO', payload);
+  }, [comboInfo, sendAction, gs.opponents, gs.myHand, selectedCardIds]);
 
   const handleNope = useCallback(async () => {
     await sendAction('RESOLVE_NOPE');
@@ -212,7 +259,7 @@ export default function ExplodingKittensGame({
     });
     if (res.ok) {
       setShowGameOver(false);
-      setSelectedCardId(null);
+      setSelectedCardIds([]);
       fetchState();
     }
   }, [sessionId, fetchState]);
@@ -315,17 +362,19 @@ export default function ExplodingKittensGame({
         canPlay={canPlay}
         deadPlayer={isDead}
         hasNopeCard={gs.myHand.some(c => c.type === 'nope')}
+        comboInfo={comboInfo}
         onDrawCard={handleDrawCard}
         onEndTurn={handleEndTurn}
         onNope={handleNope}
         onPlaySelected={handlePlayCard}
+        onPlayCombo={handlePlayCombo}
       />
 
       {/* Player's hand */}
       <div style={{ background: 'rgba(22,33,62,0.4)', borderRadius: '8px 8px 0 0', margin: '0 4px' }}>
         <Hand
           cards={gs.myHand}
-          selectedCardId={selectedCardId}
+          selectedCardIds={selectedCardIds}
           onSelectCard={handleSelectCard}
           disabled={!isMyTurn || turnPhase !== 'playing'}
         />
@@ -363,6 +412,35 @@ export default function ExplodingKittensGame({
           deadPlayers={showZombieRevive.deadPlayers}
           onRevive={handleZombieRevive}
         />
+      )}
+
+      {showDiscardPicker && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 900,
+        }}>
+          <div style={{ background: '#16213e', borderRadius: 12, padding: 20, maxWidth: 380, width: '90%' }}>
+            <h3 style={{ color: '#fbbf24', textAlign: 'center', margin: '0 0 12px', fontSize: 16 }}>
+              🃏 Search Discard Pile
+            </h3>
+            <p style={{ color: '#aaa', textAlign: 'center', margin: '0 0 12px', fontSize: 12 }}>
+              Select a card to take from the discard pile
+            </p>
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {showDiscardPicker.cards.map((c, i) => (
+                <div key={i} style={{
+                  padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
+                  background: '#0f3460', border: '1px solid #444', color: '#ccc', fontSize: 11,
+                }}>{c.name}</div>
+              ))}
+            </div>
+            <button onClick={() => { setShowDiscardPicker(null); setSelectedCardIds([]); }}
+              style={{ display: 'block', margin: '12px auto 0', padding: '6px 20px',
+                background: '#e94560', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+              Done
+            </button>
+          </div>
+        </div>
       )}
 
       {showFuture && (
