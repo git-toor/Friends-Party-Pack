@@ -5,7 +5,9 @@ export type CardType =
   | 'imploding_kitten' | 'alter_future_3x' | 'draw_from_bottom'
   | 'reverse' | 'targeted_attack' | 'feral_cat'
   | 'streaking_kitten' | 'super_skip' | 'see_future_5x' | 'alter_future_5x'
-  | 'swap_top_bottom' | 'garbage_collection' | 'catomic_bomb' | 'mark' | 'curse_cat_butt';
+  | 'swap_top_bottom' | 'garbage_collection' | 'catomic_bomb' | 'mark' | 'curse_cat_butt'
+  | 'barking_kitten' | 'tower_of_power' | 'potluck' | 'bury'
+  | 'personal_attack' | 'share_future_3x';
 
 export type EffectType =
   | 'ADD_TURNS' | 'SKIP_TURNS' | 'FORCE_GIVE' | 'SHUFFLE_DECK'
@@ -13,7 +15,8 @@ export type EffectType =
   | 'IMPLODING_KITTEN' | 'ALTER_FUTURE' | 'DRAW_FROM_BOTTOM' | 'REVERSE_DIRECTION'
   | 'TARGETED_ATTACK' | 'FERAL_CAT'
   | 'STREAKING_KITTEN' | 'SUPER_SKIP' | 'SWAP_TOP_BOTTOM' | 'GARBAGE_COLLECTION'
-  | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT';
+  | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT'
+  | 'BARKING_KITTEN' | 'TOWER_OF_POWER' | 'POTLUCK' | 'BURY' | 'SHARE_FUTURE';
 
 export interface EffectDefinition {
   type: EffectType;
@@ -58,6 +61,7 @@ export interface PlayerState {
   streakingKitten?: boolean;
   markedCardIds: string[];
   cursed: boolean;
+  stash: Card[];
 }
 
 export type ActionType =

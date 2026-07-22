@@ -18,6 +18,7 @@ export function createGame(settings: GameSettings): GameState {
       pendingTurns: 0,
       markedCardIds: [],
       cursed: false,
+      stash: [],
     })),
     deck: [],
     discardPile: [],

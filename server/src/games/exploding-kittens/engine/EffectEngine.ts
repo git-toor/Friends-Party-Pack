@@ -41,9 +41,9 @@ export function resolveEffect(
 }
 
 // ─── ADD_TURNS ────────────────────────────────────────
-registerEffect('ADD_TURNS', (state, effect, action, _callbacks) => {
+registerEffect('ADD_TURNS', (state, effect, _action, _callbacks) => {
   const amount = effect.amount ?? 2;
-  const targetIdx = nextPlayerIndex(state);
+  const targetIdx = effect.selfTarget ? state.turn.currentPlayerIndex : nextPlayerIndex(state);
   state.players[targetIdx].pendingTurns += amount;
   return { success: true, nopeable: true };
 });
@@ -357,6 +357,101 @@ registerEffect('CURSE_CAT_BUTT', (state, _effect, action, callbacks) => {
   if (!target.alive) return { success: false };
   target.cursed = true;
   callbacks.broadcast('PLAYER_CURSED', { playerIndex: targetIdx });
+  return { success: true, nopeable: true };
+});
+
+// ─── BARKING_KITTEN ────────────────────────────────────
+registerEffect('BARKING_KITTEN', (state, _effect, action, callbacks) => {
+  const targetIdx = action.payload?.targetIndex;
+  if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
+    return { success: false };
+  }
+  const target = state.players[targetIdx];
+  if (!target.alive) return { success: false };
+  // Check if target has the other Barking Kitten
+  const hasBK = target.hand.some(c => c.type === 'barking_kitten');
+  if (hasBK) {
+    // Chicken won — target must defuse or be eliminated
+    const ekInHand = target.hand.some(c => c.type === 'exploding_kitten');
+    const hasDef = target.hand.some(c => c.type === 'defuse');
+    if (ekInHand && hasDef) {
+      // Target can defuse — open defuse window
+      const defuseAction: GameAction = {
+        id: crypto.randomUUID(),
+        playerIndex: targetIdx,
+        type: 'RESOLVE_DEFUSE',
+        payload: { cardIds: target.hand.filter(c => c.type === 'defuse').map(c => c.id) },
+        status: 'awaiting_response',
+        createdAt: Date.now(),
+      };
+      callbacks.pushAction(defuseAction);
+      callbacks.broadcast('DEFUSE_WINDOW', { playerIndex: targetIdx, deckSize: state.deck.length });
+    } else if (ekInHand) {
+      // No defuse — eliminated
+      target.alive = false;
+      callbacks.broadcast('PLAYER_ELIMINATED', { playerIndex: targetIdx, isZombie: false });
+      checkWinCondition(state);
+    }
+    // Remove the other Barking Kitten from target's hand
+    const bkIdx = target.hand.findIndex(c => c.type === 'barking_kitten');
+    if (bkIdx !== -1) state.discardPile.push(target.hand.splice(bkIdx, 1)[0]);
+  }
+  callbacks.broadcast('BARKING_KITTEN_CHALLENGE', { from: action.playerIndex, to: targetIdx, hadIt: hasBK });
+  return { success: true, nopeable: true };
+});
+
+// ─── TOWER_OF_POWER ────────────────────────────────────
+registerEffect('TOWER_OF_POWER', (state, _effect, action, callbacks) => {
+  const player = state.players[action.playerIndex];
+  callbacks.broadcast('TOWER_OF_POWER_ACTIVATED', { playerIndex: action.playerIndex });
+  return { success: true, nopeable: true };
+});
+
+// ─── POTLUCK ───────────────────────────────────────────
+registerEffect('POTLUCK', (state, _effect, _action, callbacks) => {
+  // Each player puts a random card on top of the draw pile
+  const contributed: { playerIndex: number; cardId: string }[] = [];
+  for (const player of state.players) {
+    if (!player.alive) continue;
+    if (player.hand.length > 0) {
+      const idx = Math.floor(Math.random() * player.hand.length);
+      const card = player.hand.splice(idx, 1)[0];
+      contributed.push({ playerIndex: player.index, cardId: card.id });
+      state.deck.unshift(card);
+    }
+  }
+  callbacks.broadcast('POTLUCK_DONE', { count: contributed.length });
+  return { success: true, nopeable: true };
+});
+
+// ─── BURY ──────────────────────────────────────────────
+registerEffect('BURY', (state, _effect, _action, callbacks) => {
+  const player = state.players[state.turn.currentPlayerIndex];
+  if (state.deck.length === 0) return { success: false };
+  const card = state.deck.shift()!;
+  player.hand.push(card);
+  // Reinsert at random position (in real game, player chooses)
+  const ekIdx = player.hand.findIndex(c => c.id === card.id);
+  if (ekIdx !== -1) {
+    const [buried] = player.hand.splice(ekIdx, 1);
+    const pos = Math.floor(Math.random() * state.deck.length);
+    state.deck.splice(pos, 0, buried);
+  }
+  callbacks.broadcast('BURY_DONE', { playerIndex: state.turn.currentPlayerIndex });
+  return { success: true, nopeable: true };
+});
+
+// ─── SHARE_FUTURE ─────────────────────────────────────
+registerEffect('SHARE_FUTURE', (state, effect, _action, callbacks) => {
+  const count = effect.amount ?? 3;
+  const topCards = state.deck.slice(0, count).map(c => ({ id: c.id, type: c.type }));
+  const nextIdx = state.turn.currentPlayerIndex + state.turn.direction;
+  const nextPlayer = nextIdx < 0 ? state.players.length - 1 : nextIdx >= state.players.length ? 0 : nextIdx;
+  callbacks.broadcast('SHARE_FUTURE_RESULT', {
+    playerIndex: state.turn.currentPlayerIndex,
+    nextPlayerIndex: nextPlayer,
+    cards: topCards,
+  });
   return { success: true, nopeable: true };
 });
 

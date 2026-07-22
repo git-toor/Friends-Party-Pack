@@ -10,6 +10,7 @@ export interface ClientPlayerView {
   streakingKitten?: boolean;
   cursed: boolean;
   markedCardCount: number;
+  stashCount: number;
 }
 
 export interface ClientCardRef {
@@ -21,6 +22,7 @@ export interface ClientCardRef {
 
 export interface ClientGameState {
   myHand: ClientCardRef[];
+  myStash: ClientCardRef[];
   opponents: ClientPlayerView[];
   deckSize: number;
   discardCount: number;
@@ -43,6 +45,12 @@ export interface ClientGameState {
 export function serializeState(state: GameState, playerIndex: number): ClientGameState {
   const player = state.players[playerIndex];
   return {
+    myStash: player.stash.map(c => ({
+      id: c.id,
+      type: c.type,
+      name: c.definition.name,
+      marked: player.markedCardIds.includes(c.id),
+    })),
     myHand: player.hand.map(c => ({
       id: c.id,
       type: c.type,
@@ -61,6 +69,7 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
         streakingKitten: p.streakingKitten,
         cursed: p.cursed,
         markedCardCount: p.markedCardIds.length,
+        stashCount: p.stash.length,
       })),
     deckSize: state.deck.length,
     discardCount: state.discardPile.length,
