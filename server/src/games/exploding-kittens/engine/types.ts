@@ -13,13 +13,14 @@ export type CardType =
 
 export type EffectType =
   | 'ADD_TURNS' | 'SKIP_TURNS' | 'FORCE_GIVE' | 'SHUFFLE_DECK'
-  | 'SEE_FUTURE' | 'NOPE' | 'EXPLODE' | 'DEFUSE_AND_INSERT' | 'CAT_PAIR_SHUFFLE' | 'NONE'
+  | 'SEE_FUTURE' | 'NOPE' | 'EXPLODE' | 'DEFUSE_AND_INSERT' | 'CAT_PAIR_SHUFFLE' | 'CAT_COMBO' | 'NONE'
   | 'IMPLODING_KITTEN' | 'ALTER_FUTURE' | 'DRAW_FROM_BOTTOM' | 'REVERSE_DIRECTION'
   | 'TARGETED_ATTACK' | 'FERAL_CAT'
   | 'STREAKING_KITTEN' | 'SUPER_SKIP' | 'SWAP_TOP_BOTTOM' | 'GARBAGE_COLLECTION'
   | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT'
   | 'BARKING_KITTEN' | 'TOWER_OF_POWER' | 'POTLUCK' | 'BURY' | 'SHARE_FUTURE'
-  | 'ZOMBIE_KITTEN' | 'DIG_DEEPER' | 'FEED_THE_DEAD' | 'GRAVE_ROBBER' | 'ATTACK_OF_THE_DEAD';
+  | 'ZOMBIE_KITTEN' | 'DIG_DEEPER' | 'FEED_THE_DEAD' | 'GRAVE_ROBBER' | 'ATTACK_OF_THE_DEAD'
+  | 'CAT_COMBO';
 
 export interface EffectDefinition {
   type: EffectType;
@@ -87,7 +88,8 @@ export type ActionType =
   | 'RESOLVE_DEFUSE' | 'RESOLVE_FAVOR' | 'RESOLVE_NOPE'
   | 'RESOLVE_NOPE_TIMEOUT' | 'RESOLVE_ALTER_FUTURE'
   | 'RESOLVE_GARBAGE_COLLECTION'
-  | 'RESOLVE_ZOMBIE_REVIVE';
+  | 'RESOLVE_ZOMBIE_REVIVE'
+  | 'PLAY_COMBO';
 
 export interface GameAction {
   id: string;
@@ -101,6 +103,9 @@ export interface GameAction {
     deadPlayerIndices?: number[];
     hasZombieOption?: boolean;
     fromPlayerIndex?: number;
+    comboType?: 'pair' | 'triple' | 'five';
+    namedCard?: string;
+    chosenCardId?: string;
   };
   status: 'pending' | 'awaiting_response' | 'resolving' | 'resolved' | 'noped';
   createdAt: number;

@@ -40,7 +40,7 @@ export const implodingCards: CardDefinition[] = [
     id: 'feral_cat', name: 'Feral Cat', expansion: 'imploding',
     copies: 4,
     playable: { requiresTarget: true, requiresResponse: 'favor' },
-    effect: { type: 'FERAL_CAT' },
+    effect: { type: 'CAT_COMBO' },
     category: 'cat',
   },
 ];

@@ -385,4 +385,125 @@ describe('Integration: Full Card Flows', () => {
       expect(game.turn.phase).toBe('playing');
     });
   });
+
+  describe('Nope-a-Nope', () => {
+    it('double Nope chain (even) = original action executes', () => {
+      const game = testGame(2);
+      const p0 = game.turn.currentPlayerIndex;
+      const p1 = 1 - p0;
+      const [attackId] = ensureCardsInHand(game, p0, ['attack' as CardType]);
+      ensureCardsInHand(game, p0, ['nope' as CardType]);
+
+      // p0 plays Attack (deferred)
+      handleAction(game, p0, 'PLAY_CARD', { cardId: attackId });
+      expect(game.players[p1].pendingTurns).toBe(0);
+
+      // p1 Nopes the Attack
+      playNope(game, p1);
+      expect(game.nopeWindow!.chain.length).toBe(1);
+
+      // p0 Nopes the Nope (counter-nope!)
+      playNope(game, p0);
+      expect(game.nopeWindow!.chain.length).toBe(2);
+
+      // Even chain = original action (Attack) survives
+      resolveNopeTimeout(game, p0);
+      expect(game.players[p1].pendingTurns).toBe(3); // Attack went through
+    });
+  });
+
+  describe('Cat Combos', () => {
+    it('Two of a Kind: steals random card from target', () => {
+      const game = testGame(2, ['imploding']);
+      const p0 = game.turn.currentPlayerIndex;
+      const p1 = 1 - p0;
+      // Put two matching cat cards in p0's hand
+      const catType = 'tacocat';
+      const cids = ensureCardsInHand(game, p0, [catType as CardType]);
+      // Need a second copy
+      const secondCat = game.deck.find(c => c.type === catType);
+      if (!secondCat || cids.length === 0) return;
+      game.players[p0].hand.push(secondCat);
+      game.deck = game.deck.filter(c => c.id !== secondCat.id);
+
+      const p1CardCount = game.players[p1].hand.length;
+      handleAction(game, p0, 'PLAY_COMBO', {
+        cardIds: [cids[0], secondCat.id],
+        targetIndex: p1,
+        comboType: 'pair',
+      });
+      expect(game.players[p0].hand.length).toBeGreaterThan(0); // stole a card
+      expect(game.players[p1].hand.length).toBe(p1CardCount - 1);
+    });
+
+    it('Three of a Kind: names a specific card and takes it from target', () => {
+      const game = testGame(2, ['imploding']);
+      const p0 = game.turn.currentPlayerIndex;
+      const p1 = 1 - p0;
+      const catType = 'tacocat';
+      const cids = ensureCardsInHand(game, p0, [catType as CardType]);
+      // Add two more copies
+      for (let i = 0; i < 2; i++) {
+        const extra = game.deck.find(c => c.type === catType);
+        if (!extra) break;
+        game.players[p0].hand.push(extra);
+        game.deck = game.deck.filter(c => c.id !== extra.id);
+        cids.push(extra.id);
+      }
+      if (cids.length < 3) return;
+
+      // Target (p1) must have the named card
+      const targetCard = game.players[p1].hand[0];
+      const targetCardType = targetCard.type;
+
+      handleAction(game, p0, 'PLAY_COMBO', {
+        cardIds: cids.slice(0, 3),
+        targetIndex: p1,
+        comboType: 'triple',
+        namedCard: targetCardType,
+      });
+      expect(game.players[p0].hand.some(c => c.type === targetCardType)).toBe(true);
+    });
+
+    it('Five Different Cards: searches discard pile and takes a card', () => {
+      const game = testGame(2, ['imploding']);
+      const p0 = game.turn.currentPlayerIndex;
+      // Collect one of each cat type into p0's hand
+      const catTypes: CardType[] = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'feral_cat'];
+      const cardIds: string[] = [];
+
+      for (const ct of catTypes) {
+        // Find this card type anywhere
+        let card = game.players[p0].hand.find(c => c.type === ct);
+        if (!card) {
+          for (const p of game.players) {
+            if (p.index === p0) continue;
+            card = p.hand.find(c => c.type === ct);
+            if (card) { p.hand = p.hand.filter(c => c.id !== card!.id); break; }
+          }
+        }
+        if (!card) card = game.deck.find(c => c.type === ct);
+        if (card) {
+          if (!game.players[p0].hand.some(c => c.id === card!.id)) {
+            game.deck = game.deck.filter(c => c.id !== card!.id);
+            game.players[p0].hand.push(card);
+          }
+          cardIds.push(card.id);
+        }
+      }
+      if (cardIds.length < 5) return;
+
+      // Pop one card to discard for us to steal back
+      const discCard = game.players[p0].hand.shift()!;
+      game.discardPile.push(discCard);
+
+      const result = handleAction(game, p0, 'PLAY_COMBO', {
+        cardIds,
+        comboType: 'five',
+        chosenCardId: discCard.id,
+      });
+      expect(result.valid).toBe(true);
+      expect(game.players[p0].hand.some(c => c.id === discCard.id)).toBe(true);
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import type { GameState, GameSettings, GameAction, GameResult, Card } from './types.js';
+import type { GameState, GameSettings, GameAction, GameResult, Card, CardType } from './types.js';
 import type { EffectCallbacks, EffectResult } from './EffectEngine.js';
 import { resolveEffect } from './EffectEngine.js';
 import { canPlayCard, canDrawCard, createAction, advanceTurn, resolveDrawCard } from './ActionEngine.js';
@@ -120,7 +120,7 @@ export function handleAction(
       // Pre-validate target-dependent effects before deferring
       if (eff.nopeable !== false) {
         if (eff.type === 'FORCE_GIVE' || eff.type === 'TARGETED_ATTACK' || eff.type === 'BARKING_KITTEN' ||
-            eff.type === 'MARK' || eff.type === 'CURSE_CAT_BUTT' || eff.type === 'CAT_PAIR_SHUFFLE') {
+            eff.type === 'MARK' || eff.type === 'CURSE_CAT_BUTT' || eff.type === 'CAT_PAIR_SHUFFLE' || eff.type === 'CAT_COMBO') {
           const tIdx = payload?.targetIndex;
           if (tIdx === undefined || tIdx < 0 || tIdx >= state.players.length || !state.players[tIdx].alive) {
             player.hand.push(card);
@@ -292,6 +292,48 @@ export function handleAction(
       }
       state.actionStack = state.actionStack.filter(a => a.id !== state.nopeWindow?.targetActionId);
       state.nopeWindow = null;
+      return { state, valid: true };
+    }
+
+    case 'PLAY_COMBO': {
+      const player = state.players[playerIndex];
+      const cardIds = payload?.cardIds as string[] | undefined;
+      if (!cardIds || cardIds.length < 2) return { state, valid: false, error: 'Need at least 2 cards for combo' };
+
+      const cards: Card[] = [];
+      for (const cid of cardIds) {
+        const idx = player.hand.findIndex(c => c.id === cid);
+        if (idx === -1) return { state, valid: false, error: `Card ${cid} not in hand` };
+        cards.push(player.hand.splice(idx, 1)[0]);
+      }
+
+      // Determine combo type
+      const catTypes = cards.map(c => c.type);
+      const uniqueTypes = new Set(catTypes);
+      const hasFeral = catTypes.includes('feral_cat' as any);
+
+      let comboType: 'pair' | 'triple' | 'five' = 'pair';
+      if (uniqueTypes.size === 1 || (uniqueTypes.size === 2 && hasFeral)) {
+        comboType = catTypes.length >= 3 ? 'triple' : 'pair';
+      } else if (uniqueTypes.size >= 5 || (uniqueTypes.size >= 4 && hasFeral)) {
+        comboType = 'five';
+      }
+
+      // Remove combo cards from hand, add to pending
+      const callbacks = makeCallbacks();
+
+      // For pair: steal random from target
+      // For triple: name a card from target
+      // For five: take from discard
+      // Execute immediately (combos are not nopeable per real game rules)
+
+      for (const c of cards) state.discardPile.push(c);
+
+      const fakeAction = createAction('PLAY_COMBO', playerIndex, payload);
+      resolveEffect(state, { type: 'CAT_COMBO' } as any, {
+        ...fakeAction, payload: { ...payload, comboType, targetIndex: payload?.targetIndex }
+      }, callbacks);
+
       return { state, valid: true };
     }
 

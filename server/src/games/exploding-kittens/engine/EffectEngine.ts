@@ -221,31 +221,87 @@ registerEffect('DEFUSE_AND_INSERT', (state, _effect, _action, _callbacks) => {
   return { success: true };
 });
 
-// ─── CAT_PAIR_SHUFFLE ─────────────────────────────────
-registerEffect('CAT_PAIR_SHUFFLE', (state, _effect, action, callbacks) => {
+// ─── CAT_COMBO (Two/Three/Five) ───────────────────────
+const CAT_TYPES: CardType[] = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'feral_cat'];
+
+registerEffect('CAT_COMBO', (state, _effect, action, callbacks) => {
+  const player = state.players[action.playerIndex];
   const targetIdx = action.payload?.targetIndex;
-  if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
-    return { success: false };
+  const playedType = action.payload?.cardId ? player.hand.find(c => c.id === action.payload?.cardId)?.type : undefined;
+
+  // Count cat types in hand + the one being played (pendingCard won't be in hand during deferred execution)
+  // During deferred execution, this runs after nope window, so pendingCard is in action
+  const pendingCardType = (action as any).pendingCard?.type;
+  const catTypesInHand = new Set<string>();
+  let feralCount = 0;
+  for (const c of player.hand) {
+    if (CAT_TYPES.includes(c.type as any)) {
+      catTypesInHand.add(c.type);
+      if (c.type === 'feral_cat') feralCount++;
+    }
   }
-  const target = state.players[targetIdx];
-  if (!target.alive || target.hand.length === 0) {
-    return { success: false, error: 'Target has no cards' };
+  const effectiveCatTypes = new Set(catTypesInHand);
+  // Feral Cat acts as a wildcard for all cat types
+  if (feralCount > 0) {
+    for (const ct of CAT_TYPES) effectiveCatTypes.add(ct);
   }
-  const favorAction: GameAction = {
-    id: crypto.randomUUID(),
-    playerIndex: targetIdx,
-    type: 'RESOLVE_FAVOR',
-    payload: { cardIds: target.hand.map(c => c.id), fromPlayerIndex: action.playerIndex },
-    status: 'awaiting_response',
-    createdAt: Date.now(),
-  };
-  callbacks.pushAction(favorAction);
-  callbacks.broadcast('FAVOR_REQUEST', {
-    fromIndex: action.playerIndex,
-    toIndex: targetIdx,
-    cardIds: target.hand.map(c => c.id),
-  });
-  return { success: true, nopeable: true, requiresResponse: true };
+
+  const comboType = action.payload?.comboType || (action.payload?.cardIds?.length === 3 ? 'triple'
+    : action.payload?.cardIds?.length === 5 ? 'five' : 'pair');
+
+  switch (comboType) {
+    case 'pair': {
+      // Two of a Kind: steal random card from target
+      if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
+        return { success: false };
+      }
+      const target = state.players[targetIdx];
+      if (!target.alive || target.hand.length === 0) return { success: false, error: 'Target has no cards' };
+      const randomIdx = Math.floor(Math.random() * target.hand.length);
+      const [stolen] = target.hand.splice(randomIdx, 1);
+      player.hand.push(stolen);
+      callbacks.broadcast('CARD_STOLEN', { from: targetIdx, to: action.playerIndex, cardType: stolen.type });
+      return { success: true, nopeable: true };
+    }
+
+    case 'triple': {
+      // Three of a Kind: name a specific card, if target has it they give it
+      if (targetIdx === undefined || targetIdx < 0 || targetIdx >= state.players.length) {
+        return { success: false };
+      }
+      const tripleTarget = state.players[targetIdx];
+      if (!tripleTarget.alive) return { success: false };
+      const namedCard = action.payload?.namedCard as string;
+      if (!namedCard) return { success: false, error: 'Must name a card' };
+      const namedIdx = tripleTarget.hand.findIndex(c => c.type === namedCard || c.definition.name === namedCard);
+      if (namedIdx === -1) return { success: false, error: 'Target does not have that card' };
+      const [taken] = tripleTarget.hand.splice(namedIdx, 1);
+      player.hand.push(taken);
+      callbacks.broadcast('CARD_NAMED_STOLEN', { from: targetIdx, to: action.playerIndex, cardType: taken.type });
+      return { success: true, nopeable: true };
+    }
+
+    case 'five': {
+      // Five Different Cards: search discard pile, take any 1 card
+      if (state.discardPile.length === 0) return { success: false, error: 'Discard pile is empty' };
+      const chosenCardId = action.payload?.chosenCardId;
+      if (chosenCardId) {
+        const discIdx = state.discardPile.findIndex(c => c.id === chosenCardId);
+        if (discIdx === -1) return { success: false, error: 'Card not found in discard pile' };
+        const [taken] = state.discardPile.splice(discIdx, 1);
+        player.hand.push(taken);
+      } else {
+        // Auto-take top discard
+        const [taken] = state.discardPile.splice(0, 1);
+        player.hand.push(taken);
+      }
+      callbacks.broadcast('DISCARD_SEARCHED', { playerIndex: action.playerIndex });
+      return { success: true, nopeable: true };
+    }
+
+    default:
+      return { success: false };
+  }
 });
 
 // ─── NONE (placeholder for future expansion cards) ────
