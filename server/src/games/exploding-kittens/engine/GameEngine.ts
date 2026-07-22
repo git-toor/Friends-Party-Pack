@@ -159,6 +159,9 @@ export function handleAction(
       const cardIdx = usingZombie ? zombieIdx : defuseIdx;
       if (cardIdx === -1) return { state, valid: false, error: 'No Defuse or Zombie Kitten card' };
       player.hand.splice(cardIdx, 1)[0];
+      // Remove the drawn Exploding Kitten from hand
+      const ekHandIdx = player.hand.findIndex(c => c.type === 'exploding_kitten');
+      if (ekHandIdx !== -1) player.hand.splice(ekHandIdx, 1);
       const explodingKitten: Card = {
         id: crypto.randomUUID(),
         type: 'exploding_kitten',

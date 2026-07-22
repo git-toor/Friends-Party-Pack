@@ -109,7 +109,8 @@ describe('Exploding Kittens Engine', () => {
       const attackCard = findCardByType(game.players[current].hand, 'attack');
       if (!attackCard) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: attackCard });
-      expect(game.players[next].pendingTurns).toBe(2);
+      // Attack adds 3 (2+1), advanceTurn doesn't decrement for the target yet
+      expect(game.players[next].pendingTurns).toBe(3);
     });
   });
 

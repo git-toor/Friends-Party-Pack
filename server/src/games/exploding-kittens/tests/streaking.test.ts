@@ -78,15 +78,15 @@ describe('Streaking Kittens Expansion', () => {
   });
 
   describe('Super Skip', () => {
-    it('clears all pending turns', () => {
+    it('clears all pending turns on current player', () => {
       const game = createGameWithStreaking(2);
       const current = game.turn.currentPlayerIndex;
-      const next = 1 - current;
       const ss = findCardByType(game.players[current].hand, 'super_skip');
       if (!ss) return;
-      game.players[next].pendingTurns = 5;
+      game.players[current].pendingTurns = 5;
       handleAction(game, current, 'PLAY_CARD', { cardId: ss });
-      expect(game.players[next].pendingTurns).toBe(0);
+      expect(game.players[current].pendingTurns).toBe(0);
+      expect(game.turn.currentPlayerIndex).not.toBe(current); // turn advances
     });
   });
 
