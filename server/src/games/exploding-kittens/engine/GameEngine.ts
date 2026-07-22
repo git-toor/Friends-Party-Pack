@@ -34,6 +34,7 @@ export function createGame(settings: GameSettings): GameState {
     settings,
     winner: null,
     implodingKittenFaceUp: false,
+    pendingCardView: null,
   };
 
   state.deck = buildDeck(playerCount, settings.expansions);
@@ -71,6 +72,9 @@ export function handleAction(
   actionType: string,
   payload?: any
 ): GameResult {
+  // Clear transient display state
+  state.pendingCardView = null;
+
   const makeCallbacks = (): EffectCallbacks => ({
     pushAction: (action: GameAction) => {
       state.actionStack.push(action);
@@ -233,14 +237,12 @@ export function handleAction(
       if (!state.nopeWindow) return { state, valid: false, error: 'No nope window' };
       const chainLength = state.nopeWindow.chain.length;
       if (chainLength % 2 === 1) {
-        // Last Nope wins - cancel the target action
         const targetAction = state.actionStack.find(a => a.id === state.nopeWindow?.targetActionId);
         if (targetAction) {
           targetAction.status = 'noped';
         }
       }
       state.nopeWindow = null;
-      advanceTurn(state);
       return { state, valid: true };
     }
 

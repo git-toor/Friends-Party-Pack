@@ -30,6 +30,7 @@ interface ClientGameState {
   settings: { playerCount: number; expansions?: string[] };
   winner: number | null;
   implodingKittenFaceUp: boolean;
+  pendingCardView: { cards: { id: string; type: string }[] } | null;
 }
 
 interface EKGameProps {
@@ -42,7 +43,7 @@ const EMPTY_STATE: ClientGameState = {
   myHand: [], myStash: [], opponents: [], deckSize: 0, discardCount: 0,
   turn: { currentPlayerIndex: 0, direction: 1, phase: 'playing', attackCount: 0 },
   actionStack: [], nopeWindow: null,
-  settings: { playerCount: 2 }, winner: null, implodingKittenFaceUp: false,
+  settings: { playerCount: 2 }, winner: null, implodingKittenFaceUp: false, pendingCardView: null,
 };
 
 export default function ExplodingKittensGame({
@@ -56,8 +57,10 @@ export default function ExplodingKittensGame({
   const [showZombieRevive, setShowZombieRevive] = useState<{ deadPlayers: { index: number; name: string }[] } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
   const [showFuture, setShowFuture] = useState<{ cards: { id: string; type: string }[] } | null>(null);
+  const [lastNotification, setLastNotification] = useState<string | null>(null);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
   const nopeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastHandSize = useRef(0);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -69,8 +72,8 @@ export default function ExplodingKittensGame({
 
   useEffect(() => {
     if (gameStatePush) {
+      const next = gameStatePush as ClientGameState;
       setGs((prev: ClientGameState) => {
-        const next = gameStatePush as ClientGameState;
         if (next.winner !== null) {
           setShowGameOver(true);
         } else if (prev.winner !== null && next.winner === null) {
@@ -78,6 +81,19 @@ export default function ExplodingKittensGame({
         }
         return next;
       });
+      // See the Future / Alter Future detection
+      if (next.pendingCardView && next.pendingCardView.cards.length > 0) {
+        setShowFuture(next.pendingCardView);
+      }
+      // Shuffle detection — deck size changes and shuffle was played
+      if (lastHandSize.current > 0) {
+        const handDiff = next.myHand.length - lastHandSize.current;
+        if (handDiff < 0) {
+          setLastNotification(`Played a card · +1 discard`);
+          setTimeout(() => setLastNotification(null), 2000);
+        }
+      }
+      lastHandSize.current = next.myHand.length;
     }
   }, [gameStatePush]);
 
@@ -234,15 +250,6 @@ export default function ExplodingKittensGame({
     }
   }, [gs.actionStack, gs.opponents, playerIndex]);
 
-  // See the Future detection
-  useEffect(() => {
-    const futureAction = gs.actionStack.find(a => a.type === 'PLAY_CARD' && a.payload?.cardId &&
-      (a.payload as any)._futureCards);
-    if (futureAction && (futureAction.payload as any)._futureCards) {
-      setShowFuture({ cards: (futureAction.payload as any)._futureCards });
-    }
-  }, [gs.actionStack]);
-
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       {/* Top bar */}
@@ -265,9 +272,10 @@ export default function ExplodingKittensGame({
       <PlayArea
         deckSize={gs.deckSize}
         discardCount={gs.discardCount}
-        turnInfo={`Round · ${gs.turn.phase}${gs.turn.attackCount > 0 ? ` · Attacks: ${gs.turn.attackCount}` : ''}`}
+        turnInfo={`${gs.turn.phase}${gs.turn.attackCount > 0 ? ` · Attacks: ${gs.turn.attackCount}` : ''}`}
         implodingKittenFaceUp={gs.implodingKittenFaceUp}
         nopeWindow={gs.nopeWindow}
+        lastNotification={lastNotification}
       />
 
       {/* Chat messages floating above action bar */}

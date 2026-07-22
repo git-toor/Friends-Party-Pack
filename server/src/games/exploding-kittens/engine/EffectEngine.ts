@@ -119,6 +119,7 @@ registerEffect('IMPLODING_KITTEN', (state, _effect, _action, callbacks) => {
 registerEffect('ALTER_FUTURE', (state, effect, _action, callbacks) => {
   const count = effect.amount ?? 3;
   const topCards = state.deck.slice(0, count).map(c => ({ id: c.id, type: c.type }));
+  state.pendingCardView = { cards: topCards };
   callbacks.broadcast('ALTER_FUTURE_RESULT', { cards: topCards });
   return { success: true, nopeable: true };
 });
@@ -162,6 +163,7 @@ registerEffect('SHUFFLE_DECK', (state, _effect, _action, callbacks) => {
 registerEffect('SEE_FUTURE', (state, effect, _action, callbacks) => {
   const count = effect.amount ?? 3;
   const topCards = state.deck.slice(0, count).map(c => ({ id: c.id, type: c.type }));
+  state.pendingCardView = { cards: topCards };
   callbacks.broadcast('SEE_FUTURE_RESULT', { cards: topCards });
   return { success: true, nopeable: true };
 });
@@ -460,6 +462,7 @@ registerEffect('BURY', (state, _effect, _action, callbacks) => {
 registerEffect('SHARE_FUTURE', (state, effect, _action, callbacks) => {
   const count = effect.amount ?? 3;
   const topCards = state.deck.slice(0, count).map(c => ({ id: c.id, type: c.type }));
+  state.pendingCardView = { cards: topCards };
   const nextIdx = state.turn.currentPlayerIndex + state.turn.direction;
   const nextPlayer = nextIdx < 0 ? state.players.length - 1 : nextIdx >= state.players.length ? 0 : nextIdx;
   callbacks.broadcast('SHARE_FUTURE_RESULT', {

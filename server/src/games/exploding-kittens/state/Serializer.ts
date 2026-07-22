@@ -41,6 +41,7 @@ export interface ClientGameState {
   settings: { playerCount: number; expansions?: string[] };
   winner: number | null;
   implodingKittenFaceUp: boolean;
+  pendingCardView: { cards: { id: string; type: string }[] } | null;
 }
 
 export function serializeState(state: GameState, playerIndex: number): ClientGameState {
@@ -99,5 +100,6 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
     settings: { playerCount: state.settings.playerCount, expansions: state.settings.expansions },
     winner: state.winner,
     implodingKittenFaceUp: state.implodingKittenFaceUp,
+    pendingCardView: state.pendingCardView,
   };
 }
