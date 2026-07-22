@@ -396,7 +396,7 @@ export default function ExplodingKittensGame({
           cards={gs.myHand}
           selectedCardIds={selectedCardIds}
           onSelectCard={handleSelectCard}
-          disabled={!isMyTurn || turnPhase !== 'playing'}
+          disabled={false}
         />
       </div>
 
