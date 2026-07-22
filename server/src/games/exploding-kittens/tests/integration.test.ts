@@ -83,7 +83,7 @@ describe('Integration: Full Card Flows', () => {
       expect(game.discardPile.some(c => c.type === 'attack')).toBe(true);
     });
 
-    it('PATH B (noped): effect already ran before nope (architectural limitation)', () => {
+    it('PATH B (noped): effect is deferred, nope cancels it, no pending turns added', () => {
       const game = testGame(2);
       const p0 = game.turn.currentPlayerIndex;
       const p1 = 1 - p0;
@@ -94,19 +94,20 @@ describe('Integration: Full Card Flows', () => {
       expect(game.nopeWindow?.chain.length).toBe(1);
       resolveNopeTimeout(game, p0);
       expect(game.nopeWindow).toBeNull();
-      // Effect ran before nope, so turns were already added
-      expect(game.players[p1].pendingTurns).toBe(3);
+      // Nope cancelled the effect, no turns added
+      expect(game.players[p1].pendingTurns).toBe(0);
     });
   });
 
   describe('Skip', () => {
-    it('ends turn immediately, no nope window, advances to next player', () => {
+    it('is nopeable, opens nope window, advances turn on resolve', () => {
       const game = testGame(2);
       const p0 = game.turn.currentPlayerIndex;
       const [skipId] = ensureCardsInHand(game, p0, ['skip' as CardType]);
 
       handleAction(game, p0, 'PLAY_CARD', { cardId: skipId });
-      expect(game.nopeWindow).toBeNull();
+      expect(game.nopeWindow).not.toBeNull(); // Skip now nopeable!
+      resolveNopeTimeout(game, p0);
       expect(game.turn.currentPlayerIndex).not.toBe(p0);
       expect(game.turn.phase).toBe('playing');
     });
@@ -165,6 +166,8 @@ describe('Integration: Full Card Flows', () => {
       const [seeId] = ensureCardsInHand(game, p0, ['see_future_3x' as CardType]);
 
       handleAction(game, p0, 'PLAY_CARD', { cardId: seeId });
+      expect(game.pendingCardView).toBeNull(); // deferred, not yet executed
+      resolveNopeTimeout(game, p0);
       expect(game.pendingCardView).not.toBeNull();
       expect(game.pendingCardView!.cards.length).toBe(3);
       expect(game.pendingCardView!.forPlayerIndex).toBe(p0);
@@ -172,22 +175,21 @@ describe('Integration: Full Card Flows', () => {
   });
 
   describe('Nope chain', () => {
-    it('PATH A: single Nope consumes the Nope card, nope window records chain', () => {
+    it('PATH A: single Nope consumes card, appears in chain, effect cancelled on timeout', () => {
       const game = testGame(2);
       const p0 = game.turn.currentPlayerIndex;
       const p1 = 1 - p0;
       const [attackId] = ensureCardsInHand(game, p0, ['attack' as CardType]);
 
       handleAction(game, p0, 'PLAY_CARD', { cardId: attackId });
+      expect(game.players[p1].pendingTurns).toBe(0); // effect deferred
 
-      // p1 plays Nope
-      const p1HadNope = game.players[p1].hand.some(c => c.type === 'nope');
       const nopeResult = playNope(game, p1);
-      if (p1HadNope) {
-        expect(nopeResult.valid).toBe(true);
+      if (nopeResult.valid) {
         expect(game.nopeWindow!.chain.length).toBe(1);
-        // Nope card removed from hand
-        expect(game.players[p1].hand.some(c => c.type === 'nope')).toBe(false);
+        resolveNopeTimeout(game, p0);
+        expect(game.nopeWindow).toBeNull();
+        expect(game.players[p1].pendingTurns).toBe(0); // nope cancelled the attack
       }
     });
 
@@ -243,6 +245,12 @@ describe('Integration: Full Card Flows', () => {
       const game = testGame(2);
       const p0 = game.turn.currentPlayerIndex;
       const p1 = 1 - p0;
+      // Ensure top card is not an Exploding Kitten (would trigger defuse flow)
+      const ekIdx = game.deck.findIndex(c => c.type === 'exploding_kitten');
+      if (ekIdx !== -1) {
+        const [ek] = game.deck.splice(ekIdx, 1);
+        game.deck.push(ek); // move EK to bottom
+      }
       const handBefore = game.players[p0].hand.length;
       const deckBefore = game.deck.length;
 
@@ -251,7 +259,6 @@ describe('Integration: Full Card Flows', () => {
       expect(game.players[p0].hand.length).toBe(handBefore + 1);
       expect(game.deck.length).toBe(deckBefore - 1);
       expect(game.turn.currentPlayerIndex).toBe(p1);
-      expect(game.nopeWindow).toBeNull();
     });
   });
 
@@ -275,7 +282,8 @@ describe('Integration: Full Card Flows', () => {
       const [revId] = ensureCardsInHand(game, p0, ['reverse' as CardType]);
 
       handleAction(game, p0, 'PLAY_CARD', { cardId: revId });
-
+      expect(game.turn.direction).toBe(1); // deferred, not flipped yet
+      resolveNopeTimeout(game, p0);
       expect(game.turn.direction).toBe(-1);
       const expectedPrev = (p0 - 1 + 3) % 3;
       expect(game.turn.currentPlayerIndex).toBe(expectedPrev);

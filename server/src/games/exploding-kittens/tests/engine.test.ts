@@ -88,7 +88,7 @@ describe('Exploding Kittens Engine', () => {
       expect(result.valid).toBe(false);
     });
 
-    it('removes card from hand and adds to discard when played', () => {
+    it('removes card from hand immediately but defers discard until nope resolution', () => {
       const game = createTestGame(3);
       const current = game.players[game.turn.currentPlayerIndex];
       const skipCard = findCardByType(current.hand, 'skip');
@@ -96,7 +96,10 @@ describe('Exploding Kittens Engine', () => {
       const handSizeBefore = current.hand.length;
       const discardBefore = game.discardPile.length;
       handleAction(game, game.turn.currentPlayerIndex, 'PLAY_CARD', { cardId: skipCard });
-      expect(current.hand.length).toBe(handSizeBefore - 1);
+      expect(current.hand.length).toBe(handSizeBefore - 1); // removed from hand immediately
+      expect(game.discardPile.length).toBe(discardBefore); // not yet discarded (deferred)
+      // After nope resolution, card moves to discard
+      handleAction(game, game.turn.currentPlayerIndex, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.discardPile.length).toBe(discardBefore + 1);
     });
   });
@@ -108,8 +111,10 @@ describe('Exploding Kittens Engine', () => {
       const next = 1 - current;
       const attackCard = findCardByType(game.players[current].hand, 'attack');
       if (!attackCard) return;
+      expect(game.nopeWindow).toBeNull();
       handleAction(game, current, 'PLAY_CARD', { cardId: attackCard });
-      // Attack adds 3 (2+1), advanceTurn doesn't decrement for the target yet
+      expect(game.nopeWindow).not.toBeNull(); // deferred
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT'); // execute effect
       expect(game.players[next].pendingTurns).toBe(3);
     });
   });
@@ -118,7 +123,6 @@ describe('Exploding Kittens Engine', () => {
     it('ends the turn when no attack is pending', () => {
       const game = createTestGame(4);
       const current = game.turn.currentPlayerIndex;
-      // Find any skip card in any player's hand and move it to current player
       let skipCard: string | undefined;
       for (const p of game.players) {
         skipCard = findCardByType(p.hand, 'skip');
@@ -130,6 +134,8 @@ describe('Exploding Kittens Engine', () => {
       }
       if (!skipCard) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: skipCard });
+      expect(game.nopeWindow).not.toBeNull(); // Skip is now nopeable
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT'); // execute deferred effect
       expect(game.turn.currentPlayerIndex).not.toBe(current);
     });
   });

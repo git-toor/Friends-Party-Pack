@@ -47,6 +47,7 @@ describe('Streaking Kittens Expansion', () => {
       const sk = findCardByType(game.players[current].hand, 'streaking_kitten');
       if (!sk) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: sk });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[current].streakingKitten).toBe(true);
     });
 
@@ -85,8 +86,9 @@ describe('Streaking Kittens Expansion', () => {
       if (!ss) return;
       game.players[current].pendingTurns = 5;
       handleAction(game, current, 'PLAY_CARD', { cardId: ss });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[current].pendingTurns).toBe(0);
-      expect(game.turn.currentPlayerIndex).not.toBe(current); // turn advances
+      expect(game.turn.currentPlayerIndex).not.toBe(current);
     });
   });
 
@@ -99,6 +101,7 @@ describe('Streaking Kittens Expansion', () => {
       const first = game.deck[0];
       const last = game.deck[game.deck.length - 1];
       handleAction(game, current, 'PLAY_CARD', { cardId: stb });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.deck[0].id).toBe(last.id);
       expect(game.deck[game.deck.length - 1].id).toBe(first.id);
     });
@@ -112,9 +115,10 @@ describe('Streaking Kittens Expansion', () => {
       if (!gc) return;
       const handSizes = game.players.map(p => p.hand.length);
       handleAction(game, current, 'PLAY_CARD', { cardId: gc });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       for (let i = 0; i < game.players.length; i++) {
         if (game.players[i].alive) {
-          const expectedDiff = i === current ? 2 : 1; // Player who played Garbage Collection also lost the GC card
+          const expectedDiff = i === current ? 2 : 1;
           expect(game.players[i].hand.length).toBe(handSizes[i] - expectedDiff);
         }
       }
@@ -127,10 +131,9 @@ describe('Streaking Kittens Expansion', () => {
       const current = game.turn.currentPlayerIndex;
       const cb = findCardByType(game.players[current].hand, 'catomic_bomb');
       if (!cb) return;
-      // Move some EKs to discard and known positions in deck
       const ekCount = game.deck.filter(c => c.type === 'exploding_kitten').length;
       handleAction(game, current, 'PLAY_CARD', { cardId: cb });
-      // All EKs should be at the top of the deck
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       const topCards = game.deck.slice(0, ekCount);
       expect(topCards.every(c => c.type === 'exploding_kitten')).toBe(true);
     });
@@ -145,8 +148,9 @@ describe('Streaking Kittens Expansion', () => {
       if (!mk) return;
       const targetHandSize = game.players[target].hand.length;
       handleAction(game, current, 'PLAY_CARD', { cardId: mk, targetIndex: target });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[target].markedCardIds.length).toBeGreaterThanOrEqual(1);
-      expect(game.players[target].hand.length).toBe(targetHandSize); // card stays in hand
+      expect(game.players[target].hand.length).toBe(targetHandSize);
     });
 
     it('rejects invalid target', () => {
@@ -167,6 +171,7 @@ describe('Streaking Kittens Expansion', () => {
       const cc = findCardByType(game.players[current].hand, 'curse_cat_butt');
       if (!cc) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: cc, targetIndex: target });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[target].cursed).toBe(true);
     });
   });

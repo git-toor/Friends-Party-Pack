@@ -5,7 +5,7 @@ export const baseCards: CardDefinition[] = [
     id: 'exploding_kitten', name: 'Exploding Kitten', expansion: 'base',
     copies: (p: number) => Math.max(1, p - 1),
     playable: {},
-    effect: { type: 'EXPLODE', defusable: true },
+    effect: { type: 'EXPLODE', defusable: true, nopeable: false },
     category: 'exploding',
   },
   {

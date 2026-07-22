@@ -5,7 +5,7 @@ export const zombieCards: CardDefinition[] = [
     id: 'zombie_kitten', name: 'Zombie Kitten', expansion: 'zombie',
     copies: 5,
     playable: { requiresResponse: 'zombie_revive' },
-    effect: { type: 'ZOMBIE_KITTEN', reviveTarget: true },
+    effect: { type: 'ZOMBIE_KITTEN', reviveTarget: true, nopeable: false },
     category: 'defuse',
   },
   {

@@ -28,6 +28,7 @@ export interface EffectDefinition {
   selfTarget?: boolean;
   defusable?: boolean;
   reviveTarget?: boolean;
+  nopeable?: boolean; // defaults to true
   insert?: 'face_up' | 'face_down';
   requiresResponse?: string;
   responseWindowMs?: number;
@@ -104,6 +105,7 @@ export interface GameAction {
   status: 'pending' | 'awaiting_response' | 'resolving' | 'resolved' | 'noped';
   createdAt: number;
   timeout?: NodeJS.Timeout;
+  pendingCard?: Card;
 }
 
 export interface GameSettings {

@@ -5,7 +5,7 @@ export const implodingCards: CardDefinition[] = [
     id: 'imploding_kitten', name: 'Imploding Kitten', expansion: 'imploding',
     copies: 1,
     playable: {},
-    effect: { type: 'IMPLODING_KITTEN', defusable: false, insert: 'face_up' },
+    effect: { type: 'IMPLODING_KITTEN', defusable: false, insert: 'face_up', nopeable: false },
     category: 'exploding',
   },
   {

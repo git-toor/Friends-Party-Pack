@@ -110,6 +110,7 @@ describe('Imploding Kittens Expansion', () => {
       const revCard = findCardByType(game.players[current].hand, 'reverse');
       if (!revCard) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: revCard });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT'); // execute deferred reverse
       expect(game.turn.direction).toBe(-1);
     });
 
@@ -119,7 +120,7 @@ describe('Imploding Kittens Expansion', () => {
       const revCard = findCardByType(game.players[current].hand, 'reverse');
       if (!revCard) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: revCard });
-      // Turn should advance to previous player (due to reversal)
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       const next = game.turn.currentPlayerIndex;
       const expectedPrev = (current - 1 + 3) % 3;
       expect(next).toBe(expectedPrev);
@@ -134,6 +135,7 @@ describe('Imploding Kittens Expansion', () => {
       const taCard = findCardByType(game.players[current].hand, 'targeted_attack');
       if (!taCard) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: taCard, targetIndex: targetIdx });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[targetIdx].pendingTurns).toBe(2);
     });
 
@@ -143,7 +145,7 @@ describe('Imploding Kittens Expansion', () => {
       const taCard = findCardByType(game.players[current].hand, 'targeted_attack');
       if (!taCard) return;
       const result = handleAction(game, current, 'PLAY_CARD', { cardId: taCard, targetIndex: 99 });
-      expect(result.valid).toBe(false);
+      expect(result.valid).toBe(false); // pre-validated before deferring
     });
   });
 
@@ -154,6 +156,7 @@ describe('Imploding Kittens Expansion', () => {
       const dbCard = findCardByType(game.players[current].hand, 'draw_from_bottom');
       if (!dbCard) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: dbCard });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[current].pendingDrawFromBottom).toBe(true);
     });
 

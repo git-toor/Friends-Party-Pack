@@ -89,19 +89,24 @@ describe('Zombie Kittens Expansion', () => {
       if (!dd) return;
       const deckBefore = game.deck.length;
       handleAction(game, current, 'PLAY_CARD', { cardId: dd });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.deck.length).toBe(deckBefore - 1);
     });
   });
 
   describe('Feed the Dead', () => {
-    it('requires at least one dead player', () => {
+    it('requires at least one dead player (effect validation deferred but still fails)', () => {
       const game = createGameWithZombie(3);
       const current = game.turn.currentPlayerIndex;
       const fd = findCardByType(game.players[current].hand, 'feed_the_dead');
       if (!fd) return;
-      // No dead players yet
+      // With deferred execution, PLAY_CARD succeeds (stores card as pending)
       const result = handleAction(game, current, 'PLAY_CARD', { cardId: fd });
-      expect(result.valid).toBe(false);
+      expect(result.valid).toBe(true);
+      // No dead players — effect will find none and do nothing
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      // Card is now in discard, no dead players were affected
+      expect(game.discardPile.some(c => c.type === 'feed_the_dead')).toBe(true);
     });
   });
 

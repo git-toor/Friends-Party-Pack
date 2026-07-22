@@ -53,9 +53,9 @@ describe('Barking Kittens Expansion', () => {
       const target = (current + 1) % 3;
       const bk = findCardByType(game.players[current].hand, 'barking_kitten');
       if (!bk) return;
-      // Ensure target doesn't have an EK
       game.players[target].hand = game.players[target].hand.filter(c => c.type !== 'exploding_kitten');
       handleAction(game, current, 'PLAY_CARD', { cardId: bk, targetIndex: target });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[target].alive).toBe(true);
     });
 
@@ -65,7 +65,6 @@ describe('Barking Kittens Expansion', () => {
       const target = 1 - current;
       const bk = findCardByType(game.players[current].hand, 'barking_kitten');
       if (!bk) return;
-      // Give target a BK
       const otherBk = game.deck.find(c => c.type === 'barking_kitten');
       if (!otherBk) return;
       game.deck = game.deck.filter(c => c.id !== otherBk.id);
@@ -73,7 +72,7 @@ describe('Barking Kittens Expansion', () => {
       const hadBK = game.players[target].hand.some(c => c.type === 'barking_kitten');
       if (!hadBK) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: bk, targetIndex: target });
-      // Target's BK should be in discard
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.discardPile.some(c => c.type === 'barking_kitten')).toBe(true);
     });
   });
@@ -85,7 +84,7 @@ describe('Barking Kittens Expansion', () => {
       const pa = findCardByType(game.players[current].hand, 'personal_attack');
       if (!pa) return;
       handleAction(game, current, 'PLAY_CARD', { cardId: pa });
-      // Personal Attack adds 4 (3+1), endTurn decrements by 1, net = 3 pending draws
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.players[current].pendingTurns).toBe(3);
     });
   });
@@ -98,9 +97,10 @@ describe('Barking Kittens Expansion', () => {
       if (!pl) return;
       const handSizes = game.players.map(p => p.hand.length);
       handleAction(game, current, 'PLAY_CARD', { cardId: pl });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       for (let i = 0; i < game.players.length; i++) {
         if (game.players[i].alive) {
-          const expectedDiff = i === current ? 2 : 1; // Player who played Potluck also lost the Potluck card
+          const expectedDiff = i === current ? 2 : 1;
           expect(game.players[i].hand.length).toBe(handSizes[i] - expectedDiff);
         }
       }
@@ -115,7 +115,7 @@ describe('Barking Kittens Expansion', () => {
       if (!bury) return;
       const deckSizeBefore = game.deck.length;
       handleAction(game, current, 'PLAY_CARD', { cardId: bury });
-      // Card was drawn and put back — deck size unchanged
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
       expect(game.deck.length).toBe(deckSizeBefore);
     });
   });

@@ -1,7 +1,7 @@
 import type { GameState, GameSettings, GameAction, GameResult, Card } from './types.js';
 import type { EffectCallbacks, EffectResult } from './EffectEngine.js';
 import { resolveEffect } from './EffectEngine.js';
-import { canPlayCard, canDrawCard, createAction, advanceTurn, isNopeable, resolveDrawCard } from './ActionEngine.js';
+import { canPlayCard, canDrawCard, createAction, advanceTurn, resolveDrawCard } from './ActionEngine.js';
 import { createCard, getAllDefinitions } from '../cards/registry.js';
 import { shuffleArray } from './EffectEngine.js';
 import { serializeState } from '../state/Serializer.js';
@@ -102,12 +102,10 @@ export function handleAction(
       const player = state.players[playerIndex];
       const playedCard = player.hand.find(c => c.id === cardId);
 
-      // During nope window, only Nope cards can be played (from any player)
       if (state.nopeWindow) {
         if (!playedCard || playedCard.type !== 'nope') {
           return { state, valid: false, error: 'Only Nope can be played during nope window. Use RESOLVE_NOPE action.' };
         }
-        // Allow Nope from any player — bypass turn check
       } else {
         const err = canPlayCard(state, playerIndex, cardId);
         if (err) return { state, valid: false, error: err };
@@ -115,27 +113,58 @@ export function handleAction(
       const cardIndex = player.hand.findIndex(c => c.id === cardId);
       if (cardIndex === -1) return { state, valid: false, error: 'Card not in hand' };
       const card = player.hand.splice(cardIndex, 1)[0];
-      state.discardPile.push(card);
 
       const action = createAction('PLAY_CARD', playerIndex, payload);
+      const eff = card.definition.effect;
+
+      // Pre-validate target-dependent effects before deferring
+      if (eff.nopeable !== false) {
+        if (eff.type === 'FORCE_GIVE' || eff.type === 'TARGETED_ATTACK' || eff.type === 'BARKING_KITTEN' ||
+            eff.type === 'MARK' || eff.type === 'CURSE_CAT_BUTT' || eff.type === 'CAT_PAIR_SHUFFLE') {
+          const tIdx = payload?.targetIndex;
+          if (tIdx === undefined || tIdx < 0 || tIdx >= state.players.length || !state.players[tIdx].alive) {
+            player.hand.push(card);
+            return { state, valid: false, error: 'Invalid target' };
+          }
+        }
+        if (eff.type === 'FORCE_GIVE' || eff.type === 'CAT_PAIR_SHUFFLE') {
+          const tIdx = payload?.targetIndex;
+          if (tIdx !== undefined && state.players[tIdx].hand.length === 0) {
+            player.hand.push(card);
+            return { state, valid: false, error: 'Target has no cards' };
+          }
+        }
+        if (eff.type === 'MARK') {
+          const tIdx = payload?.targetIndex;
+          if (tIdx !== undefined && tIdx >= 0 && tIdx < state.players.length && state.players[tIdx].hand.length === 0) {
+            player.hand.push(card);
+            return { state, valid: false, error: 'Target has no cards' };
+          }
+        }
+        // Defer execution
+        action.pendingCard = card;
+        action.status = 'pending';
+        state.actionStack.push(action);
+        state.nopeWindow = {
+          expiresAt: Date.now() + 3000,
+          targetActionId: action.id,
+          chain: [],
+        };
+        return { state, valid: true };
+      }
+
+      // Non-nopeable: execute immediately
+      state.discardPile.push(card);
       const callbacks = makeCallbacks();
       const effectResult = resolveEffect(state, card.definition.effect, { ...action, payload: { ...payload, cardId: card.id } }, callbacks);
-
       if (!effectResult.success) {
-        player.hand.push(card); // Put the card back
+        player.hand.push(card);
         state.discardPile.pop();
         return { state, valid: false, error: 'Card effect failed' };
       }
-
-      // Streaking Kitten stays "on table" — remove from discard
       if (card.type === 'streaking_kitten') {
         state.discardPile.pop();
       }
-
-      if (effectResult.nopeable && isNopeable(action)) {
-        callbacks.queueNopeWindow(action.id);
-      }
-
       return { state, valid: true };
     }
 
@@ -241,12 +270,27 @@ export function handleAction(
     case 'RESOLVE_NOPE_TIMEOUT': {
       if (!state.nopeWindow) return { state, valid: false, error: 'No nope window' };
       const chainLength = state.nopeWindow.chain.length;
+      const targetAction = state.actionStack.find(a => a.id === state.nopeWindow?.targetActionId);
+
       if (chainLength % 2 === 1) {
-        const targetAction = state.actionStack.find(a => a.id === state.nopeWindow?.targetActionId);
-        if (targetAction) {
+        // Nope wins — discard card without executing effect
+        if (targetAction?.pendingCard) {
+          state.discardPile.push(targetAction.pendingCard);
           targetAction.status = 'noped';
         }
+      } else {
+        // No nope or nope was noped — execute the deferred effect
+        if (targetAction?.pendingCard) {
+          const card = targetAction.pendingCard;
+          state.discardPile.push(card);
+          const deferCallbacks = makeCallbacks();
+          resolveEffect(state, card.definition.effect, { ...targetAction, pendingCard: undefined }, deferCallbacks);
+          if (card.type === 'streaking_kitten') {
+            state.discardPile.pop();
+          }
+        }
       }
+      state.actionStack = state.actionStack.filter(a => a.id !== state.nopeWindow?.targetActionId);
       state.nopeWindow = null;
       return { state, valid: true };
     }
