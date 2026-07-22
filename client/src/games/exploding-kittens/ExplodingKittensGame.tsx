@@ -81,11 +81,7 @@ export default function ExplodingKittensGame({
         }
         return next;
       });
-      // See the Future / Alter Future detection
-      if (next.pendingCardView && next.pendingCardView.cards.length > 0) {
-        setShowFuture(next.pendingCardView);
-      }
-      // Shuffle detection — deck size changes and shuffle was played
+      // Shuffle or card play notification
       if (lastHandSize.current > 0) {
         const handDiff = next.myHand.length - lastHandSize.current;
         if (handDiff < 0) {
@@ -129,6 +125,13 @@ export default function ExplodingKittensGame({
       return data;
     } catch { return null; }
   }, [sessionId, playerIndex]);
+
+  // Show See/Share/Alter the Future popup when server sends card view data
+  useEffect(() => {
+    if (gs.pendingCardView && gs.pendingCardView.cards.length > 0) {
+      setShowFuture(gs.pendingCardView);
+    }
+  }, [gs.pendingCardView]);
 
   const isMyTurn = gs.turn.currentPlayerIndex === playerIndex;
   const turnPhase = gs.turn.phase;
