@@ -432,7 +432,9 @@ describe('Integration: Full Card Flows', () => {
         targetIndex: p1,
         comboType: 'pair',
       });
-      expect(game.players[p0].hand.length).toBeGreaterThan(0); // stole a card
+      expect(game.nopeWindow).not.toBeNull(); // deferred
+      resolveNopeTimeout(game, p0);
+      expect(game.players[p0].hand.length).toBeGreaterThan(0);
       expect(game.players[p1].hand.length).toBe(p1CardCount - 1);
     });
 
@@ -462,6 +464,7 @@ describe('Integration: Full Card Flows', () => {
         comboType: 'triple',
         namedCard: targetCardType,
       });
+      resolveNopeTimeout(game, p0);
       expect(game.players[p0].hand.some(c => c.type === targetCardType)).toBe(true);
     });
 
@@ -503,6 +506,7 @@ describe('Integration: Full Card Flows', () => {
         chosenCardId: discCard.id,
       });
       expect(result.valid).toBe(true);
+      resolveNopeTimeout(game, p0);
       expect(game.players[p0].hand.some(c => c.id === discCard.id)).toBe(true);
     });
   });

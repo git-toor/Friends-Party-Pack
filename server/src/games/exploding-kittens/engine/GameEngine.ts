@@ -273,21 +273,30 @@ export function handleAction(
       const targetAction = state.actionStack.find(a => a.id === state.nopeWindow?.targetActionId);
 
       if (chainLength % 2 === 1) {
-        // Nope wins — discard card without executing effect
+        // Nope wins — discard cards without executing effect
         if (targetAction?.pendingCard) {
           state.discardPile.push(targetAction.pendingCard);
           targetAction.status = 'noped';
         }
+        if ((targetAction as any)?.pendingCards) {
+          for (const c of (targetAction as any).pendingCards) state.discardPile.push(c);
+          targetAction!.status = 'noped';
+        }
       } else {
-        // No nope or nope was noped — execute the deferred effect
+        // Execute the deferred effect
         if (targetAction?.pendingCard) {
           const card = targetAction.pendingCard;
           state.discardPile.push(card);
           const deferCallbacks = makeCallbacks();
           resolveEffect(state, card.definition.effect, { ...targetAction, pendingCard: undefined }, deferCallbacks);
-          if (card.type === 'streaking_kitten') {
-            state.discardPile.pop();
-          }
+          if (card.type === 'streaking_kitten') state.discardPile.pop();
+        }
+        if ((targetAction as any)?.pendingCards) {
+          const cards: Card[] = (targetAction as any).pendingCards;
+          for (const c of cards) state.discardPile.push(c);
+          const deferCallbacks = makeCallbacks();
+          const comboPayload = targetAction?.payload || {};
+          resolveEffect(state, { type: 'CAT_COMBO' } as any, { ...targetAction!, pendingCards: undefined, payload: comboPayload } as GameAction, deferCallbacks);
         }
       }
       state.actionStack = state.actionStack.filter(a => a.id !== state.nopeWindow?.targetActionId);
@@ -307,7 +316,6 @@ export function handleAction(
         cards.push(player.hand.splice(idx, 1)[0]);
       }
 
-      // Determine combo type
       const catTypes = cards.map(c => c.type);
       const uniqueTypes = new Set(catTypes);
       const hasFeral = catTypes.includes('feral_cat' as any);
@@ -319,21 +327,16 @@ export function handleAction(
         comboType = 'five';
       }
 
-      // Remove combo cards from hand, add to pending
-      const callbacks = makeCallbacks();
-
-      // For pair: steal random from target
-      // For triple: name a card from target
-      // For five: take from discard
-      // Execute immediately (combos are not nopeable per real game rules)
-
-      for (const c of cards) state.discardPile.push(c);
-
-      const fakeAction = createAction('PLAY_COMBO', playerIndex, payload);
-      resolveEffect(state, { type: 'CAT_COMBO' } as any, {
-        ...fakeAction, payload: { ...payload, comboType, targetIndex: payload?.targetIndex }
-      }, callbacks);
-
+      // Defer execution — cat combos CAN be noped
+      const comboAction = createAction('PLAY_COMBO', playerIndex, { ...payload, comboType });
+      (comboAction as any).pendingCards = cards;
+      comboAction.status = 'pending';
+      state.actionStack.push(comboAction);
+      state.nopeWindow = {
+        expiresAt: Date.now() + 3000,
+        targetActionId: comboAction.id,
+        chain: [],
+      };
       return { state, valid: true };
     }
 

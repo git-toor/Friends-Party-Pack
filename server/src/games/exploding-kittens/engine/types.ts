@@ -111,6 +111,7 @@ export interface GameAction {
   createdAt: number;
   timeout?: NodeJS.Timeout;
   pendingCard?: Card;
+  pendingCards?: Card[];
 }
 
 export interface GameSettings {
