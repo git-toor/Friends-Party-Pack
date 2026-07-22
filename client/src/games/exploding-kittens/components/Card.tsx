@@ -181,9 +181,19 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         {artUrl ? (
-          <img src={artUrl} alt={card.name} style={{
-            width: '100%', height: '100%', objectFit: 'cover',
-          }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <img src={artUrl} alt={card.name} loading="lazy" style={{
+            width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0,
+          }} onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+            // Show fallback icon
+            const parent = (e.target as HTMLImageElement).parentElement;
+            if (parent) {
+              const fallback = document.createElement('span');
+              fallback.textContent = icon;
+              fallback.style.cssText = `font-size:${dims.iconSize * 2}px;opacity:0.3;`;
+              parent.appendChild(fallback);
+            }
+          }} />
         ) : (
           <span style={{ fontSize: dims.iconSize * 2, opacity: 0.3 }}>{icon}</span>
         )}

@@ -182,6 +182,13 @@ registerEffect('EXPLODE', (state, effect, _action, callbacks) => {
   const current = state.players[state.turn.currentPlayerIndex];
   const hasDef = hasDefuse(current);
   const hasZombie = current.hand.some(c => c.type === 'zombie_kitten');
+  
+  // Broadcast that an Exploding Kitten was drawn
+  callbacks.broadcast('EXPLODING_KITTEN_DRAWN', {
+    playerIndex: state.turn.currentPlayerIndex,
+    hasDefuse: hasDef || hasZombie,
+  });
+
   if (defusable && (hasDef || hasZombie)) {
     const defuseAction: GameAction = {
       id: crypto.randomUUID(),

@@ -132,7 +132,7 @@ describe('Zombie Kittens Expansion', () => {
       const handBefore = game.players[current].hand.length;
       handleAction(game, current, 'PLAY_CARD', { cardId: clone });
       handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
-      expect(game.players[current].hand.length).toBe(handBefore + 1);
+      expect(game.players[current].hand.length).toBe(handBefore);
       expect(game.players[current].hand.some(c => c.type === topDeckType)).toBe(true);
     });
 

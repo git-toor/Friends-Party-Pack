@@ -207,6 +207,14 @@ export function handleAction(
           reviveTarget.dead = false;
         }
       }
+      state.actionStack = state.actionStack.filter(a => a.type !== 'RESOLVE_DEFUSE');
+      // Broadcast defuse resolution to all players
+      const defCallbacks = makeCallbacks();
+      defCallbacks.broadcast('DEFUSE_RESOLVED', {
+        playerIndex,
+        insertIndex: insertIdx,
+        usingZombie,
+      });
       advanceTurn(state);
       return { state, valid: true };
     }
@@ -220,8 +228,10 @@ export function handleAction(
       if (!target || !target.dead) return { state, valid: false, error: 'Invalid revive target' };
       target.alive = true;
       target.dead = false;
+      state.actionStack = state.actionStack.filter(a => a.type !== 'RESOLVE_ZOMBIE_REVIVE');
       const revCallbacks = makeCallbacks();
       revCallbacks.broadcast('PLAYER_REVIVED', { playerIndex: targetIdx });
+      revCallbacks.broadcast('ZOMBIE_DEFUSE_RESOLVED', { playerIndex, revivedIndex: targetIdx });
       // Put EK back in deck
       const ekIdx = player.hand.findIndex(c => c.type === 'exploding_kitten');
       if (ekIdx !== -1) {
