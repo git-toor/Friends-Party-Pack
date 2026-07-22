@@ -1,0 +1,88 @@
+import type { CardDefinition } from '../../engine/types.js';
+
+export const baseCards: CardDefinition[] = [
+  {
+    id: 'exploding_kitten', name: 'Exploding Kitten', expansion: 'base',
+    copies: (p: number) => Math.max(1, p - 1),
+    playable: {},
+    effect: { type: 'EXPLODE', defusable: true },
+    category: 'exploding',
+  },
+  {
+    id: 'defuse', name: 'Defuse', expansion: 'base',
+    copies: (p: number) => p + 1,
+    playable: { requiresResponse: 'defuse' },
+    effect: { type: 'DEFUSE_AND_INSERT' },
+    category: 'defuse',
+  },
+  {
+    id: 'attack', name: 'Attack', expansion: 'base',
+    copies: 4,
+    playable: {},
+    effect: { type: 'ADD_TURNS', amount: 2, stackable: true },
+    category: 'action',
+  },
+  {
+    id: 'skip', name: 'Skip', expansion: 'base',
+    copies: 4,
+    playable: {},
+    effect: { type: 'SKIP_TURNS', responseWindowMs: 0 },
+    category: 'action',
+  },
+  {
+    id: 'favor', name: 'Favor', expansion: 'base',
+    copies: 4,
+    playable: { requiresTarget: true, requiresResponse: 'favor' },
+    effect: { type: 'FORCE_GIVE', requiresResponse: 'favor' },
+    category: 'action',
+  },
+  {
+    id: 'shuffle', name: 'Shuffle', expansion: 'base',
+    copies: 4,
+    playable: {},
+    effect: { type: 'SHUFFLE_DECK' },
+    category: 'action',
+  },
+  {
+    id: 'see_future_3x', name: 'See the Future', expansion: 'base',
+    copies: 5,
+    playable: {},
+    effect: { type: 'SEE_FUTURE', amount: 3 },
+    category: 'action',
+  },
+  {
+    id: 'nope', name: 'Nope', expansion: 'base',
+    copies: 5,
+    playable: { playAtAnyTime: true },
+    effect: { type: 'NOPE' },
+    category: 'action',
+  },
+  {
+    id: 'tacocat', name: 'TacoCat', expansion: 'base',
+    copies: 4,
+    playable: { requiresTarget: true, requiresResponse: 'favor' },
+    effect: { type: 'CAT_PAIR_SHUFFLE' },
+    category: 'cat',
+  },
+  {
+    id: 'cattermelon', name: 'Cattermelon', expansion: 'base',
+    copies: 4,
+    playable: { requiresTarget: true, requiresResponse: 'favor' },
+    effect: { type: 'CAT_PAIR_SHUFFLE' },
+    category: 'cat',
+  },
+  {
+    id: 'hairy_potato_cat', name: 'Hairy Potato Cat', expansion: 'base',
+    copies: 4,
+    playable: { requiresTarget: true, requiresResponse: 'favor' },
+    effect: { type: 'CAT_PAIR_SHUFFLE' },
+    category: 'cat',
+  },
+  {
+    id: 'beard_cat', name: 'Beard Cat', expansion: 'base',
+    copies: 4,
+    playable: { requiresTarget: true, requiresResponse: 'favor' },
+    effect: { type: 'CAT_PAIR_SHUFFLE' },
+    category: 'cat',
+  },
+];
