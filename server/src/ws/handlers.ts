@@ -1,7 +1,7 @@
 import { WebSocket } from 'ws';
 import { WsServer } from './WsServer.js';
 import { LobbyManager } from '../lobby/LobbyManager.js';
-import { getYahtzeeState, setWsBroadcast } from '../games/yahtzee/YahtzeeRouter.js';
+import { gameRegistry } from '../games/registry.js';
 
 export function setupWsHandlers(wsServer: WsServer, lobbyManager: LobbyManager): void {
   (wsServer as any).wss.on('connection', (ws: WebSocket, req: any) => {
@@ -50,11 +50,11 @@ export function setupWsHandlers(wsServer: WsServer, lobbyManager: LobbyManager):
           const { sessionId, playerIndex } = msg.payload;
           wsServer.joinRoom(ws, `game:${sessionId}`);
           // Register broadcast function for this session
-          setWsBroadcast(sessionId, (payload: any) => {
+          gameRegistry.setWsBroadcast(sessionId, (payload: any) => {
             wsServer.broadcast(`game:${sessionId}`, payload);
           });
           // Send initial state
-          const state = getYahtzeeState(sessionId, playerIndex);
+          const state = gameRegistry.getState(sessionId, playerIndex);
           if (state) {
             wsServer.sendTo(ws, { type: 'GAME_STATE', payload: state });
           }

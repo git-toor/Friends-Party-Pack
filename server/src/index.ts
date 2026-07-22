@@ -8,9 +8,9 @@ import { getDb, closeDb } from './db/index.js';
 import { LobbyManager } from './lobby/LobbyManager.js';
 import { WsServer } from './ws/WsServer.js';
 import { setupWsHandlers } from './ws/handlers.js';
-import { yahtzeeRouter, createYahtzeeSession } from './games/yahtzee/YahtzeeRouter.js';
 import { chatRouter, setWsServer } from './api/chatRouter.js';
 import type { CreateLobbyRequest } from './lobby/LobbyManager.js';
+import { gameRegistry, yahtzeeServer } from './games/registry.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +24,7 @@ getDb();
 const lobbyManager = new LobbyManager();
 const wsServer = new WsServer(server);
 setupWsHandlers(wsServer, lobbyManager);
+gameRegistry.register('yahtzee', yahtzeeServer);
 
 // ─── Health Check ─────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
@@ -75,7 +76,7 @@ app.post('/api/lobby/start', (req, res) => {
   } else {
     const playerCount = result.players.length;
     const sessionId = uuid();
-    createYahtzeeSession(sessionId, playerCount);
+    gameRegistry.createSession(result.lobby.gameId, sessionId, playerCount);
     const payload = {
       ...result,
       sessionId,
@@ -92,7 +93,7 @@ app.post('/api/lobby/state', (req, res) => {
 });
 
 // ─── Game Routes ──────────────────────────────────────────
-app.use('/api/games/yahtzee', yahtzeeRouter);
+gameRegistry.mountRouters(app);
 app.use('/api/chat', chatRouter);
 setWsServer(wsServer);
 
