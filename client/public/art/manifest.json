@@ -1,0 +1,1454 @@
+{
+  "version": "2.0",
+  "art_instances": {
+    "reverse_001": {
+      "card_id": "reverse",
+      "expansion": "imploding",
+      "copy": 1,
+      "seed": 8888,
+      "workflow": "flux",
+      "prompt": "funny cartoon cat pressing a giant red rewind button, playing cards flying backwards through the air, large reverse arrows swirling around, cat has a mischievous grin, cute exaggerated expression, professional board game card illustration, clean black ink outlines, flat colors, simple shapes, centered composition",
+      "file": "/art/imploding/reverse_001.webp"
+    },
+    "reverse_002": {
+      "card_id": "reverse",
+      "expansion": "imploding",
+      "copy": 2,
+      "seed": 8889,
+      "workflow": "flux",
+      "prompt": "a cat pressing a giant undo button, everything around it rewinding like a cartoon movie, spilled cards jumping back into its hand, amazed expression",
+      "file": "/art/imploding/reverse_002.webp"
+    },
+    "reverse_003": {
+      "card_id": "reverse",
+      "expansion": "imploding",
+      "copy": 3,
+      "seed": 8890,
+      "workflow": "flux",
+      "prompt": "a cat wearing a tiny traffic officer uniform holding a giant reverse direction sign with text reverse written on it, forcing a line of cats to turn around, chaotic funny crowd scene",
+      "file": "/art/imploding/reverse_003.webp"
+    },
+    "reverse_004": {
+      "card_id": "reverse",
+      "expansion": "imploding",
+      "copy": 4,
+      "seed": 8891,
+      "workflow": "flux",
+      "prompt": "a cat superhero creating a giant rewind wave that sends objects backward through the air, dramatic action pose, funny time power",
+      "file": "/art/imploding/reverse_004.webp"
+    },
+    "exploding_kitten_001": {
+      "card_id": "exploding_kitten",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 1001,
+      "workflow": "flux",
+      "prompt": "a shocked kitten sitting on top of a giant cartoon bomb, accidentally pressing a big red danger button, wide terrified eyes, tiny explosion sparks starting, funny panic expression",
+      "file": "/art/base/exploding_kitten_001.webp"
+    },
+    "exploding_kitten_002": {
+      "card_id": "exploding_kitten",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 1002,
+      "workflow": "flux",
+      "prompt": "a mischievous kitten holding the loose fuse of a cartoon grenade it accidentally pulled out, frozen surprised expression, smoke curling around the bomb, comedic disaster moment",
+      "file": "/art/base/exploding_kitten_002.webp"
+    },
+    "exploding_kitten_003": {
+      "card_id": "exploding_kitten",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 1003,
+      "workflow": "flux",
+      "prompt": "a silly kitten taking a selfie next to a cartoon bomb explosion, smiling proudly while everyone else runs away, ridiculous social media joke",
+      "file": "/art/base/exploding_kitten_003.webp"
+    },
+    "exploding_kitten_004": {
+      "card_id": "exploding_kitten",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 1004,
+      "workflow": "flux",
+      "prompt": "a tiny cowboy kitten sitting proudly on top of a cartoon bomb like a wild horse, holding a miniature cowboy hat, dramatic silly western pose",
+      "file": "/art/base/exploding_kitten_004.webp"
+    },
+    "defuse_001": {
+      "card_id": "defuse",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 2001,
+      "workflow": "flux",
+      "prompt": "a calm cat wearing a tiny bomb disposal suit and protective goggles, carefully examining a cartoon bomb with a magnifying glass, professional confident expression, tiny tools around it",
+      "file": "/art/base/defuse_001.webp"
+    },
+    "defuse_002": {
+      "card_id": "defuse",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 2002,
+      "workflow": "flux",
+      "prompt": "a ninja cat wearing a tiny black ninja outfit, silently disabling a cartoon bomb with precision, dramatic stealth pose, smoke clouds and funny serious expression",
+      "file": "/art/base/defuse_002.webp"
+    },
+    "defuse_003": {
+      "card_id": "defuse",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 2003,
+      "workflow": "flux",
+      "prompt": "a cat doctor wearing a tiny medical coat and stethoscope, checking a cartoon bomb like a patient, carefully fixing it with a tiny medical tool, humorous scene",
+      "file": "/art/base/defuse_003.webp"
+    },
+    "defuse_004": {
+      "card_id": "defuse",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 2004,
+      "workflow": "flux",
+      "prompt": "a focused cat mechanic wearing a tiny tool belt, carefully cutting the correct wire on a cartoon bomb, several colorful wires visible, confident determined expression",
+      "file": "/art/base/defuse_004.webp"
+    },
+    "defuse_005": {
+      "card_id": "defuse",
+      "expansion": "base",
+      "copy": 5,
+      "seed": 2005,
+      "workflow": "flux",
+      "prompt": "a brave firefighter cat wearing a tiny helmet and backpack, spraying a miniature fire extinguisher white foam over a cartoon bomb fuse, heroic rescue pose",
+      "file": "/art/base/defuse_005.webp"
+    },
+    "defuse_006": {
+      "card_id": "defuse",
+      "expansion": "base",
+      "copy": 6,
+      "seed": 2006,
+      "workflow": "flux",
+      "prompt": "a cat engineer wearing safety glasses and holding a tiny blueprint, carefully taking out battery out of a time bomb",
+      "file": "/art/base/defuse_006.webp"
+    },
+    "attack_001": {
+      "card_id": "attack",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3001,
+      "workflow": "flux",
+      "prompt": "a pirate cat captain steering a tiny ship made of playing cards toward another cat's island, firing harmless card cannonballs, adventurous silly expression",
+      "file": "/art/base/attack_001.webp"
+    },
+    "attack_002": {
+      "card_id": "attack",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3002,
+      "workflow": "flux",
+      "prompt": "a cat general commanding a tiny army of toy cats to charge at another cat, dramatic battle pose",
+      "file": "/art/base/attack_002.webp"
+    },
+    "attack_003": {
+      "card_id": "attack",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3003,
+      "workflow": "flux",
+      "prompt": "a cat using a giant slingshot to launch cards at another cat, mischievous grin",
+      "file": "/art/base/attack_003.webp"
+    },
+    "attack_004": {
+      "card_id": "attack",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3004,
+      "workflow": "flux",
+      "prompt": "a ninja cat sneaking up behind another cat and tapping its shoulder with a turn card, tactical ambush",
+      "file": "/art/base/attack_004.webp"
+    },
+    "skip_001": {
+      "card_id": "skip",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3101,
+      "workflow": "flux",
+      "prompt": "a cat lounging in a hammock with a skip sign, relaxed not-interested expression",
+      "file": "/art/base/skip_001.webp"
+    },
+    "skip_002": {
+      "card_id": "skip",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3102,
+      "workflow": "flux",
+      "prompt": "a cat fast-forwarding a remote control at another cat who disappears in a blur",
+      "file": "/art/base/skip_002.webp"
+    },
+    "skip_003": {
+      "card_id": "skip",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3103,
+      "workflow": "flux",
+      "prompt": "a cat hitting a giant NOPE IM OUT button and sliding away on a escape rope",
+      "file": "/art/base/skip_003.webp"
+    },
+    "skip_004": {
+      "card_id": "skip",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3104,
+      "workflow": "flux",
+      "prompt": "a cat hiding under a cardboard box with not my turn written on it",
+      "file": "/art/base/skip_004.webp"
+    },
+    "favor_001": {
+      "card_id": "favor",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3201,
+      "workflow": "flux",
+      "prompt": "a cat holding out an open palm to another cat expecting a card, smug smile",
+      "file": "/art/base/favor_001.webp"
+    },
+    "favor_002": {
+      "card_id": "favor",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3202,
+      "workflow": "flux",
+      "prompt": "a cat wearing a tiny thief mask stealthily taking a card from another cat's stack",
+      "file": "/art/base/favor_002.webp"
+    },
+    "favor_003": {
+      "card_id": "favor",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3203,
+      "workflow": "flux",
+      "prompt": "a cat trading a fish for a card with another cat, marketplace style",
+      "file": "/art/base/favor_003.webp"
+    },
+    "favor_004": {
+      "card_id": "favor",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3204,
+      "workflow": "flux",
+      "prompt": "a cat pointing a tiny gimme finger gun at another cat, playful demand",
+      "file": "/art/base/favor_004.webp"
+    },
+    "shuffle_001": {
+      "card_id": "shuffle",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3301,
+      "workflow": "flux",
+      "prompt": "a cat DJ mixing decks of cards like turntables, cool headphone look",
+      "file": "/art/base/shuffle_001.webp"
+    },
+    "shuffle_002": {
+      "card_id": "shuffle",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3302,
+      "workflow": "flux",
+      "prompt": "a cat magician shuffling cards with a flourish, cards flying everywhere",
+      "file": "/art/base/shuffle_002.webp"
+    },
+    "shuffle_003": {
+      "card_id": "shuffle",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3303,
+      "workflow": "flux",
+      "prompt": "a cat putting cards into a giant washing machine on shuffle mode",
+      "file": "/art/base/shuffle_003.webp"
+    },
+    "shuffle_004": {
+      "card_id": "shuffle",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3304,
+      "workflow": "flux",
+      "prompt": "a cat spinning a giant wheel with card symbols, random chaotic energy",
+      "file": "/art/base/shuffle_004.webp"
+    },
+    "nope_001": {
+      "card_id": "nope",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3401,
+      "workflow": "flux",
+      "prompt": "a cat holding up a giant red NOPE stop sign, serious unimpressed expression",
+      "file": "/art/base/nope_001.webp"
+    },
+    "nope_002": {
+      "card_id": "nope",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3402,
+      "workflow": "flux",
+      "prompt": "a cat covering another cat's mouth with a paw, shushing them firmly",
+      "file": "/art/base/nope_002.webp"
+    },
+    "nope_003": {
+      "card_id": "nope",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3403,
+      "workflow": "flux",
+      "prompt": "a cat grabbing a card mid-air that another cat just played, nah expression",
+      "file": "/art/base/nope_003.webp"
+    },
+    "nope_004": {
+      "card_id": "nope",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3404,
+      "workflow": "flux",
+      "prompt": "a cat with a giant X stamp stamping out a card being played",
+      "file": "/art/base/nope_004.webp"
+    },
+    "nope_005": {
+      "card_id": "nope",
+      "expansion": "base",
+      "copy": 5,
+      "seed": 3405,
+      "workflow": "flux",
+      "prompt": "a cat crossing its arms in front of its face making an X blocking pose",
+      "file": "/art/base/nope_005.webp"
+    },
+    "see_future_3x_001": {
+      "card_id": "see_future_3x",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3501,
+      "workflow": "flux",
+      "prompt": "a cat looking through a telescope at 3 visible cards in the distance",
+      "file": "/art/base/see_future_3x_001.webp"
+    },
+    "see_future_3x_002": {
+      "card_id": "see_future_3x",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3502,
+      "workflow": "flux",
+      "prompt": "a cat with a glowing magic crystal ball showing 3 cards inside",
+      "file": "/art/base/see_future_3x_002.webp"
+    },
+    "see_future_3x_003": {
+      "card_id": "see_future_3x",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3503,
+      "workflow": "flux",
+      "prompt": "a cat wearing a fortune teller turban peeking at 3 cards under a cup",
+      "file": "/art/base/see_future_3x_003.webp"
+    },
+    "see_future_3x_004": {
+      "card_id": "see_future_3x",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3504,
+      "workflow": "flux",
+      "prompt": "a cat using binoculars to spy on the top of the deck",
+      "file": "/art/base/see_future_3x_004.webp"
+    },
+    "see_future_3x_005": {
+      "card_id": "see_future_3x",
+      "expansion": "base",
+      "copy": 5,
+      "seed": 3505,
+      "workflow": "flux",
+      "prompt": "a cat reading 3 cards like a comic strip, dramatic lighting",
+      "file": "/art/base/see_future_3x_005.webp"
+    },
+    "tacocat_001": {
+      "card_id": "tacocat",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3601,
+      "workflow": "flux",
+      "prompt": "a cute cat taco hybrid dancing with maracas, lively fiesta energy",
+      "file": "/art/base/tacocat_001.webp"
+    },
+    "tacocat_002": {
+      "card_id": "tacocat",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3602,
+      "workflow": "flux",
+      "prompt": "a taco shell with cat ears peeking out, funny surprised expression",
+      "file": "/art/base/tacocat_002.webp"
+    },
+    "tacocat_003": {
+      "card_id": "tacocat",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3603,
+      "workflow": "flux",
+      "prompt": "a cat wrapped in a giant tortilla like a burrito, spicy energy",
+      "file": "/art/base/tacocat_003.webp"
+    },
+    "tacocat_004": {
+      "card_id": "tacocat",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3604,
+      "workflow": "flux",
+      "prompt": "a taco cat superhero flying with a cape made of lettuce",
+      "file": "/art/base/tacocat_004.webp"
+    },
+    "cattermelon_001": {
+      "card_id": "cattermelon",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3701,
+      "workflow": "flux",
+      "prompt": "a watermelon slice with cat face features and cute ears",
+      "file": "/art/base/cattermelon_001.webp"
+    },
+    "cattermelon_002": {
+      "card_id": "cattermelon",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3702,
+      "workflow": "flux",
+      "prompt": "a cat sitting inside a giant watermelon like a boat, happy expression",
+      "file": "/art/base/cattermelon_002.webp"
+    },
+    "cattermelon_003": {
+      "card_id": "cattermelon",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3703,
+      "workflow": "flux",
+      "prompt": "a cat juggling watermelon slices, silly circus energy",
+      "file": "/art/base/cattermelon_003.webp"
+    },
+    "cattermelon_004": {
+      "card_id": "cattermelon",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3704,
+      "workflow": "flux",
+      "prompt": "a cat that is half-watermelon getting carried away by birds",
+      "file": "/art/base/cattermelon_004.webp"
+    },
+    "hairy_potato_cat_001": {
+      "card_id": "hairy_potato_cat",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3801,
+      "workflow": "flux",
+      "prompt": "a hairy potato with cat ears and whiskers, grumpy expression",
+      "file": "/art/base/hairy_potato_cat_001.webp"
+    },
+    "hairy_potato_cat_002": {
+      "card_id": "hairy_potato_cat",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3802,
+      "workflow": "flux",
+      "prompt": "a cat made of potato with hair sprouting everywhere, surprised look",
+      "file": "/art/base/hairy_potato_cat_002.webp"
+    },
+    "hairy_potato_cat_003": {
+      "card_id": "hairy_potato_cat",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3803,
+      "workflow": "flux",
+      "prompt": "a potato body with cat head, trying to be elegant and failing",
+      "file": "/art/base/hairy_potato_cat_003.webp"
+    },
+    "hairy_potato_cat_004": {
+      "card_id": "hairy_potato_cat",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3804,
+      "workflow": "flux",
+      "prompt": "a hairy potato cat rolling downhill, panicked expression",
+      "file": "/art/base/hairy_potato_cat_004.webp"
+    },
+    "beard_cat_001": {
+      "card_id": "beard_cat",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 3901,
+      "workflow": "flux",
+      "prompt": "a cat with a huge magnificent beard, looking proud and distinguished",
+      "file": "/art/base/beard_cat_001.webp"
+    },
+    "beard_cat_002": {
+      "card_id": "beard_cat",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 3902,
+      "workflow": "flux",
+      "prompt": "a wizard cat with a long flowing beard, casting a spell",
+      "file": "/art/base/beard_cat_002.webp"
+    },
+    "beard_cat_003": {
+      "card_id": "beard_cat",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 3903,
+      "workflow": "flux",
+      "prompt": "a hipster cat with a perfectly groomed beard and tiny glasses",
+      "file": "/art/base/beard_cat_003.webp"
+    },
+    "beard_cat_004": {
+      "card_id": "beard_cat",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 3904,
+      "workflow": "flux",
+      "prompt": "a bearded cat doing a rockstar guitar pose, cool sunglasses",
+      "file": "/art/base/beard_cat_004.webp"
+    },
+    "rainbow_ralphing_cat_001": {
+      "card_id": "rainbow_ralphing_cat",
+      "expansion": "base",
+      "copy": 1,
+      "seed": 4001,
+      "workflow": "flux",
+      "prompt": "a cat vomiting a colorful rainbow, disgusted but funny expression",
+      "file": "/art/base/rainbow_ralphing_cat_001.webp"
+    },
+    "rainbow_ralphing_cat_002": {
+      "card_id": "rainbow_ralphing_cat",
+      "expansion": "base",
+      "copy": 2,
+      "seed": 4002,
+      "workflow": "flux",
+      "prompt": "a cat with rainbow vomit spraying everywhere, chaotic colorful scene",
+      "file": "/art/base/rainbow_ralphing_cat_002.webp"
+    },
+    "rainbow_ralphing_cat_003": {
+      "card_id": "rainbow_ralphing_cat",
+      "expansion": "base",
+      "copy": 3,
+      "seed": 4003,
+      "workflow": "flux",
+      "prompt": "a cat vomiting rainbows while riding a tiny unicorn",
+      "file": "/art/base/rainbow_ralphing_cat_003.webp"
+    },
+    "rainbow_ralphing_cat_004": {
+      "card_id": "rainbow_ralphing_cat",
+      "expansion": "base",
+      "copy": 4,
+      "seed": 4004,
+      "workflow": "flux",
+      "prompt": "cats catching the rainbow vomit in buckets, funny chaotic scene",
+      "file": "/art/base/rainbow_ralphing_cat_004.webp"
+    },
+    "imploding_kitten_001": {
+      "card_id": "imploding_kitten",
+      "expansion": "imploding",
+      "copy": 1,
+      "seed": 5001,
+      "workflow": "flux",
+      "prompt": "a kitten being sucked into a swirling black hole vortex, dramatic funny expression",
+      "file": "/art/imploding/imploding_kitten_001.webp"
+    },
+    "alter_future_3x_001": {
+      "card_id": "alter_future_3x",
+      "expansion": "imploding",
+      "copy": 1,
+      "seed": 5101,
+      "workflow": "flux",
+      "prompt": "a cat rearranging 3 cards on a table with a magic wand, mischievous smile",
+      "file": "/art/imploding/alter_future_3x_001.webp"
+    },
+    "alter_future_3x_002": {
+      "card_id": "alter_future_3x",
+      "expansion": "imploding",
+      "copy": 2,
+      "seed": 5102,
+      "workflow": "flux",
+      "prompt": "a cat editing 3 cards like a movie director cutting scenes",
+      "file": "/art/imploding/alter_future_3x_002.webp"
+    },
+    "alter_future_3x_003": {
+      "card_id": "alter_future_3x",
+      "expansion": "imploding",
+      "copy": 3,
+      "seed": 5103,
+      "workflow": "flux",
+      "prompt": "a cat swapping 3 cards using puppeteer strings, dramatic pose",
+      "file": "/art/imploding/alter_future_3x_003.webp"
+    },
+    "alter_future_3x_004": {
+      "card_id": "alter_future_3x",
+      "expansion": "imploding",
+      "copy": 4,
+      "seed": 5104,
+      "workflow": "flux",
+      "prompt": "a cat shuffling 3 cards with a sneaky plan, evil grin",
+      "file": "/art/imploding/alter_future_3x_004.webp"
+    },
+    "draw_from_bottom_001": {
+      "card_id": "draw_from_bottom",
+      "expansion": "imploding",
+      "copy": 1,
+      "seed": 5201,
+      "workflow": "flux",
+      "prompt": "a cat pulling a card from the bottom of a huge towering deck",
+      "file": "/art/imploding/draw_from_bottom_001.webp"
+    },
+    "draw_from_bottom_002": {
+      "card_id": "draw_from_bottom",
+      "expansion": "imploding",
+      "copy": 2,
+      "seed": 5202,
+      "workflow": "flux",
+      "prompt": "a cat hanging upside down to draw from the bottom, confused expression",
+      "file": "/art/imploding/draw_from_bottom_002.webp"
+    },
+    "draw_from_bottom_003": {
+      "card_id": "draw_from_bottom",
+      "expansion": "imploding",
+      "copy": 3,
+      "seed": 5203,
+      "workflow": "flux",
+      "prompt": "a cat using a fishing rod to pull a card from the decks bottom",
+      "file": "/art/imploding/draw_from_bottom_003.webp"
+    },
+    "draw_from_bottom_004": {
+      "card_id": "draw_from_bottom",
+      "expansion": "imploding",
+      "copy": 4,
+      "seed": 5204,
+      "workflow": "flux",
+      "prompt": "a cat digging under the deck like a miner, hard hat on",
+      "file": "/art/imploding/draw_from_bottom_004.webp"
+    },
+    "targeted_attack_001": {
+      "card_id": "targeted_attack",
+      "expansion": "imploding",
+      "copy": 1,
+      "seed": 5301,
+      "workflow": "flux",
+      "prompt": "a cat aiming a slingshot at a specific cat with a target on them",
+      "file": "/art/imploding/targeted_attack_001.webp"
+    },
+    "targeted_attack_002": {
+      "card_id": "targeted_attack",
+      "expansion": "imploding",
+      "copy": 2,
+      "seed": 5302,
+      "workflow": "flux",
+      "prompt": "a cat sniper with a dart gun targeting another cat, focused expression",
+      "file": "/art/imploding/targeted_attack_002.webp"
+    },
+    "targeted_attack_003": {
+      "card_id": "targeted_attack",
+      "expansion": "imploding",
+      "copy": 3,
+      "seed": 5303,
+      "workflow": "flux",
+      "prompt": "a cat putting a dartboard on another cat's back, aiming pose",
+      "file": "/art/imploding/targeted_attack_003.webp"
+    },
+    "feral_cat_001": {
+      "card_id": "feral_cat",
+      "expansion": "imploding",
+      "copy": 1,
+      "seed": 5401,
+      "workflow": "flux",
+      "prompt": "a wild messy cat with crazy eyes and sharp claws out, hissing",
+      "file": "/art/imploding/feral_cat_001.webp"
+    },
+    "feral_cat_002": {
+      "card_id": "feral_cat",
+      "expansion": "imploding",
+      "copy": 2,
+      "seed": 5402,
+      "workflow": "flux",
+      "prompt": "a cat wearing a trash can lid like armor, feral battle stance",
+      "file": "/art/imploding/feral_cat_002.webp"
+    },
+    "feral_cat_003": {
+      "card_id": "feral_cat",
+      "expansion": "imploding",
+      "copy": 3,
+      "seed": 5403,
+      "workflow": "flux",
+      "prompt": "a cat swinging from a chandelier, wild jungle energy",
+      "file": "/art/imploding/feral_cat_003.webp"
+    },
+    "feral_cat_004": {
+      "card_id": "feral_cat",
+      "expansion": "imploding",
+      "copy": 4,
+      "seed": 5404,
+      "workflow": "flux",
+      "prompt": "a cat with leaves and twigs stuck in its fur, freshly wild",
+      "file": "/art/imploding/feral_cat_004.webp"
+    },
+    "streaking_kitten_001": {
+      "card_id": "streaking_kitten",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6001,
+      "workflow": "flux",
+      "prompt": "a blur of cat fur running super fast, naked embarrassed expression, motion lines",
+      "file": "/art/streaking/streaking_kitten_001.webp"
+    },
+    "exploding_kitten_extra_001": {
+      "card_id": "exploding_kitten_extra",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6002,
+      "workflow": "flux",
+      "prompt": "a kitten sweating nervously while holding a ticking bomb, oh no moment",
+      "file": "/art/streaking/exploding_kitten_extra_001.webp"
+    },
+    "super_skip_001": {
+      "card_id": "super_skip",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6003,
+      "workflow": "flux",
+      "prompt": "a cat with a superhero cape zooms past multiple turn signs",
+      "file": "/art/streaking/super_skip_001.webp"
+    },
+    "see_future_5x_001": {
+      "card_id": "see_future_5x",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6004,
+      "workflow": "flux",
+      "prompt": "a cat looking through a giant telescope at 5 cards in the distance",
+      "file": "/art/streaking/see_future_5x_001.webp"
+    },
+    "alter_future_5x_001": {
+      "card_id": "alter_future_5x",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6005,
+      "workflow": "flux",
+      "prompt": "a cat juggling 5 cards in the air, rearranging them magically",
+      "file": "/art/streaking/alter_future_5x_001.webp"
+    },
+    "swap_top_bottom_001": {
+      "card_id": "swap_top_bottom",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6006,
+      "workflow": "flux",
+      "prompt": "a cat swapping the top and bottom cards of a tower, cheeky grin",
+      "file": "/art/streaking/swap_top_bottom_001.webp"
+    },
+    "swap_top_bottom_002": {
+      "card_id": "swap_top_bottom",
+      "expansion": "streaking",
+      "copy": 2,
+      "seed": 6007,
+      "workflow": "flux",
+      "prompt": "a cat with one hand on top card and one on bottom, switching them",
+      "file": "/art/streaking/swap_top_bottom_002.webp"
+    },
+    "swap_top_bottom_003": {
+      "card_id": "swap_top_bottom",
+      "expansion": "streaking",
+      "copy": 3,
+      "seed": 6008,
+      "workflow": "flux",
+      "prompt": "a magician cat performing a top to bottom swap trick, audience watching",
+      "file": "/art/streaking/swap_top_bottom_003.webp"
+    },
+    "garbage_collection_001": {
+      "card_id": "garbage_collection",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6009,
+      "workflow": "flux",
+      "prompt": "a cat taking out a trash bag full of unwanted cards",
+      "file": "/art/streaking/garbage_collection_001.webp"
+    },
+    "catomic_bomb_001": {
+      "card_id": "catomic_bomb",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6010,
+      "workflow": "flux",
+      "prompt": "a cat wearing a bomb suit with a lit fuse on its tail, panicked run",
+      "file": "/art/streaking/catomic_bomb_001.webp"
+    },
+    "mark_001": {
+      "card_id": "mark",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6011,
+      "workflow": "flux",
+      "prompt": "a cat marking territory beside a card tower, proud silly expression",
+      "file": "/art/streaking/mark_001.webp"
+    },
+    "mark_002": {
+      "card_id": "mark",
+      "expansion": "streaking",
+      "copy": 2,
+      "seed": 6012,
+      "workflow": "flux",
+      "prompt": "a cat putting a stamp on a card, claiming ownership smugly",
+      "file": "/art/streaking/mark_002.webp"
+    },
+    "mark_003": {
+      "card_id": "mark",
+      "expansion": "streaking",
+      "copy": 3,
+      "seed": 6013,
+      "workflow": "flux",
+      "prompt": "a cat drawing attention to a specific card with a giant marker",
+      "file": "/art/streaking/mark_003.webp"
+    },
+    "curse_cat_butt_001": {
+      "card_id": "curse_cat_butt",
+      "expansion": "streaking",
+      "copy": 1,
+      "seed": 6014,
+      "workflow": "flux",
+      "prompt": "a cartoon cat butt with a cursed spooky aura, green magical smoke",
+      "file": "/art/streaking/curse_cat_butt_001.webp"
+    },
+    "curse_cat_butt_002": {
+      "card_id": "curse_cat_butt",
+      "expansion": "streaking",
+      "copy": 2,
+      "seed": 6015,
+      "workflow": "flux",
+      "prompt": "a cat butt with a comedic angry face, cursed energy swirling",
+      "file": "/art/streaking/curse_cat_butt_002.webp"
+    },
+    "barking_kitten_001": {
+      "card_id": "barking_kitten",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7001,
+      "workflow": "flux",
+      "prompt": "a cute kitten trying to bark like a dog, confused expression",
+      "file": "/art/barking/barking_kitten_001.webp"
+    },
+    "barking_kitten_002": {
+      "card_id": "barking_kitten",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7002,
+      "workflow": "flux",
+      "prompt": "a kitten wearing a puppy mask barking at another cat",
+      "file": "/art/barking/barking_kitten_002.webp"
+    },
+    "tower_of_power_001": {
+      "card_id": "tower_of_power",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7003,
+      "workflow": "flux",
+      "prompt": "a cat wearing a tall tower of cards on its head like a crown",
+      "file": "/art/barking/tower_of_power_001.webp"
+    },
+    "personal_attack_001": {
+      "card_id": "personal_attack",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7004,
+      "workflow": "flux",
+      "prompt": "a cat attacking its own reflection in a mirror, confused",
+      "file": "/art/barking/personal_attack_001.webp"
+    },
+    "personal_attack_002": {
+      "card_id": "personal_attack",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7005,
+      "workflow": "flux",
+      "prompt": "a cat with multiple arms holding weapons all aimed at itself",
+      "file": "/art/barking/personal_attack_002.webp"
+    },
+    "personal_attack_003": {
+      "card_id": "personal_attack",
+      "expansion": "barking",
+      "copy": 3,
+      "seed": 7006,
+      "workflow": "flux",
+      "prompt": "a cat painting a target on its own chest, silly kamikaze pose",
+      "file": "/art/barking/personal_attack_003.webp"
+    },
+    "personal_attack_004": {
+      "card_id": "personal_attack",
+      "expansion": "barking",
+      "copy": 4,
+      "seed": 7007,
+      "workflow": "flux",
+      "prompt": "a cat hitting itself with a hammer labeled 3 turns, painful comedy",
+      "file": "/art/barking/personal_attack_004.webp"
+    },
+    "potluck_001": {
+      "card_id": "potluck",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7008,
+      "workflow": "flux",
+      "prompt": "multiple cats each throwing a card into a giant cooking pot",
+      "file": "/art/barking/potluck_001.webp"
+    },
+    "potluck_002": {
+      "card_id": "potluck",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7009,
+      "workflow": "flux",
+      "prompt": "cats stirring a cauldron full of cards, potluck chaos",
+      "file": "/art/barking/potluck_002.webp"
+    },
+    "bury_001": {
+      "card_id": "bury",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7010,
+      "workflow": "flux",
+      "prompt": "a cat burying a card in a sand pile with a tiny shovel",
+      "file": "/art/barking/bury_001.webp"
+    },
+    "bury_002": {
+      "card_id": "bury",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7011,
+      "workflow": "flux",
+      "prompt": "a cat hiding a card under a pile of other cards, sneaky look",
+      "file": "/art/barking/bury_002.webp"
+    },
+    "share_future_3x_001": {
+      "card_id": "share_future_3x",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7012,
+      "workflow": "flux",
+      "prompt": "two cats looking at 3 cards together, sharing a secret",
+      "file": "/art/barking/share_future_3x_001.webp"
+    },
+    "share_future_3x_002": {
+      "card_id": "share_future_3x",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7013,
+      "workflow": "flux",
+      "prompt": "a cat showing 3 cards to another cat over their shoulder",
+      "file": "/art/barking/share_future_3x_002.webp"
+    },
+    "ill_take_that_001": {
+      "card_id": "ill_take_that",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7014,
+      "workflow": "flux",
+      "prompt": "a cat snatching a card from another cat's hand, greedy grin",
+      "file": "/art/barking/ill_take_that_001.webp"
+    },
+    "ill_take_that_002": {
+      "card_id": "ill_take_that",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7015,
+      "workflow": "flux",
+      "prompt": "a cat using a magnet on a string to steal a card",
+      "file": "/art/barking/ill_take_that_002.webp"
+    },
+    "ill_take_that_003": {
+      "card_id": "ill_take_that",
+      "expansion": "barking",
+      "copy": 3,
+      "seed": 7016,
+      "workflow": "flux",
+      "prompt": "a cat swapping its card for another cats card while they arent looking",
+      "file": "/art/barking/ill_take_that_003.webp"
+    },
+    "ill_take_that_004": {
+      "card_id": "ill_take_that",
+      "expansion": "barking",
+      "copy": 4,
+      "seed": 7017,
+      "workflow": "flux",
+      "prompt": "a cat flexing its muscles and taking a card by force",
+      "file": "/art/barking/ill_take_that_004.webp"
+    },
+    "super_skip_barking_001": {
+      "card_id": "super_skip_barking",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7018,
+      "workflow": "flux",
+      "prompt": "a cat wearing a turbo boost backpack zooming past a turn",
+      "file": "/art/barking/super_skip_barking_001.webp"
+    },
+    "super_skip_barking_002": {
+      "card_id": "super_skip_barking",
+      "expansion": "barking",
+      "copy": 2,
+      "seed": 7019,
+      "workflow": "flux",
+      "prompt": "a cat using rocket boots to launch over the turn, cool pose",
+      "file": "/art/barking/super_skip_barking_002.webp"
+    },
+    "alter_future_3x_barking_001": {
+      "card_id": "alter_future_3x_barking",
+      "expansion": "barking",
+      "copy": 1,
+      "seed": 7020,
+      "workflow": "flux",
+      "prompt": "a cat editing 3 cards with scissors and tape, crafty expression",
+      "file": "/art/barking/alter_future_3x_barking_001.webp"
+    },
+    "zombie_kitten_001": {
+      "card_id": "zombie_kitten",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8001,
+      "workflow": "flux",
+      "prompt": "a cute zombie kitten with stitched patches and glowing green eyes, goofy smile",
+      "file": "/art/zombie/zombie_kitten_001.webp"
+    },
+    "zombie_kitten_002": {
+      "card_id": "zombie_kitten",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8002,
+      "workflow": "flux",
+      "prompt": "a zombie kitten dragging its torn stuffed toy, shambling forward",
+      "file": "/art/zombie/zombie_kitten_002.webp"
+    },
+    "zombie_kitten_003": {
+      "card_id": "zombie_kitten",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8003,
+      "workflow": "flux",
+      "prompt": "a zombie kitten with its brain visible through a crack, still cute",
+      "file": "/art/zombie/zombie_kitten_003.webp"
+    },
+    "zombie_kitten_004": {
+      "card_id": "zombie_kitten",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8004,
+      "workflow": "flux",
+      "prompt": "a zombie kitten wearing a tiny party hat, undead celebration",
+      "file": "/art/zombie/zombie_kitten_004.webp"
+    },
+    "zombie_kitten_005": {
+      "card_id": "zombie_kitten",
+      "expansion": "zombie",
+      "copy": 5,
+      "seed": 8005,
+      "workflow": "flux",
+      "prompt": "a zombie kitten clawing out of a tiny grave, playful undead energy",
+      "file": "/art/zombie/zombie_kitten_005.webp"
+    },
+    "exploding_kitten_z_001": {
+      "card_id": "exploding_kitten_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8006,
+      "workflow": "flux",
+      "prompt": "a zombie kitten sitting on a ticking bomb, drooling, unaware",
+      "file": "/art/zombie/exploding_kitten_z_001.webp"
+    },
+    "exploding_kitten_z_002": {
+      "card_id": "exploding_kitten_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8007,
+      "workflow": "flux",
+      "prompt": "a zombie kitten trying to eat a bomb, bad idea expression",
+      "file": "/art/zombie/exploding_kitten_z_002.webp"
+    },
+    "exploding_kitten_z_003": {
+      "card_id": "exploding_kitten_z",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8008,
+      "workflow": "flux",
+      "prompt": "a zombie kitten using a bomb as a pillow, sleeping peacefully",
+      "file": "/art/zombie/exploding_kitten_z_003.webp"
+    },
+    "exploding_kitten_z_004": {
+      "card_id": "exploding_kitten_z",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8009,
+      "workflow": "flux",
+      "prompt": "a zombie kitten juggling multiple bombs, dangerous comedy",
+      "file": "/art/zombie/exploding_kitten_z_004.webp"
+    },
+    "defuse_z_001": {
+      "card_id": "defuse_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8010,
+      "workflow": "flux",
+      "prompt": "a zombie cat in a bomb disposal suit, clumsily trying to help",
+      "file": "/art/zombie/defuse_z_001.webp"
+    },
+    "defuse_z_002": {
+      "card_id": "defuse_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8011,
+      "workflow": "flux",
+      "prompt": "a zombie cat chewing on the wrong wire, panicked expression",
+      "file": "/art/zombie/defuse_z_002.webp"
+    },
+    "attack_z_001": {
+      "card_id": "attack_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8012,
+      "workflow": "flux",
+      "prompt": "a zombie cat leading a horde of zombie toys to attack",
+      "file": "/art/zombie/attack_z_001.webp"
+    },
+    "attack_z_002": {
+      "card_id": "attack_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8013,
+      "workflow": "flux",
+      "prompt": "a zombie cat throwing its own arm like a boomerang at another cat",
+      "file": "/art/zombie/attack_z_002.webp"
+    },
+    "attack_z_003": {
+      "card_id": "attack_z",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8014,
+      "workflow": "flux",
+      "prompt": "a zombie cat commanding ghost cats to attack, spooky army",
+      "file": "/art/zombie/attack_z_003.webp"
+    },
+    "attack_z_004": {
+      "card_id": "attack_z",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8015,
+      "workflow": "flux",
+      "prompt": "a zombie cat using a catapult to launch itself at the enemy",
+      "file": "/art/zombie/attack_z_004.webp"
+    },
+    "skip_z_001": {
+      "card_id": "skip_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8016,
+      "workflow": "flux",
+      "prompt": "a zombie cat slowly shuffling away from its turn, dragging foot",
+      "file": "/art/zombie/skip_z_001.webp"
+    },
+    "skip_z_002": {
+      "card_id": "skip_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8017,
+      "workflow": "flux",
+      "prompt": "a zombie cat pretending to be dead to skip its turn, one eye open",
+      "file": "/art/zombie/skip_z_002.webp"
+    },
+    "skip_z_003": {
+      "card_id": "skip_z",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8018,
+      "workflow": "flux",
+      "prompt": "a zombie cat hiding in a coffin instead of taking its turn",
+      "file": "/art/zombie/skip_z_003.webp"
+    },
+    "shuffle_z_001": {
+      "card_id": "shuffle_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8019,
+      "workflow": "flux",
+      "prompt": "a zombie cat shuffling cards with rotting paws, cards go flying",
+      "file": "/art/zombie/shuffle_z_001.webp"
+    },
+    "shuffle_z_002": {
+      "card_id": "shuffle_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8020,
+      "workflow": "flux",
+      "prompt": "a zombie cat shuffling cards inside a tomb, spooky atmosphere",
+      "file": "/art/zombie/shuffle_z_002.webp"
+    },
+    "see_future_3x_z_001": {
+      "card_id": "see_future_3x_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8021,
+      "workflow": "flux",
+      "prompt": "a zombie cat looking into a cracked crystal ball at 3 cards",
+      "file": "/art/zombie/see_future_3x_z_001.webp"
+    },
+    "see_future_3x_z_002": {
+      "card_id": "see_future_3x_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8022,
+      "workflow": "flux",
+      "prompt": "a zombie cat reading the future from scattered bones, 3 cards shown",
+      "file": "/art/zombie/see_future_3x_z_002.webp"
+    },
+    "see_future_3x_z_003": {
+      "card_id": "see_future_3x_z",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8023,
+      "workflow": "flux",
+      "prompt": "a zombie cat using a ouija board to reveal 3 cards",
+      "file": "/art/zombie/see_future_3x_z_003.webp"
+    },
+    "see_future_3x_z_004": {
+      "card_id": "see_future_3x_z",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8024,
+      "workflow": "flux",
+      "prompt": "a zombie cat peeking through a grave crack at 3 cards",
+      "file": "/art/zombie/see_future_3x_z_004.webp"
+    },
+    "nope_z_001": {
+      "card_id": "nope_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8025,
+      "workflow": "flux",
+      "prompt": "a zombie cat grabbing a card with bony hands, nope expression",
+      "file": "/art/zombie/nope_z_001.webp"
+    },
+    "nope_z_002": {
+      "card_id": "nope_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8026,
+      "workflow": "flux",
+      "prompt": "a zombie cat using its stitched mouth to muffle a card play",
+      "file": "/art/zombie/nope_z_002.webp"
+    },
+    "nope_z_003": {
+      "card_id": "nope_z",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8027,
+      "workflow": "flux",
+      "prompt": "a zombie cat rising from a grave to block a card MID AIR",
+      "file": "/art/zombie/nope_z_003.webp"
+    },
+    "nope_z_004": {
+      "card_id": "nope_z",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8028,
+      "workflow": "flux",
+      "prompt": "a zombie cat holding a gravestone with NOPE carved on it",
+      "file": "/art/zombie/nope_z_004.webp"
+    },
+    "nope_z_005": {
+      "card_id": "nope_z",
+      "expansion": "zombie",
+      "copy": 5,
+      "seed": 8029,
+      "workflow": "flux",
+      "prompt": "a zombie cat spitting out a card that was just played, gross but effective",
+      "file": "/art/zombie/nope_z_005.webp"
+    },
+    "clairvoyance_001": {
+      "card_id": "clairvoyance",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8030,
+      "workflow": "flux",
+      "prompt": "a cat with a glowing third eye on its forehead, psychic swirls",
+      "file": "/art/zombie/clairvoyance_001.webp"
+    },
+    "clairvoyance_002": {
+      "card_id": "clairvoyance",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8031,
+      "workflow": "flux",
+      "prompt": "a cat floating in meditation, surrounded by psychic energy",
+      "file": "/art/zombie/clairvoyance_002.webp"
+    },
+    "clone_001": {
+      "card_id": "clone",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8032,
+      "workflow": "flux",
+      "prompt": "two identical cats in a cloning machine, sci-fi lab sparkles",
+      "file": "/art/zombie/clone_001.webp"
+    },
+    "clone_002": {
+      "card_id": "clone",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8033,
+      "workflow": "flux",
+      "prompt": "a cat looking at its exact copy in confusion, which is real",
+      "file": "/art/zombie/clone_002.webp"
+    },
+    "dig_deeper_001": {
+      "card_id": "dig_deeper",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8034,
+      "workflow": "flux",
+      "prompt": "a cat digging through a massive pile of cards with determination",
+      "file": "/art/zombie/dig_deeper_001.webp"
+    },
+    "dig_deeper_002": {
+      "card_id": "dig_deeper",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8035,
+      "workflow": "flux",
+      "prompt": "a cat using a tiny excavator to dig through cards",
+      "file": "/art/zombie/dig_deeper_002.webp"
+    },
+    "dig_deeper_003": {
+      "card_id": "dig_deeper",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8036,
+      "workflow": "flux",
+      "prompt": "a cat drilling through a card tower, hard hat and goggles",
+      "file": "/art/zombie/dig_deeper_003.webp"
+    },
+    "dig_deeper_004": {
+      "card_id": "dig_deeper",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8037,
+      "workflow": "flux",
+      "prompt": "a cat unearthing a glowing card from deep in the deck",
+      "file": "/art/zombie/dig_deeper_004.webp"
+    },
+    "feed_the_dead_001": {
+      "card_id": "feed_the_dead",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8038,
+      "workflow": "flux",
+      "prompt": "living cats throwing food to a zombie cat behind a fence",
+      "file": "/art/zombie/feed_the_dead_001.webp"
+    },
+    "feed_the_dead_002": {
+      "card_id": "feed_the_dead",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8039,
+      "workflow": "flux",
+      "prompt": "a zombie cat being fed cards through a slot, hungry undead",
+      "file": "/art/zombie/feed_the_dead_002.webp"
+    },
+    "feed_the_dead_003": {
+      "card_id": "feed_the_dead",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8040,
+      "workflow": "flux",
+      "prompt": "cats offering cards to a zombie cat chained up, careful poses",
+      "file": "/art/zombie/feed_the_dead_003.webp"
+    },
+    "feed_the_dead_004": {
+      "card_id": "feed_the_dead",
+      "expansion": "zombie",
+      "copy": 4,
+      "seed": 8041,
+      "workflow": "flux",
+      "prompt": "a zombie cat eating cards like snacks, crumbs everywhere",
+      "file": "/art/zombie/feed_the_dead_004.webp"
+    },
+    "grave_robber_001": {
+      "card_id": "grave_robber",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8042,
+      "workflow": "flux",
+      "prompt": "a cat digging up a card from a tiny grave with a shovel",
+      "file": "/art/zombie/grave_robber_001.webp"
+    },
+    "grave_robber_002": {
+      "card_id": "grave_robber",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8043,
+      "workflow": "flux",
+      "prompt": "a cat wearing a burglary mask stealing cards from a tomb",
+      "file": "/art/zombie/grave_robber_002.webp"
+    },
+    "attack_of_the_dead_001": {
+      "card_id": "attack_of_the_dead",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8044,
+      "workflow": "flux",
+      "prompt": "zombie cats rising from graves and attacking, arms reaching",
+      "file": "/art/zombie/attack_of_the_dead_001.webp"
+    },
+    "attack_of_the_dead_002": {
+      "card_id": "attack_of_the_dead",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8045,
+      "workflow": "flux",
+      "prompt": "zombie cats swarming a living cat, undead horde attack",
+      "file": "/art/zombie/attack_of_the_dead_002.webp"
+    },
+    "attack_of_the_dead_003": {
+      "card_id": "attack_of_the_dead",
+      "expansion": "zombie",
+      "copy": 3,
+      "seed": 8046,
+      "workflow": "flux",
+      "prompt": "a living cat running from zombie cats, chaotic chase scene",
+      "file": "/art/zombie/attack_of_the_dead_003.webp"
+    },
+    "shuffle_now_001": {
+      "card_id": "shuffle_now",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8047,
+      "workflow": "flux",
+      "prompt": "a zombie cat frantically shuffling cards with rotting urgency",
+      "file": "/art/zombie/shuffle_now_001.webp"
+    },
+    "shuffle_now_002": {
+      "card_id": "shuffle_now",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8048,
+      "workflow": "flux",
+      "prompt": "a zombie cat shuffling cards inside a casket, spooky speed",
+      "file": "/art/zombie/shuffle_now_002.webp"
+    },
+    "favor_z_001": {
+      "card_id": "favor_z",
+      "expansion": "zombie",
+      "copy": 1,
+      "seed": 8049,
+      "workflow": "flux",
+      "prompt": "a zombie cat extending a rotting paw, asking for a card favor",
+      "file": "/art/zombie/favor_z_001.webp"
+    },
+    "favor_z_002": {
+      "card_id": "favor_z",
+      "expansion": "zombie",
+      "copy": 2,
+      "seed": 8050,
+      "workflow": "flux",
+      "prompt": "a zombie cat using mind control to make another cat give a card",
+      "file": "/art/zombie/favor_z_002.webp"
+    }
+  }
+}

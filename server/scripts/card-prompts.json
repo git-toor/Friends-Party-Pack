@@ -1,8 +1,8 @@
 {
   "master_style": {
     "base": {
-      "positive": "cute western cartoon illustration, board game card artwork, funny mascot character, thick black outlines, flat cel shaded colors",
-      "negative": "text, letters, words, numbers, logos, watermark, signature, photorealistic, 3d render, bad anatomy, extra limbs, blurry, low quality, duplicate character, dark horror"
+      "positive": "cartoon cat character dressed as a sitcom character, cat face with human hairstyle and glasses, cat wearing character's signature outfit, expressive cat face, playful tv show parody scene, clean black outlines, flat vibrant colors, board game card illustration",
+      "negative": "sketch, rough drawing, unfinished, messy lines, pencil, scribble, hand drawn, doodle, text, letters, words, numbers, logos, watermark, signature, photorealistic, 3d render, bad anatomy, extra limbs, blurry, low quality, duplicate character, dark horror"
     },
     "nsfw": {
       "positive": "adult humor party card game illustration, cheeky mischievous animal character, playful suggestive comedy, naughty but humorous expression, sassy confident pose, absurd adult party humor, pinup inspired cartoon style, thick comic outlines, bright colors, satirical magazine cartoon style, over-the-top parody, funny not serious, professional card artwork, centered character, transparent background, clean illustration, high detail, SDXL quality",
@@ -256,7 +256,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 8888,
-      "base": { "prompt": "orange cat walking backwards, confused expression, large reverse arrow swirling around the cat, funny cartoon physics, party card game illustration, thick black outlines, flat colors, centered character, white background" },
+      "base": { "prompt": "funny cartoon cat pressing a giant red rewind button, playing cards flying backwards through the air, large reverse arrows swirling around, cat has a mischievous grin, cute exaggerated expression, professional board game card illustration, clean black ink outlines, flat colors, simple shapes, centered composition" },
       "nsfw": { "prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines" }
     },
     {
