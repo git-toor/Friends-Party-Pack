@@ -91,7 +91,7 @@ def generate_image(positive, negative, size=(768, 1024), seed=42, output_path=No
         },
         "4": {
             "class_type": "CheckpointLoaderSimple",
-            "inputs": {"ckpt_name": "sd_xl_base_1.0.safetensors"}
+            "inputs": {"ckpt_name": "wildcardxXL_v4Rundiffusion.safetensors"}
         },
         "5": {
             "class_type": "EmptyLatentImage",
@@ -105,9 +105,28 @@ def generate_image(positive, negative, size=(768, 1024), seed=42, output_path=No
             "class_type": "CLIPTextEncode",
             "inputs": {"text": negative, "clip": ["4", 1]}
         },
+        "10": {
+            "class_type": "LatentUpscaleBy",
+            "inputs": {"upscale_method": "nearest-exact", "scale_by": 1.5, "samples": ["3", 0]}
+        },
+        "11": {
+            "class_type": "KSampler",
+            "inputs": {
+                "seed": seed + 1,
+                "steps": 15,
+                "cfg": 6.0,
+                "sampler_name": "dpmpp_2m",
+                "scheduler": "karras",
+                "denoise": 0.45,
+                "model": ["4", 0],
+                "positive": ["6", 0],
+                "negative": ["7", 0],
+                "latent_image": ["10", 0]
+            }
+        },
         "8": {
             "class_type": "VAEDecode",
-            "inputs": {"samples": ["3", 0], "vae": ["4", 2]}
+            "inputs": {"samples": ["11", 0], "vae": ["4", 2]}
         },
         "9": {
             "class_type": "SaveImage",
@@ -125,7 +144,7 @@ def generate_image(positive, negative, size=(768, 1024), seed=42, output_path=No
             print(f" ERROR: {result}")
             return None
         
-        for _ in range(180):
+        for _ in range(300):
             time.sleep(1)
             status_resp = requests.get(f"{COMFYUI_URL}/history/{prompt_id}")
             if status_resp.status_code == 200:

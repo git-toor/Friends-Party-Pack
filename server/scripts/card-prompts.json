@@ -57,7 +57,7 @@
       "size": [768, 1024],
       "seed_base": 1001,
       "base": {
-        "prompt": "A hilarious cartoon orange kitten exploding from a magical cardboard box, shocked expression, flames and confetti around it, funny chaotic energy, oversized eyes, playful comedy style"
+        "prompt": "cute cartoon orange kitten mascot, sitting on a tiny bomb, surprised funny expression, small explosion cloud, party card game illustration, thick black outlines, flat vibrant colors, clean vector style, centered character, white background"
       },
       "nsfw": {
         "prompt": "A mischievous adult party kitten wearing a ridiculous casino outfit, holding a tiny bomb shaped like a cocktail, dramatic comedy explosion, cheeky expression, adult party joke aesthetic"
@@ -89,7 +89,7 @@
       "size": [768, 1024],
       "seed_base": 1003,
       "base": {
-        "prompt": "A furious kitten wearing a tiny general uniform commanding an army of cats, dramatic pointing pose, battle cries, cartoon chaos, raised paw"
+        "prompt": "angry cat general wearing a tiny military hat, commanding other cats, dramatic pointing pose, funny cartoon battle energy, party card game illustration, thick black outlines, flat colors, centered character, white background"
       },
       "nsfw": {
         "prompt": "A dominatrix kitten in a general uniform cracking a whip, commanding pose, army of toy cats behind it, adult party comedy"
@@ -105,7 +105,7 @@
       "size": [768, 1024],
       "seed_base": 1008,
       "base": {
-        "prompt": "A cartoon cat with both paws up yelling NOOO, dramatic freeze-frame pose, sweat drops, wide eyes, comedy interruption style, cartoon rejection"
+        "prompt": "funny angry cat mascot, holding a giant red stop sign, dramatic shocked expression, comic action pose, party card game illustration, thick black outlines, flat colors, centered character, white background"
       },
       "nsfw": {
         "prompt": "A sassy adult party cat with hand out in STOP gesture, other hand on hip, unimpressed expression, red lighting, adult comedy vibes"
@@ -256,7 +256,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 8888,
-      "base": { "prompt": "an orange cat walking backwards, looking over its shoulder, giant blue reverse arrow wrapping around its body, confused expression, full body, centered composition, white background" },
+      "base": { "prompt": "orange cat walking backwards, confused expression, large reverse arrow swirling around the cat, funny cartoon physics, party card game illustration, thick black outlines, flat colors, centered character, white background" },
       "nsfw": { "prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines" }
     },
     {
@@ -376,7 +376,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 7777,
-      "base": { "prompt": "smug orange cat lifting one leg against a fire hydrant, huge proud grin, tail raised, glowing paw print beside the hydrant, centered composition, white background" },
+      "base": { "prompt": "smug orange cat marking territory beside a fire hydrant, proud silly expression, comedic cartoon pose, party card game illustration, thick black outlines, flat colors, centered character, white background" },
       "nsfw": { "prompt": "A sexy cat wearing a collar with a tag, marked as owned, submissive pose, thick black outlines" }
     },
     {
@@ -472,7 +472,7 @@
       "rarity": "special",
       "size": [768, 1024],
       "seed_base": 5001,
-      "base": { "prompt": "cute zombie kitten, stitched patches, green glowing eyes, missing one ear, happy goofy smile, reaching forward, full body, centered composition, white background" },
+      "base": { "prompt": "cute zombie kitten mascot, stitched patches, glowing green eyes, goofy happy expression, cartoon undead character, not scary, party card game illustration, thick black outlines, flat colors, centered character, white background" },
       "nsfw": { "prompt": "A sexy zombie kitten with stitched up torn clothes, one eye seductive wink, green skin, thick black outlines" }
     },
     {
