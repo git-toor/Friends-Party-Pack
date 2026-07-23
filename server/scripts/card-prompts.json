@@ -1,7 +1,7 @@
 {
   "master_style": {
     "base": {
-      "positive": "cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors, absurd humor, whimsical animal characters, professional tabletop card artwork, centered composition, isolated character, transparent background, high detail, SDXL quality",
+      "positive": "cute western cartoon illustration, board game card artwork, funny mascot character, thick black outlines, flat cel shaded colors",
       "negative": "text, letters, words, numbers, logos, watermark, signature, photorealistic, 3d render, bad anatomy, extra limbs, blurry, low quality, duplicate character, dark horror"
     },
     "nsfw": {
@@ -256,7 +256,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 8888,
-      "base": { "prompt": "orange cat in a tiny red wagon rolling backwards down a hill, surprised eyes wide open, fur blown back by wind, motion lines trailing behind" },
+      "base": { "prompt": "an orange cat walking backwards, looking over its shoulder, giant blue reverse arrow wrapping around its body, confused expression, full body, centered composition, white background" },
       "nsfw": { "prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines" }
     },
     {
@@ -340,7 +340,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 9999,
-      "base": { "prompt": "orange cat magically swapping two cards held in each paw, glowing arrows circle around the cards, goofy grin, tongue sticking out, cards floating upside down" },
+      "base": { "prompt": "clever orange cat magician, holding one playing card above its head, holding another card below its feet, magic swirl connecting both cards, mischievous smile, centered composition, white background" },
       "nsfw": { "prompt": "A sexy cat stretching to reach top and bottom cards simultaneously, yoga pose, thick black outlines" }
     },
     {
@@ -376,7 +376,7 @@
       "rarity": "common",
       "size": [768, 1024],
       "seed_base": 7777,
-      "base": { "prompt": "smug orange cat lifting one hind leg near a giant playing card, mischievous proud grin, tiny yellow stream, glowing paw print appearing on the card" },
+      "base": { "prompt": "smug orange cat lifting one leg against a fire hydrant, huge proud grin, tail raised, glowing paw print beside the hydrant, centered composition, white background" },
       "nsfw": { "prompt": "A sexy cat wearing a collar with a tag, marked as owned, submissive pose, thick black outlines" }
     },
     {
@@ -472,7 +472,7 @@
       "rarity": "special",
       "size": [768, 1024],
       "seed_base": 5001,
-      "base": { "prompt": "A genuinely undead cartoon zombie kitten with green rotting skin, glowing yellow eyes, stitches across face, drool hanging from mouth, shambling pose with arms reaching forward, decayed ears, scary but still cute, graveyard background, thick black outlines, flat vector style" },
+      "base": { "prompt": "cute zombie kitten, stitched patches, green glowing eyes, missing one ear, happy goofy smile, reaching forward, full body, centered composition, white background" },
       "nsfw": { "prompt": "A sexy zombie kitten with stitched up torn clothes, one eye seductive wink, green skin, thick black outlines" }
     },
     {

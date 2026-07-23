@@ -59,14 +59,11 @@ def save_manifest(manifest):
         json.dump(manifest, f, indent=2)
 
 def build_full_prompt(prompts, card_data, variant="base"):
-    """Combine master style + card-specific prompt + quality tags."""
-    style = prompts["master_style"][variant]
+    """Style block first, then subject/action/composition."""
+    style = prompts["master_style"][variant]["positive"]
     subject = card_data[variant]["prompt"] if variant in card_data else card_data["base"]["prompt"]
     
-    quality = "8k quality, sharp details, beautiful lighting, SDXL masterpiece"
-    composition = "centered character, full body, isolated on transparent background, designed as collectible card game artwork"
-    
-    return f"{subject}, {style['positive']}, {composition}, {quality}"
+    return f"{style}, {subject}"
 
 def generate_image(positive, negative, size=(768, 1024), seed=42, output_path=None):
     """
@@ -81,10 +78,10 @@ def generate_image(positive, negative, size=(768, 1024), seed=42, output_path=No
             "class_type": "KSampler",
             "inputs": {
                 "seed": seed,
-                "steps": 25,
-                "cfg": 7.0,
-                "sampler_name": "euler",
-                "scheduler": "normal",
+                "steps": 35,
+                "cfg": 6.0,
+                "sampler_name": "dpmpp_2m",
+                "scheduler": "karras",
                 "denoise": 1,
                 "model": ["4", 0],
                 "positive": ["6", 0],
