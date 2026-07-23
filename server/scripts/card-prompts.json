@@ -255,8 +255,8 @@
       "icon": "🔁",
       "rarity": "common",
       "size": [768, 1024],
-      "seed_base": 5432,
-      "base": { "prompt": "cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors, a dizzy cat running backwards while wearing roller skates, giant curved arrows spiraling around it, tail tied in a knot, eyes spinning in opposite directions, cards and fish flying backwards through the air, ridiculous surprised expression, slapstick cartoon humor, centered composition, transparent background A cat driving a tiny toy car in reverse at high speed while looking over its shoulder in panic, giant reverse arrows, smoke trails going the wrong direction, exaggerated cartoon physics cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors" },
+      "seed_base": 8888,
+      "base": { "prompt": "orange cat in a tiny red wagon rolling backwards down a hill, surprised eyes wide open, fur blown back by wind, motion lines trailing behind" },
       "nsfw": { "prompt": "A sexy cat looking over its shoulder, come-hither look, reverse cowgirl pose hint, thick black outlines" }
     },
     {
@@ -339,8 +339,8 @@
       "icon": "↕️",
       "rarity": "common",
       "size": [768, 1024],
-      "seed_base": 4321,
-      "base": { "prompt": "cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors, a mischievous orange cat balancing on a ladder while swapping the top and bottom books on a giant wobbling bookshelf, cards flying everywhere, tongue sticking out in concentration, upside-down playing cards floating through the air, exaggerated confused expression, dynamic motion, slapstick comedy, centered composition, isolated character, transparent background, highly detailed and A clever cat standing beside a giant deck of cards taller than itself, magically pulling the very bottom card upward while pushing the top card underneath, swirling arrows showing the swap, goofy grin, cartoon chaos, colorful magical effects cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors" },
+      "seed_base": 9999,
+      "base": { "prompt": "orange cat magically swapping two cards held in each paw, glowing arrows circle around the cards, goofy grin, tongue sticking out, cards floating upside down" },
       "nsfw": { "prompt": "A sexy cat stretching to reach top and bottom cards simultaneously, yoga pose, thick black outlines" }
     },
     {
@@ -375,8 +375,8 @@
       "icon": "📍",
       "rarity": "common",
       "size": [768, 1024],
-      "seed_base": 6543,
-      "base": { "prompt": "cute chaotic cartoon party card game illustration, thick black comic outlines, flat vibrant colors, a smug mischievous orange cat lifting one hind leg beside an expensive golden trophy, tiny stream of pee creating a glowing territorial circle, exaggerated proud grin, another horrified cat watching from behind, comedy rather than realism, cartoon splash effects, ridiculous confidence, centered composition, transparent background, highly detailed A cat proudly marking a giant treasure chest with a tiny stream of pee while planting a miniature flag that says Mine, overconfident facial expression, absurd comedy, bright colors, thick comic outlines A smug cat lifting one leg and marking a giant playing card with pee, a glowing paw-print magically appears where the pee lands, another confused cat points at the marked card in horror, absurd cartoon comedy, expressive faces, thick comic outlines, flat colors, transparent background" },
+      "seed_base": 7777,
+      "base": { "prompt": "smug orange cat lifting one hind leg near a giant playing card, mischievous proud grin, tiny yellow stream, glowing paw print appearing on the card" },
       "nsfw": { "prompt": "A sexy cat wearing a collar with a tag, marked as owned, submissive pose, thick black outlines" }
     },
     {
