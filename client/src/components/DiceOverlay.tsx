@@ -113,6 +113,8 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
         await diceBox.initialize();
         if (diceBox.renderer) {
           diceBox.setupDieTap(diceBox.renderer.domElement);
+          // Ensure the Three.js canvas doesn't intercept pointer events
+          diceBox.renderer.domElement.style.pointerEvents = 'none';
         }
         if (!cancelled) box.current = diceBox;
       } catch(e) {
