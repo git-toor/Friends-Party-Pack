@@ -155,9 +155,17 @@ def save_manifest(manifest):
     with open(MANIFEST_FILE, "w", encoding='utf-8') as f:
         json.dump(manifest, f, indent=2)
 
-def build_full_prompt(prompts, card_data, variant="base"):
+def build_full_prompt(prompts, card_data, variant="base", copy_num=None):
     style = prompts["master_style"][variant]["positive"]
-    subject = card_data[variant]["prompt"] if variant in card_data else card_data["base"]["prompt"]
+    if variant in card_data:
+        prompts_field = card_data[variant]
+        if "prompts" in prompts_field and isinstance(prompts_field["prompts"], list):
+            idx = min(copy_num or 0, len(prompts_field["prompts"]) - 1)
+            subject = prompts_field["prompts"][idx]
+        else:
+            subject = prompts_field["prompt"]
+    else:
+        subject = card_data["base"]["prompt"]
     return f"{style}, {subject}"
 
 def build_workflow(positive, negative, size, seed, workflow_name):
@@ -373,7 +381,7 @@ def generate_card(prompts, card_id, variant="base", manifest=None, copy_num=None
         print(f"Card '{card_id}' has no '{variant}' variant")
         return False
 
-    positive = build_full_prompt(prompts, card_data, variant_key)
+    positive = build_full_prompt(prompts, card_data, variant_key, copy_num)
     negative = prompts["master_style"][variant]["negative"]
     size = card_data.get("size", [768, 1024])
     seed = card_data.get("seed_base", 42) + (1000 if variant == "nsfw" else 0)
@@ -383,8 +391,13 @@ def generate_card(prompts, card_id, variant="base", manifest=None, copy_num=None
     filename = f"{card_id}.{variant}{copy_suffix}.webp"
     out_path = os.path.join(OUTPUT_DIR, expansion, filename)
 
-    print(f"\n[{card_id}] ({variant})")
-    print(f"  Subject: {card_data[variant_key]['prompt'][:70]}...")
+    print(f"\n[{card_id}] ({variant}) copy={copy_num}")
+    if "prompts" in card_data[variant_key]:
+        subjects = card_data[variant_key]["prompts"]
+        idx = min(copy_num or 0, len(subjects) - 1)
+        print(f"  Subject: {subjects[idx][:70]}...")
+    else:
+        print(f"  Subject: {card_data[variant_key]['prompt'][:70]}...")
 
     result = generate_image(positive, negative, size, seed, out_path)
 
@@ -479,13 +492,15 @@ def main():
     if args.all:
         total = len(cards)
         for i, card in enumerate(cards):
-            print(f"\n[{i+1}/{total}] ", end="")
-            ok = generate_card(prompts, card["id"], "base", manifest)
-            if not ok and args.continue_gen:
-                print("  Skipping...")
-                continue
-            if args.nsfw and "nsfw" in card:
-                generate_card(prompts, card["id"], "nsfw", manifest)
+            copies = card.get("copies", 1)
+            for copy_num in range(copies):
+                print(f"\n[{i+1}/{total}] copy {copy_num+1}/{copies}", end="")
+                ok = generate_card(prompts, card["id"], "base", manifest, copy_num)
+                if not ok and args.continue_gen:
+                    print("  Skipping...")
+                    continue
+                if args.nsfw and "nsfw" in card:
+                    generate_card(prompts, card["id"], "nsfw", manifest, copy_num)
 
     if not any([args.card, args.all, args.sample, args.back]):
         print("Usage:")
