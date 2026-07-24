@@ -37,6 +37,13 @@ interface TokenView {
   progress: number;
 }
 
+function compareState(next: LudoClientState, prev: LudoClientState): LudoClientState {
+  if (next.currentPlayer === prev.currentPlayer && next.phase === prev.phase && next.diceValue === prev.diceValue) {
+    return prev;
+  }
+  return next;
+}
+
 interface LudoClientState {
   players: { tokens: TokenView[]; finishedCount: number }[];
   currentPlayer: number;
@@ -72,14 +79,14 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     try {
       const r = await fetch(`/api/games/ludo/state/${sessionId}?playerIndex=${playerIndex}&t=${Date.now()}`);
       const data = await r.json();
-      if (data) setGs(data);
+      if (data) setGs(prev => compareState(data, prev));
     } catch {}
   }, [sessionId, playerIndex]);
 
   useEffect(() => {
     if (!sessionId) return;
     fetchState();
-    const interval = setInterval(fetchState, 5000);
+    const interval = setInterval(fetchState, 10000);
     return () => clearInterval(interval);
   }, [sessionId, fetchState]);
 
@@ -110,8 +117,12 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         body: JSON.stringify({ sessionId, playerIndex, action: { type: actionType, payload } }),
       });
       const data = await r.json();
+      if (!r.ok || data.valid === false) {
+        console.warn('[Ludo] Action rejected:', data.error || r.status);
+        return data;
+      }
       if (data.state) {
-        setGs(data.state);
+        setGs(prev => compareState(data.state, prev));
         if (data.events) {
           for (const ev of data.events as GameEvent[]) {
             if (ev.type === 'CAPTURE') {
@@ -130,11 +141,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const handleRollResult = useCallback(async () => {
     if (!diceRef.current) return;
     sounds.playDiceRoll();
-    // Send roll to server first
     const data = await sendAction('ROLL_DICE');
-    console.log('[Ludo] ROLL_DICE response:', data?.diceValue, 'currentPlayer:', data?.state?.currentPlayer, 'isMyTurn:', data?.state?.isMyTurn, 'phase:', data?.state?.phase);
-    if (data?.diceValue) {
-      // Animate 3D dice with the server value
+    console.log('[Ludo] ROLL_DICE response:', data?.valid, data?.diceValue, 'cp:', data?.state?.currentPlayer);
+    if (data?.valid && data?.diceValue) {
       await diceRef.current.rollWithValue(data.diceValue);
     }
   }, [sendAction, sounds]);
