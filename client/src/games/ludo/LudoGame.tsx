@@ -68,9 +68,10 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   // ─── Calculate isMyTurn locally ──
   const isMyTurn = playerIndex === gs.currentPlayer;
-  const needsRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null && !rollingRef.current;
+  const canRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null && !rollingRef.current;
   const myDice = gs.diceRolledBy === playerIndex;
   const showDiceValue = gs.diceValue !== null && myDice && gs.phase !== 'rolling_dice';
+  const canMoveToken = isMyTurn && gs.phase === 'waiting_for_move' && gs.validMoves.length > 0;
 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
@@ -120,6 +121,21 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     }
   }, [gameStatePush, sounds, updateState]);
 
+  // ─── Client state diagnostics — fires on every render ──
+  useEffect(() => {
+    console.log('[CLIENT STATE]', {
+      phase: gs.phase,
+      currentPlayer: gs.currentPlayer,
+      diceValue: gs.diceValue,
+      diceRolledBy: gs.diceRolledBy,
+      validMoves: gs.validMoves,
+      playerIndex,
+      isMyTurn: playerIndex === gs.currentPlayer,
+      canMoveToken: playerIndex === gs.currentPlayer && gs.phase === 'waiting_for_move' && gs.validMoves.length > 0,
+      homeTokens: gs.players[playerIndex]?.tokens?.filter((t: any) => t.state === 'home').length ?? 0,
+    });
+  }, [gs, playerIndex]);
+
   // ─── Server action — only state update, no client logic ──────
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
     if (!sessionId) return;
@@ -153,6 +169,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const handleRollResult = useCallback(async () => {
     if (rollingRef.current) return;
+    if (gs.phase !== 'waiting_for_roll') return;
     if (!diceRef.current) return;
     rollingRef.current = true;
     sounds.playDiceRoll();
@@ -179,11 +196,20 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     });
 
     rollingRef.current = false;
-  }, [sendAction, sounds]);
+    console.log('[CLIENT STATE]', {
+      phase: gs.phase,
+      currentPlayer: gs.currentPlayer,
+      diceValue: gs.diceValue,
+      validMoves: gs.validMoves,
+      playerIndex,
+      isMyTurn,
+    });
+  }, [sendAction, sounds, gs.phase]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
-    if (!isMyTurn || gs.phase !== 'waiting_for_move') return;
-    if (!gs.validMoves.includes(tokenIndex)) return;
+    if (!isMyTurn) { console.log('[TOKEN CLICK] blocked: not my turn', { tokenIndex, playerIndex, currentPlayer: gs.currentPlayer }); return; }
+    if (gs.phase !== 'waiting_for_move') { console.log('[TOKEN CLICK] blocked: wrong phase', { tokenIndex, phase: gs.phase }); return; }
+    if (!gs.validMoves.includes(tokenIndex)) { console.log('[TOKEN CLICK] blocked: not in validMoves', { tokenIndex, validMoves: gs.validMoves }); return; }
     if (diceRef.current) diceRef.current.clear();
     sounds.playTokenMove();
     await sendAction('MOVE_TOKEN', { tokenIndex });
@@ -285,7 +311,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
         padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0, flexWrap: 'wrap',
       }}>
-        {needsRoll && (
+        {canRoll && (
           <button onClick={handleRollResult} style={{
             padding: '10px 22px', fontSize: 16, fontWeight: 700, borderRadius: 8,
             border: 'none', background: '#e94560', color: '#fff', cursor: 'pointer',
@@ -315,7 +341,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               : `Rolled ${gs.diceValue} — Tap glowing token to move`}
           </div>
         )}
-        {gs.diceValue !== null && myDice && !needsRoll && gs.phase !== 'waiting_for_move' && gs.phase !== 'rolling_dice' && (
+        {gs.diceValue !== null && myDice && !canRoll && gs.phase !== 'waiting_for_move' && gs.phase !== 'rolling_dice' && (
           <div style={{ fontSize: 10, color: '#aaa' }}>
             Tap the board to dismiss dice
           </div>
