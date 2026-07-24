@@ -194,15 +194,20 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         });
       })}
 
-      {/* Home tokens (idle in base) */}
+      {/* Home tokens (idle in base) — clickable if validMoves */}
       {tokens.filter(t => t.state === 'home').map(tok => {
         const q = pq(tok.playerIndex);
         const cell = getHomeTokens(q)[tok.tokenIndex % 4];
         if (!cell) return null;
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
+        const isMovable = validMoves.includes(tok.tokenIndex);
         return (
-          <Pawn key={`h-${tok.playerIndex}-${tok.tokenIndex}`}
-            cx={cx(cell[0])} cy={cy(cell[1])} color={P_COLORS[cIdx]} isMovable={false} />
+          <g key={`h-${tok.playerIndex}-${tok.tokenIndex}`}
+            style={{ cursor: isMovable ? 'pointer' : 'default' }}
+            onClick={() => isMovable && onTokenClick(tok.tokenIndex)}
+          >
+            <Pawn cx={cx(cell[0])} cy={cy(cell[1])} color={P_COLORS[cIdx]} isMovable={isMovable} />
+          </g>
         );
       })}
 

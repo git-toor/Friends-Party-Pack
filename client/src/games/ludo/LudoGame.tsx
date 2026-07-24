@@ -154,6 +154,14 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     if (data?.success && data?.diceValue) {
       diceRef.current.rollWithValue(data.diceValue).catch(() => {});
       const confirm = await sendAction('CONFIRM_DICE');
+      console.log('[LUDO] MOVE STATE', {
+        phase: confirm?.phase,
+        diceValue: confirm?.diceValue ?? confirm?.state?.diceValue,
+        validMoves: confirm?.validMoves ?? confirm?.state?.validMoves,
+        currentPlayer: confirm?.currentPlayer ?? confirm?.state?.currentPlayer,
+        myPlayer: playerIndex,
+        pieces: confirm?.state?.players?.[playerIndex]?.tokens?.map((t: any) => ({ state: t.state, progress: t.progress })),
+      });
       console.log('[Ludo] CONFIRM_DICE:', confirm?.success, 'phase:', confirm?.phase, 'cp:', confirm?.currentPlayer);
     }
   }, [sendAction, sounds]);
