@@ -1,6 +1,7 @@
 // Unified 15x15 Ludo grid — 52 path tiles, 5 home stretch per player
 export type GridPos = [number, number];
 
+// ─── Outer path (52 tiles, clockwise) ─────────────────────────
 export const PATH: GridPos[] = [
   [6,0],[6,1],[6,2],[6,3],[6,4],[6,5],
   [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -17,47 +18,82 @@ export const PATH: GridPos[] = [
 ];
 
 export const SAFE_ABS = new Set([2, 10, 15, 23, 28, 36, 41, 49]);
-
 export function isSafeSquare(absPos: number): boolean { return SAFE_ABS.has(absPos); }
 
-// ─── Player → quadrant mapping (2 players use opposite: Blue & Green) ──
-export function playerQuadrant(playerIndex: number, totalPlayers: number): number {
-  if (totalPlayers === 2) return playerIndex === 0 ? 1 : 3;
-  return playerIndex;
+// ─── Player configuration ──────────────────────────────────────
+// Player 0 = BLUE   (bottom-left quadrant,  home stretch goes DOWN)
+// Player 1 = RED    (top-left quadrant,     home stretch goes LEFT)
+// Player 2 = GREEN  (top-right quadrant,    home stretch goes UP)
+// Player 3 = YELLOW (bottom-right quadrant, home stretch goes RIGHT)
+
+export interface PlayerConfig {
+  entryOffset: number;       // absolute path index where pieces enter
+  homeStretch: GridPos[];    // 5 tiles leading from path exit to center
+  homeZoneOffset: [number, number]; // grid [col, row] for 6x6 home base
 }
 
-// ─── Per-quadrant data ───────────────────────────────────────────
-const QUAD_OFFSETS: Record<number, number> = { 0: 0, 1: 13, 2: 26, 3: 39 };
+// Entry offsets: where each player enters the main path
+const ENTRY_OFFSETS: Record<number, number> = { 0: 13, 1: 0, 2: 39, 3: 26 };
 
-export function absPath(progress: number, quadIdx: number): number {
-  return (progress + (QUAD_OFFSETS[quadIdx] ?? 0)) % 52;
-}
+// Home stretches: each leads from the path exit toward center (7,7)
+// Blue (player 0, offset 13): path exit at PATH[12]=(0,7), stretch goes RIGHT → (1,7)...(5,7)
+// Red  (player 1, offset 0):  path exit at PATH[51]=(7,0), stretch goes DOWN → (7,1)...(7,5)
+// Green(player 2, offset 39): path exit at PATH[38]=(14,7), stretch goes LEFT → (13,7)...(9,7)
+// Yel  (player 3, offset 26): path exit at PATH[25]=(7,14), stretch goes UP   → (7,13)...(7,9)
 
-// ─── Home stretches — keyed by path OFFSET (0, 13, 26, 39) ──
-// Each stretch starts at the tile after the player's path exit and goes toward center
-const HOME_STRETCH_BY_OFFSET: Record<number, GridPos[]> = {
-  0:  [[7,1],[7,2],[7,3],[7,4],[7,5]],     // offset 0 → column 7 DOWN
-  13: [[1,7],[2,7],[3,7],[4,7],[5,7]],    // offset 13 → row 7 RIGHT
-  26: [[7,13],[7,12],[7,11],[7,10],[7,9]], // offset 26 → column 7 UP
-  39: [[13,7],[12,7],[11,7],[10,7],[9,7]], // offset 39 → row 7 LEFT
+const HOME_STRETCHES: Record<number, GridPos[]> = {
+  0: [[1,7],[2,7],[3,7],[4,7],[5,7]],     // Blue → RIGHT
+  1: [[7,1],[7,2],[7,3],[7,4],[7,5]],     // Red  → DOWN
+  2: [[13,7],[12,7],[11,7],[10,7],[9,7]], // Green → LEFT
+  3: [[7,13],[7,12],[7,11],[7,10],[7,9]], // Yellow → UP
 };
 
-export function getHomeStretch(quadrant: number): GridPos[] {
-  const off = QUAD_OFFSETS[quadrant] ?? 0;
-  return HOME_STRETCH_BY_OFFSET[off] ?? HOME_STRETCH_BY_OFFSET[0];
-}
+// Home zone offsets: top-left corner of the 6x6 base for each player
+const HOME_ZONE_OFFSETS: Record<number, [number, number]> = {
+  0: [0, 9],  // Blue  → bottom-left  (rows 9-14, cols 0-5)
+  1: [0, 0],  // Red   → top-left     (rows 0-5,  cols 0-5)
+  2: [9, 0],  // Green → top-right    (rows 0-5,  cols 9-14)
+  3: [9, 9],  // Yellow→ bottom-right (rows 9-14, cols 9-14)
+};
 
 function homeTokens(col0: number, row0: number): GridPos[] {
   return [[2,2],[3,2],[2,3],[3,3]].map(([c, r]) => [col0 + c, row0 + r] as GridPos);
 }
+
 export const HOME_TOKENS: Record<number, GridPos[]> = {
-  0: homeTokens(0, 0),
-  1: homeTokens(0, 9),
-  2: homeTokens(9, 9),
-  3: homeTokens(9, 0),
+  0: homeTokens(0, 9),  // Blue
+  1: homeTokens(0, 0),  // Red
+  2: homeTokens(9, 0),  // Green
+  3: homeTokens(9, 9),  // Yellow
 };
 
-export function getHomeTokens(quadrant: number): GridPos[] {
+// ─── Quadrant mapping (2 players use Blue & Green — opposites) ─
+export function playerQuadrant(playerIndex: number, totalPlayers: number): number {
+  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 2; // Blue(0) & Green(2)
+  return playerIndex;
+}
+
+export function absPath(progress: number, playerIndex: number, totalPlayers: number): number {
+  const q = playerQuadrant(playerIndex, totalPlayers);
+  return (progress + ENTRY_OFFSETS[q]) % 52;
+}
+
+export function getHomeStretch(playerIndex: number, totalPlayers: number): GridPos[] {
+  const q = playerQuadrant(playerIndex, totalPlayers);
+  return HOME_STRETCHES[q] ?? HOME_STRETCHES[0];
+}
+
+// Direct quadrant lookup for rendering
+export function getHomeStretchByQuadrant(quadrant: number): GridPos[] {
+  return HOME_STRETCHES[quadrant] ?? HOME_STRETCHES[0];
+}
+
+export function getHomeTokens(playerIndex: number, totalPlayers: number): GridPos[] {
+  const q = playerQuadrant(playerIndex, totalPlayers);
+  return HOME_TOKENS[q] ?? HOME_TOKENS[0];
+}
+
+export function getHomeTokensByQuadrant(quadrant: number): GridPos[] {
   return HOME_TOKENS[quadrant] ?? HOME_TOKENS[0];
 }
 
@@ -70,13 +106,12 @@ export function cellCenter(col: number, row: number): { x: number; y: number } {
 }
 
 export function getBoardPosition(playerIndex: number, progress: number, totalPlayers: number = 4): { x: number; y: number } {
-  const q = playerQuadrant(playerIndex, totalPlayers);
-  if (progress === -1) return cellCenter(...getHomeTokens(q)[0]);
+  if (progress === -1) return cellCenter(...getHomeTokens(playerIndex, totalPlayers)[0]);
   if (progress >= 52 && progress <= 56) {
-    const cell = getHomeStretch(q)[progress - 52];
+    const cell = getHomeStretch(playerIndex, totalPlayers)[progress - 52];
     return cell ? cellCenter(cell[0], cell[1]) : { x: 0.5, y: 0.5 };
   }
   if (progress >= 57) return { x: 0.5, y: 0.5 };
-  const idx = (progress + (QUAD_OFFSETS[q] ?? 0)) % 52;
+  const idx = absPath(progress, playerIndex, totalPlayers);
   return cellCenter(PATH[idx][0], PATH[idx][1]);
 }

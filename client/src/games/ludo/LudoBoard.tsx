@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import {
-  PATH, HOME_TOKENS, SAFE_ABS,
-  getBoardPosition, getHomeTokens, getHomeStretch, playerQuadrant,
+  PATH, SAFE_ABS,
+  getBoardPosition, getHomeTokens, getHomeTokensByQuadrant,
+  getHomeStretchByQuadrant, playerQuadrant,
 } from './BoardLayout.js';
 
 const P_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
@@ -118,7 +119,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
       {/* Z-2: Home stretch colored tiles — all 4 quadrants, dim if inactive */}
       {[0,1,2,3].map(q => {
         const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
-        return (getHomeStretch(q) || []).map(([c,r], i) => (
+        return (getHomeStretchByQuadrant(q) || []).map(([c,r], i) => (
           <rect key={`hs-${q}-${i}`}
             x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
             width={ts} height={ts} rx={0.004}
@@ -162,7 +163,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
       {/* Z-2: Home token starting circles — all 4 quadrants, dim if inactive */}
       {[0,1,2,3].map(q => {
         const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
-        return (getHomeTokens(q) || []).map(([c,r], i) => (
+        return (getHomeTokensByQuadrant(q) || []).map(([c,r], i) => (
           <circle key={`ht-${q}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
             fill={isActive ? `${P_COLORS[q]}20` : `${P_COLORS[q]}10`}
             stroke={isActive ? `${P_COLORS[q]}35` : `${P_COLORS[q]}15`}
@@ -197,7 +198,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
       {/* Home tokens (idle in base) — clickable if validMoves */}
       {tokens.filter(t => t.state === 'home').map(tok => {
         const q = pq(tok.playerIndex);
-        const cell = getHomeTokens(q)[tok.tokenIndex % 4];
+        const cell = (getHomeTokensByQuadrant(q) || [])[tok.tokenIndex % 4];
         if (!cell) return null;
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
         const isMovable = validMoves.includes(tok.tokenIndex);
