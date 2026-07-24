@@ -413,6 +413,9 @@ export function handleAction(
       if (state.turn.phase !== 'playing') {
         return { state, valid: false, error: 'Cannot end turn now' };
       }
+      if (state.actionStack.some(a => a.status === 'awaiting_response')) {
+        return { state, valid: false, error: 'Resolve pending actions first' };
+      }
       state.turn.phase = 'drawing';
       const callbacks = makeCallbacks();
       return resolveDrawCard(state, playerIndex, callbacks);
