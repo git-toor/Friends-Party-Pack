@@ -92,7 +92,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       winner: newState.winner ?? null,
       validMoves: newState.validMoves || [],
     });
-    console.log('[Ludo] State ←', newState.phase, 'cp:', newState.currentPlayer, 'dv:', newState.diceValue, 'drb:', newState.diceRolledBy, 'rid:', newState.rollId?.slice(0,8));
   }, []);
 
   const fetchState = useCallback(async () => {
@@ -140,7 +139,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       });
       const data = await r.json();
       if (!r.ok || data.valid === false) {
-        console.warn('[Ludo] Action rejected:', data.error || r.status);
         return data;
       }
       if (data.state) {
@@ -162,7 +160,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const handleRollResult = useCallback(async () => {
     if (rollingRef.current) return;
-    console.log('[ROLL CLICK]', { phase: gs.phase, cp: gs.currentPlayer, drb: gs.diceRolledBy, dv: gs.diceValue, pi: playerIndex, canRoll });
     if (gs.phase !== 'waiting_for_roll') return;
     if (!diceRef.current) return;
     rollingRef.current = true;
@@ -175,18 +172,11 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       return;
     }
 
-    console.log('[ROLL]', { rollId: rollData.rollId?.slice(0,8) });
-
     // Step 2: free 3D physics — no forced value, reads actual result
     const [value] = await diceRef.current.roll();
 
     // Step 3: confirm the dice value with server
-    const confirmData = await sendAction('CONFIRM_DICE', { rollId: rollData.rollId, value });
-    console.log('[CONFIRM DICE]', {
-      phase: confirmData?.state?.phase,
-      diceValue: confirmData?.state?.diceValue,
-      validMoves: confirmData?.validMoves,
-    });
+    await sendAction('CONFIRM_DICE', { rollId: rollData.rollId, value });
 
     rollingRef.current = false;
   }, [sendAction, sounds, gs.phase]);
@@ -230,13 +220,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1a1a2e', color: '#eee', position: 'relative', overflow: 'auto' }}>
-      {/* Debug overlay */}
-      {isMyTurn && (
-        <div style={{ position: 'absolute', top: 4, left: 4, zIndex: 9999, fontSize: 9, color: '#666', background: 'rgba(0,0,0,0.7)', padding: '2px 6px', borderRadius: 4, pointerEvents: 'none' }}>
-          P{gs.currentPlayer} {gs.phase} d:{gs.diceValue ?? '-'} myP:{playerIndex}
-        </div>
-      )}
-
       {/* Top bar — players (always renders when players exist) */}
       {hasPlayers && (
         <div style={{ display: 'flex', gap: 8, padding: '8px 12px', overflowX: 'auto', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
