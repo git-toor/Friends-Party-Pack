@@ -1,21 +1,16 @@
 import { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  PATH, HOME_STRETCH, HOME_ZONES, CENTER, getBoardPosition, getTileSize,
-  isSafeSquare, absPath, type TileCoord,
+  PATH, HOME_STRETCH, HOME_TOKENS, SAFE_ABS,
+  cellCenter, getBoardPosition, isSafeSquare,
+  GRID,
 } from './BoardLayout.js';
-import { Tile } from './Tile.js';
-import { Token } from './Token.js';
 
-const S = 40;
-const BOARD_SIZE = 640;
-const BOARD_OFFSET = 20;
-const PLAYER_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
+// Player colors
+const P_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
 
-// Map player index to board color index (opposite sides for 2 players)
 export function playerColorIndex(playerIndex: number, totalPlayers: number): number {
-  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 2; // Red ↔ Yellow
-  return playerIndex; // Sequential for 3-4 players
+  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 2;
+  return playerIndex;
 }
 
 interface TokenData {
@@ -29,164 +24,222 @@ interface LudoBoardProps {
   tokens: TokenData[];
   validMoves: number[];
   currentPlayer: number;
-  diceValue: number | null;
-  phase: string;
   playerIndex: number;
   totalPlayers: number;
   onTokenClick: (tokenIndex: number) => void;
-  playerNames?: Record<number, string>;
 }
 
-function CenterPiece() {
-  return (
-    <g>
-      {/* Center background */}
-      <rect x={6*S} y={6*S} width={3*S} height={3*S} fill="#1a1a2e" rx={4} />
-      {/* Colored triangles meeting in center */}
-      <polygon points={`${7*S},${7*S} ${6*S},${6*S} ${6*S},${9*S}`} fill="rgba(231,76,60,0.3)" />
-      <polygon points={`${7*S},${7*S} ${6*S},${6*S} ${9*S},${6*S}`} fill="rgba(46,204,113,0.3)" />
-      <polygon points={`${7*S},${7*S} ${9*S},${6*S} ${9*S},${9*S}`} fill="rgba(241,196,15,0.3)" />
-      <polygon points={`${7*S},${7*S} ${6*S},${9*S} ${9*S},${9*S}`} fill="rgba(52,152,219,0.3)" />
-      {/* Center circle */}
-      <circle cx={7*S} cy={7*S} r={12} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-    </g>
-  );
+// SVG viewBox is 1×1; all grid positions are divided by GRID=15
+const C = (col: number) => (col + 0.5) / GRID;
+const R = (row: number) => (row + 0.5) / GRID;
+const SZ = 0.055; // tile size in viewBox units
+
+// Base area rectangles per player (col0, row0, width in cols, height in rows)
+const BASES: { c: number; r: number; w: number; h: number; color: string }[] = [
+  { c: 0, r: 0, w: 6, h: 6, color: P_COLORS[0] },
+  { c: 0, r: 9, w: 6, h: 6, color: P_COLORS[1] },
+  { c: 9, r: 9, w: 6, h: 6, color: P_COLORS[2] },
+  { c: 9, r: 0, w: 6, h: 6, color: P_COLORS[3] },
+];
+
+// Arm rectangles forming the cross
+const ARMS: { c: number; r: number; w: number; h: number }[] = [
+  { c: 6, r: 0, w: 3, h: 6 },  // top
+  { c: 0, r: 6, w: 6, h: 3 },  // left
+  { c: 9, r: 6, w: 6, h: 3 },  // right
+  { c: 6, r: 9, w: 3, h: 6 },  // bottom
+];
+
+// Stacking offsets for multi-token tiles
+function stackOffsets(count: number): { dx: number; dy: number }[] {
+  if (count === 1) return [{ dx: 0, dy: 0 }];
+  if (count === 2) return [{ dx: -0.015, dy: 0 }, { dx: 0.015, dy: 0 }];
+  if (count === 3) return [{ dx: 0, dy: -0.012 }, { dx: -0.015, dy: 0.012 }, { dx: 0.015, dy: 0.012 }];
+  return [
+    { dx: -0.015, dy: -0.015 }, { dx: 0.015, dy: -0.015 },
+    { dx: -0.015, dy: 0.015 }, { dx: 0.015, dy: 0.015 },
+  ];
 }
 
-function HomeZone({ player, tokens, totalPlayers }: { player: number; tokens: TokenData[]; totalPlayers: number }) {
-  const cIdx = playerColorIndex(player, totalPlayers);
-  const color = PLAYER_COLORS[cIdx];
-  const homeTokens = tokens.filter(t => t.playerIndex === player && t.state === 'home');
-  const finishedTokens = tokens.filter(t => t.playerIndex === player && t.state === 'finished');
-  const zoneTiles = HOME_ZONES[player];
-
-  return (
-    <g>
-      <rect
-        x={player === 0 ? S : player === 3 ? 9*S : player === 1 ? S : 9*S}
-        y={player < 2 ? S : 9*S}
-        width={5*S}
-        height={5*S}
-        rx={10}
-        fill={`${color}15`}
-        stroke={`${color}40`}
-        strokeWidth={1.5}
-      />
-      {zoneTiles.map((pos, i) => (
-        <circle key={i} cx={pos.x} cy={pos.y} r={8} fill={`${color}30`} stroke={`${color}50`} strokeWidth={1} />
-      ))}
-      {homeTokens.map((tok, i) => {
-        const pos = zoneTiles[homeTokens.indexOf(tok)] || zoneTiles[i % 4];
-        return (
-          <Token
-            key={`home-${tok.tokenIndex}`}
-            pos={pos}
-            colorIndex={playerColorIndex(tok.playerIndex, totalPlayers)}
-            size={getTileSize()}
-            movable={false}
-            isDragging={false}
-          />
-        );
-      })}
-      {finishedTokens.map(tok => (
-        <Token
-          key={`fin-${tok.tokenIndex}`}
-          pos={CENTER}
-          colorIndex={playerColorIndex(tok.playerIndex, totalPlayers)}
-          size={getTileSize()}
-          movable={false}
-          isDragging={false}
-        />
-      ))}
-    </g>
-  );
-}
-
-export function LudoBoard({ tokens, validMoves, currentPlayer, playerIndex, totalPlayers, onTokenClick, playerNames = {} }: LudoBoardProps) {
-  const ts = getTileSize();
-  const colorIdx = (p: number) => playerColorIndex(p, totalPlayers);
-
-  // Group path tokens by board position for stacking
-  const pathTokenGroups = useMemo(() => {
+export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: LudoBoardProps) {
+  // Group path/stretch tokens by board position
+  const tokenGroups = useMemo(() => {
     const groups = new Map<string, TokenData[]>();
     for (const tok of tokens) {
       if (tok.state !== 'path' && tok.state !== 'stretch') continue;
       const pos = getBoardPosition(tok.playerIndex, tok.progress);
-      const key = `${pos.x},${pos.y}`;
+      const key = `${pos.x.toFixed(4)},${pos.y.toFixed(4)}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(tok);
     }
     return groups;
   }, [tokens]);
 
-  // Stacking offsets for multi-token tiles
-  const stackPositions = (count: number, cx: number, cy: number): { x: number; y: number }[] => {
-    if (count === 1) return [{ x: cx, y: cy }];
-    if (count === 2) return [{ x: cx - 8, y: cy }, { x: cx + 8, y: cy }];
-    if (count === 3) return [{ x: cx, y: cy - 8 }, { x: cx - 8, y: cy + 8 }, { x: cx + 8, y: cy + 8 }];
-    return [
-      { x: cx - 8, y: cy - 8 }, { x: cx + 8, y: cy - 8 },
-      { x: cx - 8, y: cy + 8 }, { x: cx + 8, y: cy + 8 },
-    ];
-  };
-
   return (
-    <svg viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`} style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.3))' }}>
-      <g transform={`translate(${BOARD_OFFSET}, ${BOARD_OFFSET})`}>
-        {/* Board background */}
-      <rect width={BOARD_SIZE} height={BOARD_SIZE} fill="#1a1a2e" rx={8} />
+    <svg viewBox="0 0 1 1" style={{ width: '100%', height: 'auto', display: 'block' }}>
+      {/* Z-1: Dark board background */}
+      <rect x={0} y={0} width={1} height={1} fill="#1a1a2e" rx={0.02} />
 
-      {/* Cross-shaped board surface */}
-      <rect x={6*S} y={0} width={3*S} height={6*S} fill="#25254a" />
-      <rect x={0} y={6*S} width={6*S} height={3*S} fill="#25254a" />
-      <rect x={9*S} y={6*S} width={6*S} height={3*S} fill="#25254a" />
-      <rect x={6*S} y={9*S} width={3*S} height={6*S} fill="#25254a" />
+      {/* Z-2: Cross-shaped arm surfaces */}
+      {ARMS.map((a, i) => (
+        <rect key={`arm-${i}`} x={a.c / GRID} y={a.r / GRID} width={a.w / GRID} height={a.h / GRID}
+          fill="#25254a" stroke="#2a2a4a" strokeWidth={0.002} />
+      ))}
 
-      {/* Home zones */}
-      <HomeZone player={0} tokens={tokens} totalPlayers={totalPlayers} />
-      <HomeZone player={1} tokens={tokens} totalPlayers={totalPlayers} />
-      <HomeZone player={2} tokens={tokens} totalPlayers={totalPlayers} />
-      <HomeZone player={3} tokens={tokens} totalPlayers={totalPlayers} />
+      {/* Z-2: Colored base zones */}
+      {BASES.map((b, i) => (
+        <rect key={`base-${i}`} x={b.c / GRID} y={b.r / GRID} width={b.w / GRID} height={b.h / GRID}
+          fill={`${b.color}15`} stroke={`${b.color}40`} strokeWidth={0.003} rx={0.01} />
+      ))}
 
-      {/* Center */}
-      <CenterPiece />
+      {/* Z-2: Center finish zone (3×3 box) */}
+      <rect x={6/GRID} y={6/GRID} width={3/GRID} height={3/GRID}
+        fill="#1a1a2e" stroke="rgba(255,255,255,0.1)" strokeWidth={0.003} rx={0.005} />
 
-      {/* Home stretch tiles */}
+      {/* Z-2: Colored triangles in center */}
+      <polygon points={`${C(7.5)},${C(7.5)} ${C(6)},${C(6)} ${C(6)},${C(9)}`} fill="rgba(231,76,60,0.25)" />
+      <polygon points={`${C(7.5)},${C(7.5)} ${C(6)},${C(6)} ${C(9)},${C(6)}`} fill="rgba(46,204,113,0.25)" />
+      <polygon points={`${C(7.5)},${C(7.5)} ${C(9)},${C(6)} ${C(9)},${C(9)}`} fill="rgba(241,196,15,0.25)" />
+      <polygon points={`${C(7.5)},${C(7.5)} ${C(6)},${C(9)} ${C(9)},${C(9)}`} fill="rgba(52,152,219,0.25)" />
+      {/* Center dot */}
+      <circle cx={C(7.5)} cy={C(7.5)} r={0.02} fill="rgba(255,255,255,0.15)" />
+
+      {/* Z-2: Home token starting circles */}
       {[0, 1, 2, 3].map(p =>
-        HOME_STRETCH[p].map((pos, i) => (
-          <Tile key={`hs-${p}-${i}`} pos={pos} size={ts} color={PLAYER_COLORS[p]} isHomeStretch />
+        HOME_TOKENS[p].map(([c, r], i) => (
+          <circle key={`ht-${p}-${i}`} cx={C(c)} cy={R(r)} r={0.018}
+            fill={`${P_COLORS[p]}30`} stroke={`${P_COLORS[p]}50`} strokeWidth={0.002} />
         ))
       )}
 
-      {/* Path tiles */}
-      {PATH.map((pos, i) => (
-        <Tile key={`p-${i}`} pos={pos} size={ts} isPath isSafe={isSafeSquare(i)} />
+      {/* Z-2: Home stretch colored path tiles */}
+      {[0, 1, 2, 3].map(p =>
+        HOME_STRETCH[p].map(([c, r], i) => (
+          <rect key={`hs-${p}-${i}`}
+            x={c / GRID + (1 - SZ) / 2 / GRID} y={r / GRID + (1 - SZ) / 2 / GRID}
+            width={SZ / GRID} height={SZ / GRID} rx={0.003}
+            fill={P_COLORS[p]} opacity={0.7}
+          />
+        ))
+      )}
+
+      {/* Z-2: Outer path tiles */}
+      {PATH.map(([c, r], i) => (
+        <rect key={`p-${i}`}
+          x={c / GRID + (1 - SZ) / 2 / GRID} y={r / GRID + (1 - SZ) / 2 / GRID}
+          width={SZ / GRID} height={SZ / GRID} rx={0.003}
+          fill="#2a2a4a" stroke="#3a3a5a" strokeWidth={0.002}
+        />
       ))}
 
-      {/* Destination highlights */}
-      {tokens.filter(t => t.playerIndex === playerIndex && validMoves.includes(t.tokenIndex)).map(tok => {
-        const dice = 3; // Placeholder — real dice value should come from state
-        if (tok.state === 'home' || tok.state === 'finished') return null;
-        if (tok.state === 'path' || tok.state === 'stretch') {
-          // We'll highlight the destination tile for movable tokens when selected
-        }
-        return null;
+      {/* Z-3: Safe square stars (perfectly centered in cell) */}
+      {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c, r]) => (
+        <text key={`safe-${c}-${r}`} x={C(c)} y={R(r) + 0.018}
+          textAnchor="middle" fontSize={0.035} fill="#f1c40f" opacity={0.8}>
+          ★
+        </text>
+      ))}
+
+      {/* Z-3: Destination highlight rings */}
+      {Array.from(tokenGroups.entries()).map(([key, group]) => {
+        if (!group.some(t => validMoves.includes(t.tokenIndex))) return null;
+        const [x, y] = key.split(',').map(Number);
+        return (
+          <rect key={`dest-${key}`}
+            x={x - SZ / 2 / GRID - 0.003} y={y - SZ / 2 / GRID - 0.003}
+            width={SZ / GRID + 0.006} height={SZ / GRID + 0.006} rx={0.004}
+            fill="none" stroke="#fbbf24" strokeWidth={0.003}
+            strokeDasharray="0.008 0.006"
+          >
+            <animate attributeName="opacity" values="0.3;1;0.3" dur="1.2s" repeatCount="indefinite" />
+          </rect>
+        );
       })}
 
-      {/* Path/Stretch tokens */}
-      {Array.from(pathTokenGroups.entries()).map(([key, group]) => {
+      {/* Z-3: Path tokens with stacking */}
+      {Array.from(tokenGroups.entries()).map(([key, group]) => {
         const [x, y] = key.split(',').map(Number);
-        const positions = stackPositions(group.length, x, y);
+        const offsets = stackOffsets(group.length);
         return group.map((tok, i) => {
           const isMovable = validMoves.includes(tok.tokenIndex);
+          const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
           return (
-            <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`} style={{ cursor: isMovable ? 'pointer' : 'default' }} onClick={() => isMovable && onTokenClick(tok.tokenIndex)}>
-              <Token pos={positions[i]} colorIndex={playerColorIndex(tok.playerIndex, totalPlayers)} size={ts} movable={isMovable && tok.state !== 'finished'} isDragging={false} />
+            <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`}
+              style={{ cursor: isMovable ? 'pointer' : 'default' }}
+              onClick={() => isMovable && onTokenClick(tok.tokenIndex)}
+            >
+              {/* Shadow */}
+              <ellipse cx={x + offsets[i].dx + 0.003} cy={y + offsets[i].dy + 0.005}
+                rx={0.023} ry={0.005} fill="rgba(0,0,0,0.2)" />
+              {/* Pawn body */}
+              <path d={`
+                M ${x + offsets[i].dx - 0.018},${y + offsets[i].dy + 0.025}
+                C ${x + offsets[i].dx - 0.018},${y + offsets[i].dy + 0.025}
+                  ${x + offsets[i].dx - 0.022},${y + offsets[i].dy + 0.015}
+                  ${x + offsets[i].dx - 0.022},${y + offsets[i].dy + 0.005}
+                C ${x + offsets[i].dx - 0.022},${y + offsets[i].dy - 0.005}
+                  ${x + offsets[i].dx - 0.016},${y + offsets[i].dy - 0.012}
+                  ${x + offsets[i].dx - 0.012},${y + offsets[i].dy - 0.015}
+                C ${x + offsets[i].dx - 0.014},${y + offsets[i].dy - 0.022}
+                  ${x + offsets[i].dx - 0.012},${y + offsets[i].dy - 0.028}
+                  ${x + offsets[i].dx - 0.006},${y + offsets[i].dy - 0.032}
+                C ${x + offsets[i].dx},${y + offsets[i].dy - 0.035}
+                  ${x + offsets[i].dx + 0.006},${y + offsets[i].dy - 0.032}
+                  ${x + offsets[i].dx + 0.012},${y + offsets[i].dy - 0.028}
+                C ${x + offsets[i].dx + 0.012},${y + offsets[i].dy - 0.022}
+                  ${x + offsets[i].dx + 0.014},${y + offsets[i].dy - 0.022}
+                  ${x + offsets[i].dx + 0.012},${y + offsets[i].dy - 0.015}
+                C ${x + offsets[i].dx + 0.016},${y + offsets[i].dy - 0.012}
+                  ${x + offsets[i].dx + 0.022},${y + offsets[i].dy - 0.005}
+                  ${x + offsets[i].dx + 0.022},${y + offsets[i].dy + 0.005}
+                C ${x + offsets[i].dx + 0.022},${y + offsets[i].dy + 0.015}
+                  ${x + offsets[i].dx + 0.018},${y + offsets[i].dy + 0.025}
+                  ${x + offsets[i].dx + 0.018},${y + offsets[i].dy + 0.025}
+                Z`}
+                fill={P_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002}
+              />
+              {/* Head highlight */}
+              <ellipse cx={x + offsets[i].dx} cy={y + offsets[i].dy - 0.022}
+                rx={0.006} ry={0.004} fill="rgba(255,255,255,0.2)" />
+              {/* Movable glow ring */}
+              {isMovable && (
+                <circle cx={x + offsets[i].dx} cy={y + offsets[i].dy} r={0.035}
+                  fill="none" stroke={P_COLORS[cIdx]} strokeWidth={0.003}>
+                  <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" />
+                  <animate attributeName="r" values="0.03;0.038;0.03" dur="1.5s" repeatCount="indefinite" />
+                </circle>
+              )}
             </g>
           );
         });
       })}
-      </g>
+
+      {/* Home tokens (not on path) */}
+      {tokens.filter(t => t.state === 'home').map(tok => {
+        const homePos = HOME_TOKENS[tok.playerIndex]?.[0];
+        if (!homePos) return null;
+        const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
+        const cx = C(homePos[0]), cy = R(homePos[1]);
+        return (
+          <g key={`home-${tok.playerIndex}-${tok.tokenIndex}`}>
+            <ellipse cx={cx + 0.003} cy={cy + 0.005} rx={0.023} ry={0.005} fill="rgba(0,0,0,0.2)" />
+            <circle cx={cx} cy={cy} r={0.022}
+              fill={P_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} />
+            <circle cx={cx - 0.005} cy={cy - 0.005} r={0.008} fill="rgba(255,255,255,0.15)" />
+          </g>
+        );
+      })}
+
+      {/* Finished tokens at center */}
+      {tokens.filter(t => t.state === 'finished').map(tok => {
+        const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
+        return (
+          <circle key={`fin-${tok.playerIndex}-${tok.tokenIndex}`}
+            cx={C(7.5)} cy={R(7.5)} r={0.018}
+            fill={P_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} opacity={0.8}
+          />
+        );
+      })}
     </svg>
   );
 }

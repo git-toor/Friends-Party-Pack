@@ -48,7 +48,7 @@ const PLAYER_OFFSETS = [0, 13, 26, 39];
 const SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
 const PATH_LENGTH = 52;
 const STRETCH_START = 52;
-const FINISH = 58;
+const FINISH = 57;
 
 function absPath(progress: number, playerIndex: number): number {
   return (progress + PLAYER_OFFSETS[playerIndex]) % PATH_LENGTH;

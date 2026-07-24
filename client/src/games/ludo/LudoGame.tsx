@@ -204,12 +204,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             tokens={allTokens}
             validMoves={gs.validMoves}
             currentPlayer={gs.currentPlayer}
-            diceValue={gs.diceValue}
-            phase={gs.phase}
             playerIndex={playerIndex}
             totalPlayers={gs.players.length}
             onTokenClick={handleTokenClick}
-            playerNames={playerNames}
           />
         </div>
       </div>

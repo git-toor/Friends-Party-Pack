@@ -160,18 +160,18 @@ describe('LudoEngine', () => {
       expect(game.players[0].tokens[0].progress).toBe(52);
     });
 
-    it('finishes token with exact roll to 58', () => {
-      game.players[0].tokens[0] = { state: 'stretch', progress: 55 };
+    it('finishes token with exact roll to 57', () => {
+      game.players[0].tokens[0] = { state: 'stretch', progress: 54 };
       gameWithFixedRoll(game, 0, 3);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(true);
       expect(game.players[0].tokens[0].state).toBe('finished');
-      expect(game.players[0].tokens[0].progress).toBe(58);
+      expect(game.players[0].tokens[0].progress).toBe(57);
       expect(game.players[0].finishedCount).toBe(1);
       expect(r.events?.some(e => e.type === 'TOKEN_FINISHED')).toBe(true);
     });
 
-    it('rejects overshoot beyond 58', () => {
+    it('rejects overshoot beyond 57', () => {
       game.players[0].tokens[0] = { state: 'stretch', progress: 55 };
       gameWithFixedRoll(game, 0, 5);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
@@ -192,8 +192,10 @@ describe('LudoEngine', () => {
     });
 
     it('does not capture on safe square', () => {
-      game.players[0].tokens[0] = { state: 'path', progress: 12 };
-      game.players[1].tokens[0] = { state: 'path', progress: 14 };
+      // Safe square at abs 13 (Blue's entry). P0 at progress 11 (abs 11), rolls 2 → progress 13 (abs 13 safe).
+      // P1 at progress 0 (abs 0+13=13) — same absolute square, but it's safe.
+      game.players[0].tokens[0] = { state: 'path', progress: 11 };
+      game.players[1].tokens[0] = { state: 'path', progress: 0 };
       gameWithFixedRoll(game, 0, 2);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(game.players[1].tokens[0].state).toBe('path');
@@ -235,8 +237,9 @@ describe('LudoEngine', () => {
     });
 
     it('can land on safe square occupied by opponent', () => {
-      // Safe square at abs 8
-      game.players[1].tokens[0] = { state: 'path', progress: 8 };
+      // Safe square at abs 8. P0 at progress 6 (abs 6), rolls 2 → abs 8.
+      // P1 at progress 47 (abs 47+13=60%52=8) — same safe square.
+      game.players[1].tokens[0] = { state: 'path', progress: 47 };
       game.players[0].tokens[0] = { state: 'path', progress: 6 };
       gameWithFixedRoll(game, 0, 2);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
@@ -313,12 +316,12 @@ describe('LudoEngine', () => {
 
   describe('Win condition', () => {
     it('declares winner when all 4 tokens finished', () => {
-      // Set player 0's tokens at stretch progress 57 (need 1 to finish)
+      // Set player 0's tokens at stretch progress 56 (need 1 to finish)
       for (let i = 0; i < 3; i++) {
-        game.players[0].tokens[i] = { state: 'finished', progress: 58 };
+        game.players[0].tokens[i] = { state: 'finished', progress: 57 };
       }
       game.players[0].finishedCount = 3;
-      game.players[0].tokens[3] = { state: 'stretch', progress: 57 };
+      game.players[0].tokens[3] = { state: 'stretch', progress: 56 };
       gameWithFixedRoll(game, 0, 1);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 3 } });
       expect(game.winner).toBe(0);
@@ -354,20 +357,20 @@ describe('LudoEngine', () => {
 
     it('returns only movable path tokens', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
-      game.players[0].tokens[1] = { state: 'path', progress: 57 };
-      game.players[0].tokens[2] = { state: 'finished', progress: 58 };
+      game.players[0].tokens[1] = { state: 'stretch', progress: 56 };
+      game.players[0].tokens[2] = { state: 'finished', progress: 57 };
       gameWithFixedRoll(game, 0, 3);
       const moves = getAllMoves(game, 0);
       // Token 0: 10+3=13 valid
-      // Token 1: 57+3=60 > 58 invalid
+      // Token 1: 56+3=59 > 57 invalid (overshoot)
       // Token 2: finished invalid
       // Tokens 3: home, needs 6
       expect(moves).toEqual([0]);
     });
 
     it('returns empty when no valid moves after roll', () => {
-      // Token at progress 57, roll > 1 would overshoot
-      game.players[0].tokens[0] = { state: 'stretch', progress: 57 };
+      // Token at stretch progress 56, roll 5 overshoots
+      game.players[0].tokens[0] = { state: 'stretch', progress: 56 };
       gameWithFixedRoll(game, 0, 5);
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
@@ -403,8 +406,8 @@ describe('LudoEngine', () => {
       expect(r.events?.some(e => e.type === 'TOKEN_MOVED')).toBe(true);
     });
 
-    it('emits TOKEN_FINISHED when reaching 58', () => {
-      game.players[0].tokens[0] = { state: 'stretch', progress: 55 };
+    it('emits TOKEN_FINISHED when reaching 57', () => {
+      game.players[0].tokens[0] = { state: 'stretch', progress: 54 };
       gameWithFixedRoll(game, 0, 3);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.events?.some(e => e.type === 'TOKEN_FINISHED')).toBe(true);
