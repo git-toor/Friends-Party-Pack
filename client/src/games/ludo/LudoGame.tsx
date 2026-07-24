@@ -241,9 +241,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
         padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0, flexWrap: 'wrap',
       }}>
-        <div style={{ fontSize: 10, color: '#666', marginRight: 8 }}>
+        {isMyTurn && <div style={{ fontSize: 10, color: '#666' }}>
           P{gs.currentPlayer} {gs.phase} d:{gs.diceValue ?? '-'}
-        </div>
+        </div>}
         {needsRoll && (
           <button onClick={handleRollResult} style={{
             padding: '10px 22px', fontSize: 16, fontWeight: 700, borderRadius: 8,
@@ -252,7 +252,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             🎲 Roll
           </button>
         )}
-        {gs.diceValue !== null && (
+        {gs.diceValue !== null && isMyTurn && (
           <motion.div
             key={gs.diceValue}
             initial={{ scale: 0.5, rotate: -180 }}
@@ -274,7 +274,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               : `Rolled ${gs.diceValue} — Tap glowing token to move`}
           </div>
         )}
-        {gs.diceValue !== null && !needsRoll && (
+        {gs.diceValue !== null && isMyTurn && !needsRoll && gs.phase !== 'moving' && (
           <div style={{ fontSize: 10, color: '#aaa' }}>
             Tap the board to dismiss dice
           </div>
