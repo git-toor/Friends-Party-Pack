@@ -7,7 +7,6 @@ import { OpponentBar } from './components/OpponentBar.js';
 import { ActionBar } from './components/ActionBar.js';
 import { PlayArea } from './components/PlayArea.js';
 import { GameOverOverlay } from './components/modals/GameOverOverlay.js';
-import { FavorModal } from './components/modals/FavorModal.js';
 import { DefuseModal } from './components/modals/DefuseModal.js';
 import { ZombieReviveModal } from './components/modals/ZombieReviveModal.js';
 import type { ChatMessage } from '../../components/ChatBox.js';
@@ -61,7 +60,7 @@ export default function ExplodingKittensGame({
 }: EKGameProps) {
   const [gs, setGs] = useState<ClientGameState>(EMPTY_STATE);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
-  const [showFavor, setShowFavor] = useState<ClientCardRef[] | null>(null);
+  const [favorGiveMode, setFavorGiveMode] = useState<{ selectedCardId: string | null } | null>(null);
   const [showDefuse, setShowDefuse] = useState<{ deckSize: number; hasZombie: boolean } | null>(null);
   const [showZombieRevive, setShowZombieRevive] = useState<{ deadPlayers: { index: number; name: string }[] } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
@@ -160,34 +159,33 @@ export default function ExplodingKittensGame({
       }
 
       // Detect nope played — compare chain length
-      if (next.nopeWindow && next.lastPlayedCard?.type === 'nope' && next.lastPlayedCard.playerIndex !== playerIndex
-        && (next.nopeWindow.chain.length > prevNopeChainLen.current)) {
-        setShowNopeOverlay(true);
-        setTimeout(() => setShowNopeOverlay(false), 1500);
+      if (next.nopeWindow) {
+        const chain = next.nopeWindow.chain;
+        if (chain.length > prevNopeChainLen.current) {
+          const lastNoper = chain[chain.length - 1]?.playerIndex;
+          if (lastNoper !== undefined && lastNoper !== playerIndex) {
+            setShowNopeOverlay(true);
+            setTimeout(() => setShowNopeOverlay(false), 1500);
+          }
+        }
       }
       prevNopeChainLen.current = next.nopeWindow?.chain.length ?? 0;
     }
   }, [gameStatePush]);
 
-  // Nope window auto-timeout — each player gets full duration from when they see it
+  // Nope window auto-timeout — use server expiresAt for consistent timing
   useEffect(() => {
     if (nopeTimerRef.current) {
       clearTimeout(nopeTimerRef.current);
       nopeTimerRef.current = null;
     }
     if (gs.nopeWindow) {
-      // Track when we first learned about this nope window
-      if (nopeStartRef.current === 0) {
-        nopeStartRef.current = Date.now();
+      const remaining = Math.max(0, gs.nopeWindow.expiresAt - Date.now());
+      if (remaining > 0) {
+        nopeTimerRef.current = setTimeout(() => {
+          sendAction('RESOLVE_NOPE_TIMEOUT');
+        }, remaining);
       }
-      const duration = (gs.settings as any).nopeWindowDuration ?? 5000;
-      const elapsed = Date.now() - nopeStartRef.current;
-      const remaining = Math.max(0, duration - elapsed) + 500;
-      nopeTimerRef.current = setTimeout(() => {
-        sendAction('RESOLVE_NOPE_TIMEOUT');
-      }, remaining);
-    } else {
-      nopeStartRef.current = 0;
     }
     return () => {
       if (nopeTimerRef.current) clearTimeout(nopeTimerRef.current);
@@ -237,9 +235,8 @@ export default function ExplodingKittensGame({
     if (gs.pendingCardView && gs.pendingCardView.cards.length > 0 && !dismissedFuture) {
       setShowFuture(gs.pendingCardView);
       setReorderedFuture(gs.pendingCardView.cards);
-    } else if (!gs.pendingCardView) {
-      setShowFuture(null);
-      setReorderedFuture(null);
+    }
+    if (!gs.pendingCardView) {
       setDismissedFuture(false);
     }
   }, [gs.pendingCardView, dismissedFuture]);
@@ -380,7 +377,7 @@ export default function ExplodingKittensGame({
   }, [sendAction]);
 
   const handleFavorChoose = useCallback(async (cardId: string) => {
-    setShowFavor(null);
+    setFavorGiveMode(null);
     await sendAction('RESOLVE_FAVOR', { cardId, victimIndex: playerIndex });
   }, [sendAction, playerIndex]);
 
@@ -421,10 +418,12 @@ export default function ExplodingKittensGame({
   useEffect(() => {
     const pendingFavor = gs.actionStack.find(a => a.type === 'RESOLVE_FAVOR');
     if (pendingFavor && pendingFavor.playerIndex === playerIndex) {
-      const cards = gs.myHand.map(c => ({ id: c.id, type: c.type, name: c.name }));
-      if (cards.length > 0) setShowFavor(cards);
+      setFavorGiveMode({ selectedCardId: null });
     }
-  }, [gs.actionStack, gs.myHand, playerIndex]);
+    if (!pendingFavor) {
+      setFavorGiveMode(null);
+    }
+  }, [gs.actionStack, playerIndex]);
 
   useEffect(() => {
     const pendingDefuse = gs.actionStack.find(a => a.type === 'RESOLVE_DEFUSE');
@@ -589,11 +588,42 @@ export default function ExplodingKittensGame({
 
       {/* Player's hand */}
       <div style={{ position: 'relative', zIndex: 20, overflow: 'visible', background: 'rgba(22,33,62,0.4)', borderRadius: '8px 8px 0 0', margin: '0 4px' }}>
+        {favorGiveMode && (
+          <div style={{
+            padding: '8px 12px', textAlign: 'center', borderBottom: '1px solid rgba(233,69,96,0.3)',
+          }}>
+            <span style={{ color: '#e94560', fontSize: 13, fontWeight: 600 }}>
+              🤝 Select a card to give away
+            </span>
+            {favorGiveMode.selectedCardId && (
+              <button onClick={() => {
+                const sid = favorGiveMode.selectedCardId;
+                if (!sid) return;
+                handleFavorChoose(sid);
+              }}
+                style={{
+                  marginLeft: 8, padding: '4px 14px', background: '#e94560', color: '#fff',
+                  border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                  verticalAlign: 'middle',
+                }}>
+                Give Card
+              </button>
+            )}
+          </div>
+        )}
         <Hand
           cards={gs.myHand}
-          selectedCardIds={[...new Set([...selectedCardIds, ...comboPileCards.map(c => c.id)])]}
-          onSelectCard={handleSelectCard}
-          onSwipePlay={(cardId, point) => {
+          selectedCardIds={[...new Set([
+            ...selectedCardIds,
+            ...comboPileCards.map(c => c.id),
+            ...(favorGiveMode?.selectedCardId ? [favorGiveMode.selectedCardId] : []),
+          ])]}
+          onSelectCard={favorGiveMode ? (cardId) => {
+            setFavorGiveMode(prev => prev ? { selectedCardId: prev.selectedCardId === cardId ? null : cardId } : null);
+          } : handleSelectCard}
+          onSwipePlay={favorGiveMode ? (cardId) => {
+            handleFavorChoose(cardId);
+          } : (cardId, point) => {
             const card = gs.myHand.find(c => c.id === cardId);
             if (!card) return;
             if (card.type === 'defuse' || card.type === 'exploding_kitten' || card.type === 'imploding_kitten') return;
@@ -638,10 +668,6 @@ export default function ExplodingKittensGame({
         />
       )}
 
-      {showFavor && (
-        <FavorModal cardIds={showFavor} onChooseCard={handleFavorChoose} />
-      )}
-
       {showDefuse && (
         <DefuseModal
           deckSize={showDefuse.deckSize}
@@ -662,28 +688,26 @@ export default function ExplodingKittensGame({
           position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', zIndex: 900,
         }}>
-          <div style={{ background: '#16213e', borderRadius: 12, padding: 20, maxWidth: 380, width: '90%', maxHeight: '80vh', overflow: 'auto' }}>
-            <h3 style={{ color: '#fbbf24', textAlign: 'center', margin: '0 0 12px', fontSize: 16 }}>
+          <div style={{ background: '#16213e', borderRadius: 12, padding: 20, maxWidth: '90vw', maxHeight: '80vh', overflow: 'auto' }}>
+            <h3 style={{ color: '#fbbf24', textAlign: 'center', margin: '0 0 4px', fontSize: 16 }}>
               🃏 Search Discard Pile
             </h3>
-            <p style={{ color: '#aaa', textAlign: 'center', margin: '0 0 12px', fontSize: 12 }}>
-              Select a card to take from the discard pile
+            <p style={{ color: '#aaa', textAlign: 'center', margin: '0 0 16px', fontSize: 12 }}>
+              Select a card to take
             </p>
-            <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 600 }}>
               {showDiscardPicker.cards.map((c, i) => (
                 <div key={c.id || i} onClick={() => handleDiscardPick(c.id)}
-                  style={{
-                    padding: '8px 12px', borderRadius: 6, cursor: 'pointer',
-                    background: '#0f3460', border: '1px solid #444', color: '#ccc', fontSize: 11,
-                    transition: 'background 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#e94560')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#0f3460')}
-                >{c.name}</div>
+                  style={{ cursor: 'pointer', transition: 'transform 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.08)')}
+                  onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                >
+                  <Card card={c} size="small" />
+                </div>
               ))}
             </div>
             <button onClick={() => { setShowDiscardPicker(null); setSelectedCardIds([]); }}
-              style={{ display: 'block', margin: '12px auto 0', padding: '6px 20px',
+              style={{ display: 'block', margin: '16px auto 0', padding: '6px 20px',
                 background: '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
               Cancel
             </button>
@@ -766,20 +790,19 @@ export default function ExplodingKittensGame({
       {showFuture && reorderedFuture && (() => {
         const isAlter = showFuture.viewType === 'alter';
         const cardCount = showFuture.cards.length;
-        const centerX = window.innerWidth / 2;
-        const deckY = window.innerHeight * 0.3;
-        const fanSpread = Math.min(cardCount * 80, window.innerWidth * 0.65);
+        const fanSpread = Math.min(cardCount * 90, Math.min(window.innerWidth * 0.8, 500));
+        const cardW = 75;
 
         const sorted = reorderedFuture.map((c, i) => {
           const center = (cardCount - 1) / 2;
           const offset = ((i - center) / Math.max(center, 1));
           return {
             ...c,
-            targetX: centerX + offset * fanSpread / 2,
-            targetY: deckY - 80 - Math.abs(offset) * 20,
-            rotate: offset * 10,
+            targetX: (fanSpread / 2) + offset * (fanSpread * 0.4) - cardW / 2,
+            targetY: 50 - Math.abs(offset) * 15,
+            rotate: offset * 8,
             zIndex: cardCount - Math.abs(i - Math.floor(cardCount / 2)),
-            entryDelay: showFuture.cards.findIndex(sc => sc.id === c.id) * 0.15,
+            entryDelay: i * 0.15,
           };
         });
 
@@ -798,18 +821,22 @@ export default function ExplodingKittensGame({
               {isAlter ? 'Drag cards left/right to reorder, then confirm' : `${cardCount} cards on top`}
             </p>
             <div style={{
-              position: 'relative', width: fanSpread + 80, height: 200, zIndex: 5,
+              position: 'relative', width: fanSpread + 40, height: 180, zIndex: 5,
             }}>
               {sorted.map((c, i) => {
                 const offset = ((i - (cardCount - 1) / 2) / Math.max((cardCount - 1) / 2, 1));
-                const startX = centerX - 52 + offset * 30;
-                const startY = deckY + Math.abs(offset) * 15;
+                const startX = c.targetX + offset * 20;
+                const startY = -80 + Math.abs(offset) * 10;
                 return (
                   <motion.div
                     key={c.id}
                     layout={isAlter}
-                    initial={{ x: startX, y: startY, scale: 0.2, rotate: offset * 25, opacity: 0 }}
-                    animate={{ x: c.targetX - 52, y: c.targetY, scale: 1, rotate: c.rotate, opacity: 1 }}
+                    style={{
+                      position: 'absolute', left: 0, top: 0, width: cardW,
+                      cursor: isAlter ? 'grab' : 'default', zIndex: c.zIndex,
+                    }}
+                    initial={{ x: startX, y: startY, scale: 0.2, rotate: offset * 20, opacity: 0 }}
+                    animate={{ x: c.targetX, y: c.targetY, scale: 1, rotate: c.rotate, opacity: 1 }}
                     transition={{
                       delay: c.entryDelay,
                       type: 'spring', stiffness: 150, damping: 18, mass: 1,
@@ -834,10 +861,6 @@ export default function ExplodingKittensGame({
                     } : undefined}
                     whileHover={isAlter ? { scale: 1.1, zIndex: 20 } : undefined}
                     whileTap={isAlter ? { scale: 1.15, zIndex: 20 } : undefined}
-                    style={{
-                      position: 'absolute', left: 0, top: 0, zIndex: c.zIndex,
-                      cursor: isAlter ? 'grab' : 'default',
-                    }}
                   >
                     <Card
                       card={{ id: c.id, type: c.type, name: c.type.replace(/_/g, ' ') }}
@@ -918,48 +941,58 @@ export default function ExplodingKittensGame({
         )}
       </AnimatePresence>
 
-      {/* Shuffle animation — riffle motion */}
+      {/* Shuffle animation — riffle shuffle */}
       <AnimatePresence>
         {showShuffle && (
           <motion.div
             key="shuffle"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onAnimationComplete={() => setShowShuffle(false)}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.25 }}
             style={{
               position: 'fixed', inset: 0, zIndex: 998, pointerEvents: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.4)',
+              background: 'rgba(0,0,0,0.35)',
             }}
           >
-            <div style={{ position: 'relative', width: 120, height: 170 }}>
-              {/* Left half of deck */}
+            <div style={{ position: 'relative', width: 200, height: 200 }}>
+              {/* Phase 1: split apart (0s → 0.4s) */}
               <motion.div
-                animate={{ x: [-60, -50, -55, -50, -60, -50, 0], rotate: [0, -15, -10, -15, -5, -10, 0] }}
-                transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 1] }}
-                style={{ position: 'absolute', left: 0, top: 0, zIndex: 2 }}
-              >
-                <CardBack size="medium" nsfw={nsfw} />
-              </motion.div>
-              {/* Right half of deck */}
-              <motion.div
-                animate={{ x: [60, 50, 55, 50, 60, 50, 0], rotate: [0, 15, 10, 15, 5, 10, 0] }}
-                transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 1] }}
-                style={{ position: 'absolute', left: 0, top: 0, zIndex: 1 }}
+                animate={{ x: [-70, -80, -60], rotate: [0, -12, -8] }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                style={{ position: 'absolute', left: 30, top: 0, zIndex: 2 }}
               >
                 <CardBack size="medium" nsfw={nsfw} />
               </motion.div>
               <motion.div
-                animate={{ scale: [0, 0.3, 0.6, 0.8, 1], opacity: [0, 0, 0.3, 0.6, 1] }}
-                transition={{ duration: 1.2, delay: 0.8, ease: 'easeOut' }}
-                style={{
-                  position: 'absolute', left: 22, top: 29, zIndex: 3,
-                  fontSize: 16, color: '#fbbf24', fontWeight: 700,
+                animate={{ x: [70, 80, 60], rotate: [0, 12, 8] }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                style={{ position: 'absolute', left: 30, top: 0, zIndex: 1 }}
+              >
+                <CardBack size="medium" nsfw={nsfw} />
+              </motion.div>
+
+              {/* Phase 2: riffle together (0.4s → 2.2s) */}
+              <motion.div
+                animate={{
+                  x: [-60, -40, -55, -30, -50, -20, -40, -10, -30, 0, -15, 0, -5, 0],
+                  rotate: [-8, -4, -7, -3, -6, -2, -5, -1, -4, 0, -2, 0, -1, 0],
                 }}
+                transition={{ duration: 1.8, delay: 0.4, ease: 'easeInOut', times: [0,0.07,0.14,0.21,0.28,0.35,0.42,0.49,0.56,0.63,0.7,0.77,0.85,1] }}
+                style={{ position: 'absolute', left: 30, top: 0, zIndex: 2 }}
               >
-                🔀
+                <CardBack size="medium" nsfw={nsfw} />
+              </motion.div>
+              <motion.div
+                animate={{
+                  x: [60, 40, 55, 30, 50, 20, 40, 10, 30, 0, 15, 0, 5, 0],
+                  rotate: [8, 4, 7, 3, 6, 2, 5, 1, 4, 0, 2, 0, 1, 0],
+                }}
+                transition={{ duration: 1.8, delay: 0.4, ease: 'easeInOut', times: [0,0.07,0.14,0.21,0.28,0.35,0.42,0.49,0.56,0.63,0.7,0.77,0.85,1] }}
+                style={{ position: 'absolute', left: 30, top: 0, zIndex: 1 }}
+              >
+                <CardBack size="medium" nsfw={nsfw} />
               </motion.div>
             </div>
           </motion.div>

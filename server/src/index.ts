@@ -77,7 +77,7 @@ app.post('/api/lobby/start', (req, res) => {
   } else {
     const playerCount = result.players.length;
     const sessionId = uuid();
-    gameRegistry.createSession(result.lobby.gameId, sessionId, playerCount);
+    gameRegistry.createSession(result.lobby.gameId, sessionId, playerCount, result.lobby.settings);
     const payload = {
       ...result,
       sessionId,

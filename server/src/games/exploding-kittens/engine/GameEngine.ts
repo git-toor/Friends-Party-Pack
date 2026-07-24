@@ -59,12 +59,22 @@ function buildDeck(playerCount: number, expansions?: string[]): Card[] {
 
 function dealCards(state: GameState, playerCount: number): void {
   const handSize = playerCount <= 3 ? 7 : 5;
+  const defuseCards = state.deck.filter(c => c.type === 'defuse');
   const explodingCards = state.deck.filter(c => c.type === 'exploding_kitten');
-  const nonExploding = state.deck.filter(c => c.type !== 'exploding_kitten');
+  const otherCards = state.deck.filter(c => c.type !== 'defuse' && c.type !== 'exploding_kitten');
+  // Give 1 defuse to each player
   for (const player of state.players) {
-    player.hand = nonExploding.splice(0, handSize);
+    const defuse = defuseCards.pop();
+    player.hand = defuse ? [defuse] : [];
   }
-  state.deck = [...nonExploding, ...explodingCards];
+  // Deal remaining hand from non-exploding pool
+  const pool = [...otherCards, ...defuseCards];
+  shuffleArray(pool);
+  for (const player of state.players) {
+    const needed = handSize - player.hand.length;
+    if (needed > 0) player.hand.push(...pool.splice(0, needed));
+  }
+  state.deck = [...pool, ...explodingCards];
   shuffleArray(state.deck);
 }
 
