@@ -7,7 +7,7 @@ import { PLAYER_COLORS, COLOR_NAMES } from './constants.js';
 import type { ChatMessage } from '../../components/ChatBox.js';
 
 interface GameEvent {
-  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED';
+  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED' | 'TURN_ENDED';
   playerIndex: number;
   tokenIndex: number;
   from?: number;
@@ -58,6 +58,7 @@ const EMPTY_STATE: LudoClientState = {
 export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush }: LudoGameProps) {
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
   const svRef = useRef(-1);
+  const [stepAnim, setStepAnim] = useState<{ tokenIndex: number; from: number; to: number; playerIndex: number } | null>(null);
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
@@ -149,6 +150,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               setShowCapture({ player: ev.victimPlayer!, token: ev.victimToken! });
               sounds.playCapture();
               setTimeout(() => setShowCapture(null), 600);
+            }
+            if (ev.type === 'TOKEN_MOVED' && ev.playerIndex !== playerIndex) {
+              setStepAnim({ tokenIndex: ev.tokenIndex, from: ev.from ?? 0, to: ev.to ?? 0, playerIndex: ev.playerIndex });
             }
           }
         }
@@ -271,7 +275,11 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               currentPlayer={gs.currentPlayer}
               playerIndex={playerIndex}
               totalPlayers={gs.players.length}
-              onTokenClick={handleTokenClick}
+              diceValue={gs.diceValue}
+              isMyTurn={isMyTurn}
+              onMoveToken={handleTokenClick}
+              stepAnim={stepAnim}
+              onStepAnimDone={() => setStepAnim(null)}
             />
           </div>
         )}
