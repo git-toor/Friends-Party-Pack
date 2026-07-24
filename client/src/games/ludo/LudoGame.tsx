@@ -141,9 +141,15 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
     if (!gs.isMyTurn || gs.phase !== 'moving') return;
     if (!gs.validMoves.includes(tokenIndex)) return;
+    // Clear dice visual
+    if (diceRef.current) diceRef.current.clear();
     sounds.playTokenMove();
     await sendAction('MOVE_TOKEN', { tokenIndex });
   }, [gs, playerIndex, sendAction, sounds]);
+
+  const handleBoardClick = useCallback(() => {
+    if (diceRef.current) diceRef.current.clear();
+  }, []);
 
   const handleRematch = useCallback(async () => {
     if (!sessionId) return;
@@ -201,8 +207,8 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         })}
       </div>
 
-      {/* Board area — with dice and controls layered above */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px', position: 'relative', minHeight: 0 }}>
+      {/* Board area — click to dismiss dice */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px', position: 'relative', minHeight: 0 }} onClick={handleBoardClick}>
         <div style={{ width: '100%', maxWidth: 500 }}>
           <LudoBoard
             tokens={allTokens}
