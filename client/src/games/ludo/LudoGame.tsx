@@ -57,7 +57,6 @@ const EMPTY_STATE: LudoClientState = {
 
 export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush }: LudoGameProps) {
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
-  const lastStateKey = useRef('');
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
@@ -77,9 +76,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
-    const key = `${newState.phase}|${newState.currentPlayer}|${newState.diceValue}|${newState.diceRolledBy}|${newState.validMoves?.join(',')}`;
-    if (key === lastStateKey.current) return;
-    lastStateKey.current = key;
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
