@@ -24,8 +24,9 @@ export const Dice = forwardRef<DiceHandle, DiceProps>(({ onRollComplete }, ref) 
 
   useEffect(() => {
     const saved = loadDiceAppearance();
+    const cfg = saved['dice_0'] || saved['dice_1'] || DEFAULT_CONFIG;
     const config: Record<string, PerDieConfig> = {};
-    config['dice_0'] = saved['dice_0'] || saved['dice_1'] || DEFAULT_CONFIG;
+    for (let i = 0; i < 5; i++) config[`dice_${i}`] = cfg;
     const t = setInterval(async () => {
       if (diceRef.current?.configure) {
         await diceRef.current.configure(config);
