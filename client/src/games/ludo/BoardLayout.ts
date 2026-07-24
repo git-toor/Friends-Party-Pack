@@ -24,10 +24,10 @@ const BASE_PATH: [number, number][] = [
   [7,0],
 ];
 
-// Rotate: Blue entry (old[13] = (0,8)) → tile 0
+// Rotate: Blue entry (old[23]) → tile 0
 export const PATH: [number, number][] = [
-  ...BASE_PATH.slice(13),
-  ...BASE_PATH.slice(0, 13),
+  ...BASE_PATH.slice(23),
+  ...BASE_PATH.slice(0, 23),
 ];
 
 // ─── Safe tiles (indices in the rotated PATH) ───────────────────
