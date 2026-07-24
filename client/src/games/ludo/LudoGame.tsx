@@ -121,21 +121,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     }
   }, [gameStatePush, sounds, updateState]);
 
-  // ─── Client state diagnostics — fires on every render ──
-  useEffect(() => {
-    console.log('[CLIENT STATE]', {
-      phase: gs.phase,
-      currentPlayer: gs.currentPlayer,
-      diceValue: gs.diceValue,
-      diceRolledBy: gs.diceRolledBy,
-      validMoves: gs.validMoves,
-      playerIndex,
-      isMyTurn: playerIndex === gs.currentPlayer,
-      canMoveToken: playerIndex === gs.currentPlayer && gs.phase === 'waiting_for_move' && gs.validMoves.length > 0,
-      homeTokens: gs.players[playerIndex]?.tokens?.filter((t: any) => t.state === 'home').length ?? 0,
-    });
-  }, [gs, playerIndex]);
-
   // ─── Server action — only state update, no client logic ──────
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
     if (!sessionId) return;
