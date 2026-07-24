@@ -34,8 +34,8 @@ export interface GameEvent {
 }
 
 export interface GameAction {
-  type: 'ROLL_DICE' | 'DICE_LANDED' | 'MOVE_TOKEN';
-  payload?: { tokenIndex?: number; rollId?: string };
+  type: 'ROLL_DICE' | 'CONFIRM_DICE' | 'MOVE_TOKEN' | 'END_TURN';
+  payload?: { tokenIndex?: number; rollId?: string; value?: number };
 }
 
 export interface GameResult {
@@ -155,35 +155,35 @@ function checkWin(state: GameState): void {
   }
 }
 
-// ─── ROLL_DICE: server generates the dice value, hides it until DICE_LANDED ──
+// ─── ROLL_DICE: creates a roll slot. No RNG — client reads physics result. ──
 export function rollDice(state: GameState, playerIndex: number): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   if (state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Already rolled' };
 
   const rollId = crypto.randomUUID();
-  const value = Math.floor(Math.random() * 6) + 1;
-  state.diceValue = value;
   state.phase = 'rolling_dice';
   state.diceRolledBy = playerIndex;
   state.rollId = rollId;
+  state.diceValue = null;
 
-  console.log(`[Ludo] P${playerIndex} ROLL_DICE → ${value} (hidden, rollId=${rollId.slice(0,8)})`);
-  return { state, valid: true, rollId, diceValue: value };
+  console.log(`[Ludo] P${playerIndex} ROLL_DICE → rollId=${rollId.slice(0,8)}`);
+  return { state, valid: true, rollId };
 }
 
-// ─── DICE_LANDED: called after animation completes. Server generates RNG now. ──
-export function diceLanded(state: GameState, playerIndex: number, payload?: { rollId?: string }): GameResult {
+// ─── CONFIRM_DICE: client reports the physical dice result. Server validates and transitions phase. ──
+export function confirmDice(state: GameState, playerIndex: number, payload?: { rollId?: string; value?: number }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   if (state.phase !== 'rolling_dice') return { state, valid: false, error: 'No active dice roll' };
   if (state.diceRolledBy !== playerIndex) return { state, valid: false, error: 'Not your dice' };
   if (payload?.rollId && payload.rollId !== state.rollId) return { state, valid: false, error: 'Stale roll' };
 
-  const value = state.diceValue;
-  if (value === null) return { state, valid: false, error: 'No dice value' };
+  const value = payload?.value;
+  if (!value || value < 1 || value > 6) return { state, valid: false, error: 'Invalid dice value' };
 
-  console.log(`[Ludo] P${playerIndex} DICE_LANDED → ${value}`);
+  state.diceValue = value;
+  console.log(`[Ludo] P${playerIndex} CONFIRM_DICE → ${value}`);
 
   if (value === 6) {
     state.consecutiveSixes++;
@@ -199,23 +199,15 @@ export function diceLanded(state: GameState, playerIndex: number, payload?: { ro
   }
 
   const moves = getValidMoves(state, playerIndex);
-  if (moves.length > 0) {
-    state.phase = 'waiting_for_move';
-    console.log(`[Ludo] P${playerIndex} → ${moves.length} valid moves, phase=waiting_for_move`);
-    return { state, valid: true, diceValue: value, validMoves: moves };
-  }
-
-  // No valid moves — auto-advance
-  const events: GameEvent[] = [{ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 }];
-  advanceTurn(state);
-  console.log(`[Ludo] P${playerIndex} → no valid moves (dice=${value}), turn to P${state.currentPlayer}`);
-  return { state, valid: true, diceValue: value, events };
+  state.phase = 'waiting_for_move';
+  console.log(`[Ludo] P${playerIndex} → ${moves.length} valid moves, phase=waiting_for_move`);
+  return { state, valid: true, diceValue: value, validMoves: moves };
 }
 
 export function getValidMoves(state: GameState, playerIndex: number): number[] {
   if (state.winner !== null) return [];
   if (state.currentPlayer !== playerIndex) return [];
-  if (state.phase !== 'waiting_for_move' && state.phase !== 'rolling_dice') return [];
+  if (state.phase !== 'waiting_for_move') return [];
   if (state.diceValue === null) return [];
 
   const player = state.players[playerIndex];
@@ -311,11 +303,24 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
     }
   } else {
     state.consecutiveSixes = 0;
-    events.push({ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 });
-    advanceTurn(state);
-    console.log(`[Ludo] P${playerIndex} moved (rolled ${dice}) → turn to P${state.currentPlayer}`);
+    state.phase = 'waiting_for_roll';
+    state.diceValue = null;
+    // diceRolledBy stays set → client shows End Turn instead of Roll
+    console.log(`[Ludo] P${playerIndex} moved (rolled ${dice}) → end turn to pass`);
   }
 
+  return { state, valid: true, events };
+}
+
+// ─── END_TURN: player manually ends their turn. Advances to next player. ──
+export function endTurn(state: GameState, playerIndex: number): GameResult {
+  if (state.winner !== null) return { state, valid: false, error: 'Game over' };
+  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
+  if (state.phase !== 'waiting_for_roll' && state.phase !== 'waiting_for_move') return { state, valid: false, error: 'Cannot end turn now' };
+
+  const events: GameEvent[] = [{ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 }];
+  advanceTurn(state);
+  console.log(`[Ludo] P${playerIndex} END_TURN → turn to P${state.currentPlayer}`);
   return { state, valid: true, events };
 }
 
@@ -323,11 +328,13 @@ export function handleAction(state: GameState, playerIndex: number, action: Game
   switch (action.type) {
     case 'ROLL_DICE':
       return rollDice(state, playerIndex);
-    case 'DICE_LANDED':
-      return diceLanded(state, playerIndex, action.payload);
+    case 'CONFIRM_DICE':
+      return confirmDice(state, playerIndex, action.payload);
     case 'MOVE_TOKEN':
       if (action.payload?.tokenIndex === undefined) return { state, valid: false, error: 'No token specified' };
       return moveToken(state, playerIndex, action.payload.tokenIndex);
+    case 'END_TURN':
+      return endTurn(state, playerIndex);
     default:
       return { state, valid: false, error: 'Unknown action' };
   }

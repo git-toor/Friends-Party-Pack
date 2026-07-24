@@ -1,13 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createGame, handleAction, getValidMoves, type GameState, type GameResult } from '../LudoEngine.js';
 
-// Helper: ROLL_DICE + DICE_LANDED with a forced value, returns the DICE_LANDED result
+// Helper: ROLL_DICE + CONFIRM_DICE with a forced value
 function rollWithFixedValue(state: GameState, playerIndex: number, value: number): GameResult {
-  handleAction(state, playerIndex, { type: 'ROLL_DICE' });
-  state.diceValue = value;
-  state.rollId = 'test-roll-id';
-  // Let DICE_LANDED handle consecutiveSixes internally
-  return handleAction(state, playerIndex, { type: 'DICE_LANDED', payload: { rollId: 'test-roll-id' } });
+  const r = handleAction(state, playerIndex, { type: 'ROLL_DICE' });
+  return handleAction(state, playerIndex, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value } });
 }
 
 function getAllMoves(state: GameState, playerIndex: number): number[] {
@@ -58,18 +55,16 @@ describe('LudoEngine', () => {
   // ─── ROLL_DICE ─────────────────────────────────────────
 
   describe('ROLL_DICE', () => {
-    it('sets phase to rolling_dice with rollId and diceValue', () => {
+    it('creates roll slot with rollId', () => {
       for (let i = 0; i < 20; i++) {
         const g = createGame(4);
         g.players[0].tokens[0] = { state: 'path', progress: 10 };
         const r = handleAction(g, 0, { type: 'ROLL_DICE' });
         expect(r.valid).toBe(true);
         expect(r.rollId).toBeTruthy();
-        expect(r.diceValue).toBeGreaterThanOrEqual(1);
-        expect(r.diceValue).toBeLessThanOrEqual(6);
+        expect(r.diceValue).toBeUndefined();
         expect(g.phase).toBe('rolling_dice');
-        expect(g.diceValue).toBeGreaterThanOrEqual(1);
-        expect(g.diceValue).toBeLessThanOrEqual(6);
+        expect(g.diceValue).toBeNull();
       }
     });
 
@@ -91,56 +86,69 @@ describe('LudoEngine', () => {
     });
   });
 
-  // ─── DICE_LANDED ──────────────────────────────────────
+  // ─── CONFIRM_DICE ─────────────────────────────────────
 
-  describe('DICE_LANDED', () => {
+  describe('CONFIRM_DICE', () => {
     it('transitions to waiting_for_move when valid moves exist', () => {
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 4;
-      const r = handleAction(game, 0, { type: 'DICE_LANDED' });
-      expect(r.valid).toBe(true);
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      const c = handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 4 } });
+      expect(c.valid).toBe(true);
       expect(game.phase).toBe('waiting_for_move');
+      expect(game.diceValue).toBe(4);
     });
 
-    it('auto-advances turn when no valid moves', () => {
-      // Remove the path token — all home, no 6
+    it('transitions to waiting_for_move even when no valid moves', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 3;
-      const r = handleAction(game, 0, { type: 'DICE_LANDED' });
-      expect(r.valid).toBe(true);
-      expect(game.currentPlayer).toBe(1);
-      expect(game.phase).toBe('waiting_for_roll');
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      const c = handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 3 } });
+      expect(c.valid).toBe(true);
+      expect(game.phase).toBe('waiting_for_move');
+      expect(c.validMoves?.length).toBe(0);
     });
 
     it('rejects if phase is not rolling_dice', () => {
-      const r = handleAction(game, 0, { type: 'DICE_LANDED' });
-      expect(r.valid).toBe(false);
+      const c = handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: 'x', value: 4 } });
+      expect(c.valid).toBe(false);
     });
 
-    it('stays on same player after no valid moves (advances to next)', () => {
-      game.players[0].tokens[0] = { state: 'home', progress: -1 };
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 5;
-      handleAction(game, 0, { type: 'DICE_LANDED' });
+    it('rejects invalid dice value', () => {
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      const c = handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 0 } });
+      expect(c.valid).toBe(false);
+    });
+
+    it('penalizes three consecutive sixes', () => {
+      rollWithFixedValue(game, 0, 6);
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
+      rollWithFixedValue(game, 0, 6);
       expect(game.currentPlayer).toBe(1);
+      expect(game.phase).toBe('waiting_for_roll');
+    });
+  });
+
+  // ─── END_TURN ─────────────────────────────────────────
+
+  describe('END_TURN', () => {
+    it('advances to next player', () => {
+      game.players[0].tokens[0] = { state: 'home', progress: -1 };
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 3 } });
+      const e = handleAction(game, 0, { type: 'END_TURN' });
+      expect(e.valid).toBe(true);
+      expect(game.currentPlayer).toBe(1);
+      expect(game.phase).toBe('waiting_for_roll');
+      expect(game.diceValue).toBeNull();
     });
 
-    it('does not allow move before DICE_LANDED', () => {
+    it('rejects end turn when not your turn', () => {
+      const e = handleAction(game, 1, { type: 'END_TURN' });
+      expect(e.valid).toBe(false);
+    });
+
+    it('rejects end turn during rolling_dice', () => {
       handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 4;
-      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
-      expect(r.valid).toBe(false);
-    });
-
-    it('does not advance turn while dice animation is running', () => {
-      const g = createGame(4);
-      g.players[0].tokens[0] = { state: 'path', progress: 10 };
-      // P0 rolls — phase becomes rolling_dice, currentPlayer stays 0
-      handleAction(g, 0, { type: 'ROLL_DICE' });
-      // P1 tries to roll — must be rejected
-      const r = handleAction(g, 1, { type: 'ROLL_DICE' });
-      expect(r.valid).toBe(false);
+      const e = handleAction(game, 0, { type: 'END_TURN' });
+      expect(e.valid).toBe(false);
     });
   });
 
@@ -292,10 +300,14 @@ describe('LudoEngine', () => {
   // ─── Turn advancement ──────────────────────────────────
 
   describe('Turn advancement', () => {
-    it('non-6 advances turn after move', () => {
+    it('non-6 requires End Turn after move', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
       rollWithFixedValue(game, 0, 3);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      expect(game.currentPlayer).toBe(0);
+      expect(game.phase).toBe('waiting_for_roll');
+      // Must end turn explicitly
+      handleAction(game, 0, { type: 'END_TURN' });
       expect(game.currentPlayer).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
     });
@@ -307,20 +319,25 @@ describe('LudoEngine', () => {
       expect(game.phase).toBe('waiting_for_roll');
     });
 
-    it('no valid moves after confirm advances turn', () => {
+    it('no valid moves requires End Turn to advance', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 3;
-      handleAction(game, 0, { type: 'DICE_LANDED' });
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 3 } });
+      expect(game.currentPlayer).toBe(0);
+      expect(game.phase).toBe('waiting_for_move');
+      handleAction(game, 0, { type: 'END_TURN' });
       expect(game.currentPlayer).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
     });
 
-    it('turn advances after bonus roll without a 6', () => {
+    it('turn advances after End Turn following bonus roll without a 6', () => {
       rollWithFixedValue(game, 0, 6);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       rollWithFixedValue(game, 0, 3);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      expect(game.currentPlayer).toBe(0);
+      // Must end turn explicitly
+      handleAction(game, 0, { type: 'END_TURN' });
       expect(game.currentPlayer).toBe(1);
     });
   });
@@ -332,8 +349,6 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
       rollWithFixedValue(game, 0, 6);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
-      rollWithFixedValue(game, 0, 6);
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 2 } });
       rollWithFixedValue(game, 0, 6);
       expect(game.currentPlayer).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
@@ -378,9 +393,8 @@ describe('LudoEngine', () => {
 
     it('returns token indices for home→path on 6', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 6;
-      handleAction(game, 0, { type: 'DICE_LANDED' });
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 6 } });
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(4);
     });
@@ -389,18 +403,16 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
       game.players[0].tokens[1] = { state: 'stretch', progress: 56 };
       game.players[0].tokens[2] = { state: 'finished', progress: 57 };
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 3;
-      handleAction(game, 0, { type: 'DICE_LANDED' });
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 3 } });
       const moves = getAllMoves(game, 0);
       expect(moves).toEqual([0]);
     });
 
     it('returns empty when no valid moves after roll', () => {
       game.players[0].tokens[0] = { state: 'stretch', progress: 56 };
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      game.diceValue = 5;
-      handleAction(game, 0, { type: 'DICE_LANDED' });
+      const r = handleAction(game, 0, { type: 'ROLL_DICE' });
+      handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, value: 5 } });
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });

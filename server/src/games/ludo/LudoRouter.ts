@@ -60,7 +60,7 @@ ludoRouter.post('/action', (req, res) => {
       if (i === playerIndex) continue;
       broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i } });
     }
-    if (action.type === 'ROLL_DICE' || action.type === 'DICE_LANDED') {
+    if (action.type === 'ROLL_DICE' || action.type === 'CONFIRM_DICE') {
       broadcast({ type: 'DICE_EVENT', payload: { action: action.type, playerIndex, value: result.diceValue } });
     }
   }
@@ -112,9 +112,9 @@ function sanitizeState(state: GameState, playerIndex: number) {
   return {
     players: state.players,
     currentPlayer: state.currentPlayer,
-    diceValue: state.phase === 'rolling_dice' ? null : state.diceValue,
+    diceValue: state.diceValue,
     diceRolledBy: state.diceRolledBy,
-    rollId: state.phase === 'rolling_dice' ? null : state.rollId,
+    rollId: state.rollId,
     phase: state.phase,
     consecutiveSixes: state.consecutiveSixes,
     winner: state.winner,

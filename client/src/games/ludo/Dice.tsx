@@ -11,7 +11,7 @@ const DEFAULT_CONFIG: PerDieConfig = {
 };
 
 export interface DiceHandle {
-  roll: (value?: number) => Promise<void>;
+  roll: (value?: number) => Promise<number[]>;
   clear: () => void;
 }
 
@@ -37,12 +37,12 @@ export const Dice = forwardRef<DiceHandle, DiceProps>(({ onRollComplete }, ref) 
 
   useImperativeHandle(ref, () => ({
     roll: async (value?: number) => {
-      if (!diceRef.current) return;
+      if (!diceRef.current) return [];
       const suffix = value !== undefined ? `@${value}` : '';
       try {
-        await diceRef.current.roll('d6', 1, suffix);
+        return await diceRef.current.roll('d6', 1, suffix);
       } catch {
-        // roll failed silently
+        return [];
       }
     },
     clear: () => {
