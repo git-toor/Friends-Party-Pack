@@ -34,10 +34,10 @@ export function absPath(progress: number, quadIdx: number): number {
 }
 
 export const HOME_STRETCH: Record<number, GridPos[]> = {
-  0: [[7,1],[7,2],[7,3],[7,4],[7,5]],
-  1: [[1,7],[2,7],[3,7],[4,7],[5,7]],
-  2: [[7,13],[7,12],[7,11],[7,10],[7,9]],
-  3: [[13,7],[12,7],[11,7],[10,7],[9,7]],
+  0: [[1,7],[2,7],[3,7],[4,7],[5,7]],     // Q2 Red — left
+  1: [[7,13],[7,12],[7,11],[7,10],[7,9]], // Q1 Blue — bottom
+  2: [[13,7],[12,7],[11,7],[10,7],[9,7]], // Q4 Yellow — right
+  3: [[7,1],[7,2],[7,3],[7,4],[7,5]],     // Q3 Green — top
 };
 
 function homeTokens(col0: number, row0: number): GridPos[] {
