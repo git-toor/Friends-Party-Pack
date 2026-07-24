@@ -162,17 +162,21 @@ export function rollDice(state: GameState, playerIndex: number): GameResult {
       state.diceValue = null;
       state.consecutiveSixes = 0;
       advanceTurn(state);
+      console.log(`[Ludo] P${playerIndex} rolled 6 (3rd consecutive) → penalty, turn to P${state.currentPlayer}`);
       return { state, valid: true, diceValue: value };
     }
     state.phase = 'moving';
+    console.log(`[Ludo] P${playerIndex} rolled 6 → bonus, phase=moving, diceValue=${value}`);
   } else {
     state.consecutiveSixes = 0;
     state.phase = 'moving';
-    // Auto-advance if no valid moves (all tokens home, not a 6)
     const validMoves = getValidMoves(state, playerIndex);
     if (validMoves.length === 0) {
       state.diceValue = null;
       advanceTurn(state);
+      console.log(`[Ludo] P${playerIndex} rolled ${value} → no valid moves, auto-advance to P${state.currentPlayer}`);
+    } else {
+      console.log(`[Ludo] P${playerIndex} rolled ${value} → ${validMoves.length} valid moves: [${validMoves}]`);
     }
   }
 

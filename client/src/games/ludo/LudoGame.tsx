@@ -70,7 +70,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const fetchState = useCallback(async () => {
     if (!sessionId) return;
     try {
-      const r = await fetch(`/api/games/ludo/state/${sessionId}?playerIndex=${playerIndex}`);
+      const r = await fetch(`/api/games/ludo/state/${sessionId}?playerIndex=${playerIndex}&t=${Date.now()}`);
       const data = await r.json();
       if (data) setGs(data);
     } catch {}
@@ -132,6 +132,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     sounds.playDiceRoll();
     // Send roll to server first
     const data = await sendAction('ROLL_DICE');
+    console.log('[Ludo] ROLL_DICE response:', data?.diceValue, 'currentPlayer:', data?.state?.currentPlayer, 'isMyTurn:', data?.state?.isMyTurn, 'phase:', data?.state?.phase);
     if (data?.diceValue) {
       // Animate 3D dice with the server value
       await diceRef.current.rollWithValue(data.diceValue);
@@ -231,6 +232,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
         padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0, flexWrap: 'wrap',
       }}>
+        <div style={{ fontSize: 10, color: '#666', marginRight: 8 }}>
+          P{gs.currentPlayer} {gs.phase} d:{gs.diceValue ?? '-'}
+        </div>
         {needsRoll && (
           <button onClick={handleRollResult} style={{
             padding: '10px 22px', fontSize: 16, fontWeight: 700, borderRadius: 8,
