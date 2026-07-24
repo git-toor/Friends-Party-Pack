@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Hand } from './components/Hand.js';
 import { Card } from './components/Card.js';
 import { CardBack } from '../../components/CardBack.js';
-import { OpponentBar } from './components/OpponentBar.js';
+
 import { ActionBar } from './components/ActionBar.js';
 import { PlayArea } from './components/PlayArea.js';
 import { GameOverOverlay } from './components/modals/GameOverOverlay.js';
@@ -93,6 +93,10 @@ export default function ExplodingKittensGame({
 
   const [pendingCombo, setPendingCombo] = useState<{
     comboType: 'pair' | 'triple'; payload: any;
+  } | null>(null);
+
+  const [pendingTripleName, setPendingTripleName] = useState<{
+    targetIndex: number; payload: any;
   } | null>(null);
 
   const playerNames = useMemo(() => {
@@ -354,14 +358,22 @@ export default function ExplodingKittensGame({
     setSelectedCardIds([]);
 
     if (comboType === 'triple') {
-      setShowFuture({ cards: [{ id: 'prompt', type: 'tap to name' }] });
-      alert('Three of a Kind: Tap the card you want to name from your hand selection');
+      setPendingTripleName({ targetIndex, payload });
       return;
     }
 
     payload.targetIndex = targetIndex;
     await sendAction('PLAY_COMBO', payload);
   }, [pendingCombo, sendAction]);
+
+  const handleTripleNamePick = useCallback(async (namedCard: string) => {
+    if (!pendingTripleName) return;
+    const { targetIndex, payload } = pendingTripleName;
+    setPendingTripleName(null);
+    setComboPileCards([]);
+    setSelectedCardIds([]);
+    await sendAction('PLAY_COMBO', { ...payload, targetIndex, namedCard });
+  }, [pendingTripleName, sendAction]);
 
   // Handle discard pile selection for Five Different Cards
   const handleDiscardPick = useCallback(async (cardId: string) => {
@@ -485,9 +497,6 @@ export default function ExplodingKittensGame({
           </span>
         )}
       </div>
-
-      {/* Opponents */}
-      <OpponentBar opponents={gs.opponents} currentPlayerIndex={gs.turn.currentPlayerIndex} playerNames={playerNames} />
 
       {/* Play area (center) */}
       <div style={{ position: 'relative', zIndex: 1, overflow: 'visible', flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -820,6 +829,88 @@ export default function ExplodingKittensGame({
           </div>
         </div>
       )}
+
+      {pendingTripleName && (() => {
+        const ALL_CARD_TYPES: { type: string; name: string }[] = [
+          { type: 'exploding_kitten', name: 'Exploding Kitten' },
+          { type: 'defuse', name: 'Defuse' },
+          { type: 'attack', name: 'Attack' },
+          { type: 'skip', name: 'Skip' },
+          { type: 'favor', name: 'Favor' },
+          { type: 'shuffle', name: 'Shuffle' },
+          { type: 'see_future_3x', name: 'See the Future (3x)' },
+          { type: 'nope', name: 'Nope' },
+          { type: 'tacocat', name: 'Taco Cat' },
+          { type: 'cattermelon', name: 'Cattermelon' },
+          { type: 'hairy_potato_cat', name: 'Hairy Potato Cat' },
+          { type: 'beard_cat', name: 'Beard Cat' },
+          { type: 'rainbow_ralphing_cat', name: 'Rainbow Ralphing Cat' },
+          { type: 'imploding_kitten', name: 'Imploding Kitten' },
+          { type: 'alter_future_3x', name: 'Alter the Future (3x)' },
+          { type: 'draw_from_bottom', name: 'Draw from the Bottom' },
+          { type: 'reverse', name: 'Reverse' },
+          { type: 'targeted_attack', name: 'Targeted Attack' },
+          { type: 'feral_cat', name: 'Feral Cat' },
+          { type: 'streaking_kitten', name: 'Streaking Kitten' },
+          { type: 'super_skip', name: 'Super Skip' },
+          { type: 'see_future_5x', name: 'See the Future (5x)' },
+          { type: 'alter_future_5x', name: 'Alter the Future (5x)' },
+          { type: 'swap_top_bottom', name: 'Swap Top & Bottom' },
+          { type: 'garbage_collection', name: 'Garbage Collection' },
+          { type: 'catomic_bomb', name: 'Catomic Bomb' },
+          { type: 'mark', name: 'Mark' },
+          { type: 'curse_cat_butt', name: 'Curse of the Cat Butt' },
+          { type: 'barking_kitten', name: 'Barking Kitten' },
+          { type: 'tower_of_power', name: 'Tower of Power' },
+          { type: 'potluck', name: 'Potluck' },
+          { type: 'bury', name: 'Bury' },
+          { type: 'personal_attack', name: 'Personal Attack' },
+          { type: 'share_future_3x', name: 'Share the Future' },
+          { type: 'zombie_kitten', name: 'Zombie Kitten' },
+          { type: 'clone', name: 'Clone' },
+          { type: 'clairvoyance', name: 'Clairvoyance' },
+          { type: 'dig_deeper', name: 'Dig Deeper' },
+          { type: 'feed_the_dead', name: 'Feed the Dead' },
+          { type: 'grave_robber', name: 'Grave Robber' },
+          { type: 'attack_of_the_dead', name: 'Attack of the Dead' },
+          { type: 'shuffle_now', name: 'Shuffle Now' },
+        ];
+        return (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 900,
+          }}>
+            <div style={{ background: '#16213e', borderRadius: 12, padding: 20, maxWidth: 340, width: '90%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+              <h3 style={{ color: '#fbbf24', textAlign: 'center', margin: '0 0 4px', fontSize: 15 }}>
+                Name a Card
+              </h3>
+              <p style={{ color: '#aaa', textAlign: 'center', margin: '0 0 10px', fontSize: 11 }}>
+                Pick a card type to steal from your target
+              </p>
+              <div style={{ overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>
+                {ALL_CARD_TYPES.map(ct => (
+                  <button key={ct.type} onClick={() => handleTripleNamePick(ct.type)}
+                    style={{
+                      padding: '6px 12px', borderRadius: 6, border: '1px solid #444',
+                      background: '#0f3460', color: '#eee', cursor: 'pointer', fontSize: 12,
+                      transition: 'background 0.2s', whiteSpace: 'nowrap',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#e94560')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#0f3460')}
+                  >
+                    {ct.name}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => { setPendingTripleName(null); setComboPileCards([]); setSelectedCardIds([]); }}
+                style={{ display: 'block', margin: '10px auto 0', padding: '6px 20px',
+                  background: '#555', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {showFuture && reorderedFuture && (() => {
         const isAlter = showFuture.viewType === 'alter';

@@ -74,6 +74,10 @@ function dealCards(state: GameState, playerCount: number): void {
     const needed = handSize - player.hand.length;
     if (needed > 0) player.hand.push(...pool.splice(0, needed));
   }
+  // Shuffle each hand so the free defuse isn't always at position 0
+  for (const player of state.players) {
+    shuffleArray(player.hand);
+  }
   state.deck = [...pool, ...explodingCards];
   shuffleArray(state.deck);
 }
