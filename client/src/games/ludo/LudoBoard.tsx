@@ -29,26 +29,25 @@ interface LudoBoardProps {
 }
 
 function Pawn({ cx, cy, color, isMovable }: { cx: number; cy: number; color: string; isMovable: boolean }) {
-  const s = G * 0.42; // pawn scale
+  const s = G * 0.35; // pawn scale — 70% of tile
   return (
     <g>
-      {/* Shadow */}
-      <ellipse cx={cx + s*0.05} cy={cy + s*0.7} rx={s*0.6} ry={s*0.15} fill="rgba(0,0,0,0.15)" />
-      {/* Base */}
-      <rect x={cx - s*0.5} y={cy + s*0.3} width={s} height={s*0.3} rx={s*0.08} fill={color} stroke="rgba(0,0,0,0.2)" strokeWidth={0.0015} />
-      {/* Body (trapezoid) */}
-      <path d={`M ${cx - s*0.35} ${cy + s*0.3} L ${cx - s*0.18} ${cy - s*0.1} L ${cx + s*0.18} ${cy - s*0.1} L ${cx + s*0.35} ${cy + s*0.3} Z`}
-        fill={color} stroke="rgba(0,0,0,0.2)" strokeWidth={0.0015} />
-      {/* Collar ring */}
-      <rect x={cx - s*0.2} y={cy - s*0.13} width={s*0.4} height={s*0.06} rx={s*0.02} fill="rgba(0,0,0,0.1)" />
-      {/* Head */}
-      <circle cx={cx} cy={cy - s*0.25} r={s*0.2} fill={color} stroke="rgba(0,0,0,0.2)" strokeWidth={0.0015} />
-      {/* Head shine */}
-      <ellipse cx={cx - s*0.06} cy={cy - s*0.3} rx={s*0.08} ry={s*0.05} fill="rgba(255,255,255,0.2)" />
+      <ellipse cx={cx + s*0.05} cy={cy + s*0.55} rx={s*0.5} ry={s*0.12} fill="rgba(0,0,0,0.12)" />
+      {/* Wide flared base */}
+      <rect x={cx - s*0.5} y={cy + s*0.2} width={s} height={s*0.28} rx={s*0.06} fill={color} stroke="rgba(0,0,0,0.15)" strokeWidth={0.0015} />
+      {/* Tapered body */}
+      <path d={`M ${cx - s*0.4} ${cy + s*0.2} L ${cx - s*0.15} ${cy - s*0.15} L ${cx + s*0.15} ${cy - s*0.15} L ${cx + s*0.4} ${cy + s*0.2} Z`}
+        fill={color} stroke="rgba(0,0,0,0.15)" strokeWidth={0.0015} />
+      {/* Collar */}
+      <rect x={cx - s*0.2} y={cy - s*0.18} width={s*0.4} height={s*0.06} rx={s*0.015} fill="rgba(0,0,0,0.08)" />
+      {/* Circular head */}
+      <circle cx={cx} cy={cy - s*0.32} r={s*0.22} fill={color} stroke="rgba(0,0,0,0.15)" strokeWidth={0.0015} />
+      {/* Head highlight */}
+      <ellipse cx={cx - s*0.06} cy={cy - s*0.36} rx={s*0.08} ry={s*0.05} fill="rgba(255,255,255,0.18)" />
       {/* Movable glow */}
       {isMovable && (
-        <circle cx={cx} cy={cy} r={s*0.7} fill="none" stroke={color} strokeWidth={0.003}>
-          <animate attributeName="opacity" values="0.3;0.9;0.3" dur="1.5s" repeatCount="indefinite" />
+        <circle cx={cx} cy={cy} r={s*0.6} fill="none" stroke={color} strokeWidth={0.003}>
+          <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.5s" repeatCount="indefinite" />
         </circle>
       )}
     </g>
@@ -146,17 +145,17 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         </>);
       })()}
 
-      {/* Z-2: Home token starting circles */}
+      {/* Z-2: Home token starting circles — always show all 4 */}
       {[0,1,2,3].map(p =>
-        HOME_TOKENS[p].slice(0, Math.max(1, tokens.filter(t => t.playerIndex === p && t.state === 'home').length)).map(([c,r], i) => (
-          <circle key={`ht-${p}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.2}
-            fill={`${P_COLORS[p]}25`} stroke={`${P_COLORS[p]}40`} strokeWidth={0.002} />
+        HOME_TOKENS[p].map(([c,r], i) => (
+          <circle key={`ht-${p}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
+            fill={`${P_COLORS[p]}20`} stroke={`${P_COLORS[p]}35`} strokeWidth={0.002} />
         ))
       )}
 
-      {/* Z-3: Safe zone ★ stars — programmatically bound to SAFE_ABS tile indices */}
+      {/* Z-3: Safe zone ★ stars — centered in tile */}
       {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c,r]) => (
-        <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r) + starSize * 0.5}
+        <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r)} dy="0.35em"
           textAnchor="middle" fontSize={starSize} fill="#f1c40f" opacity={0.9}
           style={{ userSelect: 'none' }}>★</text>
       ))}
@@ -184,12 +183,9 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         const cell = HOME_TOKENS[tok.playerIndex]?.[tok.tokenIndex % 4];
         if (!cell) return null;
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
-        const x = cx(cell[0]), y = cy(cell[1]);
         return (
-          <g key={`h-${tok.playerIndex}-${tok.tokenIndex}`}>
-            <circle cx={x} cy={y} r={G*0.25} fill={P_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} />
-            <ellipse cx={x-G*0.05} cy={y-G*0.08} rx={G*0.1} ry={G*0.06} fill="rgba(255,255,255,0.15)" />
-          </g>
+          <Pawn key={`h-${tok.playerIndex}-${tok.tokenIndex}`}
+            cx={cx(cell[0])} cy={cy(cell[1])} color={P_COLORS[cIdx]} isMovable={false} />
         );
       })}
 

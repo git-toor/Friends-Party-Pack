@@ -184,12 +184,12 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         ))}
       </div>
 
-      {/* Chat messages overlay */}
-      <div style={{ position: 'absolute', top: 48, right: 8, zIndex: 100, display: 'flex', flexDirection: 'column', gap: 4, pointerEvents: 'none', maxWidth: 240 }}>
+      {/* Chat messages overlay — centered above board */}
+      <div style={{ position: 'absolute', top: 48, left: '50%', transform: 'translateX(-50%)', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 4, pointerEvents: 'none', maxWidth: 300, width: '90%', alignItems: 'center' }}>
         {chatMsgs.slice(-4).map((m, i) => (
           <div key={i} style={{
-            background: 'rgba(15,20,40,0.85)', borderRadius: 6, padding: '4px 10px',
-            fontSize: 11, animation: 'fadeIn 0.3s ease',
+            background: 'rgba(15,20,40,0.85)', borderRadius: 6, padding: '4px 14px',
+            fontSize: 11, animation: 'fadeIn 0.3s ease', textAlign: 'center',
           }}>
             <span style={{ color: '#e94560', fontWeight: 600 }}>{m.playerName}</span>
             <span style={{ color: '#ccc', marginLeft: 4 }}>{m.text}</span>
