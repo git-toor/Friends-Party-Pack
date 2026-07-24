@@ -58,16 +58,18 @@ describe('LudoEngine', () => {
   // ─── ROLL_DICE ─────────────────────────────────────────
 
   describe('ROLL_DICE', () => {
-    it('sets phase to rolling_dice with rollId', () => {
+    it('sets phase to rolling_dice with rollId and diceValue', () => {
       for (let i = 0; i < 20; i++) {
         const g = createGame(4);
         g.players[0].tokens[0] = { state: 'path', progress: 10 };
         const r = handleAction(g, 0, { type: 'ROLL_DICE' });
         expect(r.valid).toBe(true);
-        expect(r.diceValue).toBeUndefined();
         expect(r.rollId).toBeTruthy();
+        expect(r.diceValue).toBeGreaterThanOrEqual(1);
+        expect(r.diceValue).toBeLessThanOrEqual(6);
         expect(g.phase).toBe('rolling_dice');
-        expect(g.diceValue).toBeNull();
+        expect(g.diceValue).toBeGreaterThanOrEqual(1);
+        expect(g.diceValue).toBeLessThanOrEqual(6);
       }
     });
 

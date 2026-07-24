@@ -60,7 +60,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
-  const activeRollIdRef = useRef<string | null>(null);
+  const rollingRef = useRef(false);
   const diceRef = useRef<DiceHandle>(null);
   const sounds = useLudoSounds();
 
@@ -68,13 +68,12 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   // ─── Calculate isMyTurn locally ──
   const isMyTurn = playerIndex === gs.currentPlayer;
-  const needsRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null;
+  const needsRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null && !rollingRef.current;
   const myDice = gs.diceRolledBy === playerIndex;
+  const showDiceValue = gs.diceValue !== null && myDice && gs.phase !== 'rolling_dice';
 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
-    if (!newState) return;
-    if (newState.rollId) activeRollIdRef.current = newState.rollId;
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
@@ -153,26 +152,34 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   }, [sessionId, playerIndex, sounds, updateState]);
 
   const handleRollResult = useCallback(async () => {
+    if (rollingRef.current) return;
     if (!diceRef.current) return;
+    rollingRef.current = true;
     sounds.playDiceRoll();
-    const rollData = await sendAction('ROLL_DICE');
-    if (!rollData?.success) return;
-    activeRollIdRef.current = rollData.rollId;
-    console.log('[ROLL] rollId=' + rollData.rollId);
-    diceRef.current.roll();
-  }, [sendAction, sounds]);
 
-  // Fires when 3D physics animation settles
-  const handleDiceLanded = useCallback(async () => {
-    const rollId = activeRollIdRef.current;
-    console.log('[DICE ANIMATION COMPLETE]', { rollId, phase: gs.phase, player: playerIndex });
-    if (!rollId) {
-      console.warn('[DICE_LANDED] Missing rollId');
+    const rollData = await sendAction('ROLL_DICE');
+    if (!rollData?.success || !rollData.diceValue) {
+      rollingRef.current = false;
       return;
     }
-    await sendAction('DICE_LANDED', { rollId });
-    activeRollIdRef.current = null;
-  }, [sendAction, gs.phase, playerIndex]);
+
+    const value = rollData.diceValue;
+    console.log('[ROLL]', { rollId: rollData.rollId?.slice(0,8), diceValue: value });
+
+    // Wait for 3D physics to finish rolling to the server's value
+    await diceRef.current.roll(value);
+
+    // Animation settled — tell server to transition phase
+    const result = await sendAction('DICE_LANDED', { rollId: rollData.rollId });
+    console.log('[DICE_LANDED RESPONSE]', {
+      phase: result?.state?.phase,
+      currentPlayer: result?.state?.currentPlayer,
+      diceValue: result?.state?.diceValue,
+      validMoves: result?.validMoves,
+    });
+
+    rollingRef.current = false;
+  }, [sendAction, sounds]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
     if (!isMyTurn || gs.phase !== 'waiting_for_move') return;
@@ -271,7 +278,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       </div>
 
       {/* Dice overlay */}
-      <Dice ref={diceRef} onRollComplete={handleDiceLanded} />
+      <Dice ref={diceRef} />
 
       {/* Controls bar */}
       <div style={{
@@ -286,7 +293,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             🎲 Roll
           </button>
         )}
-        {gs.diceValue !== null && myDice && (
+        {showDiceValue && (
           <motion.div
             key={gs.diceValue}
             initial={{ scale: 0.5, rotate: -180 }}
@@ -301,14 +308,14 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             {gs.diceValue}
           </motion.div>
         )}
-        {gs.diceValue !== null && myDice && gs.phase === 'waiting_for_move' && (
+        {showDiceValue && gs.phase === 'waiting_for_move' && (
           <div style={{ fontSize: 11, color: '#fbbf24' }}>
             {gs.diceValue !== 6 && gs.players[playerIndex]?.tokens.every(t => t.state === 'home' || t.state === 'finished')
               ? `No 6, wait for your turn to try again`
               : `Rolled ${gs.diceValue} — Tap glowing token to move`}
           </div>
         )}
-        {gs.diceValue !== null && myDice && !needsRoll && gs.phase !== 'waiting_for_move' && (
+        {gs.diceValue !== null && myDice && !needsRoll && gs.phase !== 'waiting_for_move' && gs.phase !== 'rolling_dice' && (
           <div style={{ fontSize: 10, color: '#aaa' }}>
             Tap the board to dismiss dice
           </div>

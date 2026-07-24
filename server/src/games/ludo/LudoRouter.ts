@@ -108,9 +108,9 @@ function sanitizeState(state: GameState, playerIndex: number) {
   return {
     players: state.players,
     currentPlayer: state.currentPlayer,
-    diceValue: state.diceValue,
+    diceValue: state.phase === 'rolling_dice' ? null : state.diceValue,
     diceRolledBy: state.diceRolledBy,
-    rollId: state.rollId,
+    rollId: state.phase === 'rolling_dice' ? null : state.rollId,
     phase: state.phase,
     consecutiveSixes: state.consecutiveSixes,
     winner: state.winner,

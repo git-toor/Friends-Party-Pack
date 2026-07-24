@@ -155,20 +155,21 @@ function checkWin(state: GameState): void {
   }
 }
 
-// ─── ROLL_DICE: server only validates and creates a roll slot. NO RNG. ──
+// ─── ROLL_DICE: server generates the dice value, hides it until DICE_LANDED ──
 export function rollDice(state: GameState, playerIndex: number): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   if (state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Already rolled' };
 
   const rollId = crypto.randomUUID();
+  const value = Math.floor(Math.random() * 6) + 1;
+  state.diceValue = value;
   state.phase = 'rolling_dice';
   state.diceRolledBy = playerIndex;
   state.rollId = rollId;
-  state.diceValue = null; // explicitly null
 
-  console.log(`[Ludo] P${playerIndex} ROLL_DICE → rollId=${rollId.slice(0,8)}`);
-  return { state, valid: true, rollId };
+  console.log(`[Ludo] P${playerIndex} ROLL_DICE → ${value} (hidden, rollId=${rollId.slice(0,8)})`);
+  return { state, valid: true, rollId, diceValue: value };
 }
 
 // ─── DICE_LANDED: called after animation completes. Server generates RNG now. ──
@@ -179,10 +180,8 @@ export function diceLanded(state: GameState, playerIndex: number, payload?: { ro
   if (state.diceRolledBy !== playerIndex) return { state, valid: false, error: 'Not your dice' };
   if (payload?.rollId && payload.rollId !== state.rollId) return { state, valid: false, error: 'Stale roll' };
 
-  if (state.diceValue === null) {
-    state.diceValue = Math.floor(Math.random() * 6) + 1;
-  }
   const value = state.diceValue;
+  if (value === null) return { state, valid: false, error: 'No dice value' };
 
   console.log(`[Ludo] P${playerIndex} DICE_LANDED → ${value}`);
 
