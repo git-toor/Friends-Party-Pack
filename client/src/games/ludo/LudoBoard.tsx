@@ -187,8 +187,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
           return (
             <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`}
               style={{ cursor: isMovable ? 'pointer' : 'default' }}
-              onClick={() => isMovable && onTokenClick(tok.tokenIndex)}
-            >
+              onClick={() => isMovable && onTokenClick(tok.tokenIndex)}>
               <Pawn cx={offsets[i].x} cy={offsets[i].y} color={P_COLORS[cIdx]} isMovable={isMovable} />
             </g>
           );

@@ -256,7 +256,12 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
           <div style={{ fontSize: 11, color: '#fbbf24' }}>
             {gs.diceValue !== 6 && gs.players[playerIndex]?.tokens.every(t => t.state === 'home' || t.state === 'finished')
               ? `No 6, wait for your turn to try again`
-              : `Rolled ${gs.diceValue} — Tap a glowing token to move it`}
+              : `Rolled ${gs.diceValue} — Tap glowing token to move`}
+          </div>
+        )}
+        {gs.diceValue !== null && !needsRoll && (
+          <div style={{ fontSize: 10, color: '#aaa' }}>
+            Tap the board to dismiss dice
           </div>
         )}
         {!isMyTurn && gs.winner === null && (
