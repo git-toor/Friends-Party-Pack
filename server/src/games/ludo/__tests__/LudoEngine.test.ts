@@ -33,6 +33,8 @@ describe('LudoEngine', () => {
 
   beforeEach(() => {
     game = createGame(4);
+    // Give player 0 a token on the path so rolls always have valid moves
+    game.players[0].tokens[0] = { state: 'path', progress: 10 };
   });
 
   // ─── createGame ────────────────────────────────────────
@@ -44,7 +46,8 @@ describe('LudoEngine', () => {
     });
 
     it('each player has 4 tokens in home state', () => {
-      for (const p of game.players) {
+      const g = createGame(4);
+      for (const p of g.players) {
         expect(p.tokens.length).toBe(4);
         for (const t of p.tokens) {
           expect(t.state).toBe('home');
@@ -113,16 +116,16 @@ describe('LudoEngine', () => {
   describe('MOVE_TOKEN — Home to Path', () => {
     it('requires 6 to leave home', () => {
       gameWithFixedRoll(game, 0, 3);
-      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.valid).toBe(false);
     });
 
     it('allows home→path on 6', () => {
       gameWithFixedRoll(game, 0, 6);
-      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.valid).toBe(true);
-      expect(game.players[0].tokens[0].state).toBe('path');
-      expect(game.players[0].tokens[0].progress).toBe(0);
+      expect(game.players[0].tokens[1].state).toBe('path');
+      expect(game.players[0].tokens[1].progress).toBe(0);
     });
 
     it('rejects move from wrong player after roll', () => {
@@ -133,7 +136,7 @@ describe('LudoEngine', () => {
 
     it('fires TOKEN_MOVED event on home exit', () => {
       gameWithFixedRoll(game, 0, 6);
-      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.events?.some(e => e.type === 'TOKEN_MOVED')).toBe(true);
     });
   });
@@ -149,7 +152,9 @@ describe('LudoEngine', () => {
     });
 
     it('rejects move when no valid tokens after roll', () => {
-      gameWithFixedRoll(game, 0, 3);
+      // Token at stretch progress 56, roll 5 overshoots (56+5=61>57)
+      game.players[0].tokens[0] = { state: 'stretch', progress: 56 };
+      gameWithFixedRoll(game, 0, 5);
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });
@@ -273,23 +278,23 @@ describe('LudoEngine', () => {
 
     it('6 grants bonus turn', () => {
       gameWithFixedRoll(game, 0, 6);
-      // Move token out of home
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      // Move token 1 out of home (token 0 is already on path from beforeEach)
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       // Should still be player 0's turn
       expect(game.currentPlayer).toBe(0);
     });
 
     it('no valid moves after 6 still keeps turn (bonus)', () => {
       gameWithFixedRoll(game, 0, 6);
-      // Home→path for token 0
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      // Home→path for token 1
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(game.currentPlayer).toBe(0);
       expect(game.phase).toBe('rolling');
     });
 
     it('turn advances after bonus roll without a 6', () => {
       gameWithFixedRoll(game, 0, 6);
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       // Bonus roll
       gameWithFixedRoll(game, 0, 3);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
@@ -318,15 +323,18 @@ describe('LudoEngine', () => {
 
   describe('Win condition', () => {
     it('declares winner when all 4 tokens finished', () => {
+      const g = createGame(4);
       // Set player 0's tokens at stretch progress 56 (need 1 to finish)
       for (let i = 0; i < 3; i++) {
-        game.players[0].tokens[i] = { state: 'finished', progress: 57 };
+        g.players[0].tokens[i] = { state: 'finished', progress: 57 };
       }
-      game.players[0].finishedCount = 3;
-      game.players[0].tokens[3] = { state: 'stretch', progress: 56 };
-      gameWithFixedRoll(game, 0, 1);
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 3 } });
-      expect(game.winner).toBe(0);
+      g.players[0].finishedCount = 3;
+      // Give tokens to other players so they have path tokens (prevent auto-advance)
+      g.players[0].tokens[3] = { state: 'stretch', progress: 56 };
+      g.players[1].tokens[0] = { state: 'path', progress: 10 };
+      gameWithFixedRoll(g, 0, 1);
+      handleAction(g, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 3 } });
+      expect(g.winner).toBe(0);
     });
 
     it('rejects actions after game over', () => {

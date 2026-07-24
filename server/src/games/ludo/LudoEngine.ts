@@ -134,13 +134,13 @@ function checkWin(state: GameState): void {
   }
 }
 
-export function createGame(playerCount: number): GameState {
+export function createGame(playerCount: number, startingPlayer?: number): GameState {
   return {
     players: Array.from({ length: playerCount }, () => ({
       tokens: Array.from({ length: 4 }, () => ({ state: 'home' as TokenState, progress: -1 })),
       finishedCount: 0,
     })),
-    currentPlayer: 0,
+    currentPlayer: startingPlayer ?? 0,
     diceValue: null,
     phase: 'rolling',
     consecutiveSixes: 0,
@@ -168,6 +168,12 @@ export function rollDice(state: GameState, playerIndex: number): GameResult {
   } else {
     state.consecutiveSixes = 0;
     state.phase = 'moving';
+    // Auto-advance if no valid moves (all tokens home, not a 6)
+    const validMoves = getValidMoves(state, playerIndex);
+    if (validMoves.length === 0) {
+      state.diceValue = null;
+      advanceTurn(state);
+    }
   }
 
   return { state, valid: true, diceValue: value };

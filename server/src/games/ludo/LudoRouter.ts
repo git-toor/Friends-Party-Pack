@@ -7,7 +7,7 @@ const wsBroadcasts = new Map<string, (payload: any) => void>();
 export const ludoRouter = Router();
 
 export function createLudoSession(sessionId: string, playerCount: number): void {
-  sessions.set(sessionId, createGame(playerCount));
+  sessions.set(sessionId, createGame(playerCount, Math.floor(Math.random() * playerCount)));
 }
 
 export function getLudoState(sessionId: string, playerIndex: number) {
