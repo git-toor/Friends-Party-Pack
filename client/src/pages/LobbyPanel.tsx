@@ -119,7 +119,7 @@ export default function LobbyPanel() {
         ))}
       </div>
 
-      {lobby?.gameId === 'yahtzee' && (
+      {(lobby?.gameId === 'yahtzee' || lobby?.gameId === 'ludo') && (
         <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
           <DiceAppearanceSelector />
         </div>
