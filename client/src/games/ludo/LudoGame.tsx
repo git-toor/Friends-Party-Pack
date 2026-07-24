@@ -215,6 +215,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         </div>
       </div>
 
+      {/* Dice overlay (hidden until roll) */}
+      <Dice ref={diceRef} />
+
       {/* Controls bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
