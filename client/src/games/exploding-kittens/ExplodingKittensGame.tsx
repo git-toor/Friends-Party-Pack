@@ -80,7 +80,10 @@ export default function ExplodingKittensGame({
   const nopeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nopeStartRef = useRef<number>(0);
   const lastHandSize = useRef(0);
+  const prevHandRef = useRef<ClientCardRef[]>([]);
+  const prevNopeChainLen = useRef(0);
   const [reorderedFuture, setReorderedFuture] = useState<{ id: string; type: string }[] | null>(null);
+  const [dismissedFuture, setDismissedFuture] = useState(false);
 
   const TARGETED_CARD_TYPES = ['favor', 'targeted_attack', 'barking_kitten', 'mark', 'curse_cat_butt'];
 
@@ -148,14 +151,7 @@ export default function ExplodingKittensGame({
         setTimeout(() => setShowAttackOverlay(false), 1500);
       }
 
-      // Detect explosion in my hand
-      if (next.myHand.length > gs.myHand.length) {
-        const hasNew = next.myHand.some(c => !gs.myHand.some(pc => pc.id === c.id) && c.type === 'exploding_kitten');
-        if (hasNew) {
-          setShowExplosion(true);
-          setTimeout(() => setShowExplosion(false), 2000);
-        }
-      }
+      // Detect draw from bottom animation
 
       // Detect draw from bottom animation
       if (next.lastDrawFromBottom && next.myHand.length > gs.myHand.length) {
@@ -163,11 +159,13 @@ export default function ExplodingKittensGame({
         setTimeout(() => setDrawCard(null), 800);
       }
 
-      // Detect nope targeting me
-      if (next.nopeWindow && !gs.nopeWindow && next.lastPlayedCard?.type === 'nope' && next.lastPlayedCard.playerIndex !== playerIndex) {
+      // Detect nope played — compare chain length
+      if (next.nopeWindow && next.lastPlayedCard?.type === 'nope' && next.lastPlayedCard.playerIndex !== playerIndex
+        && (next.nopeWindow.chain.length > prevNopeChainLen.current)) {
         setShowNopeOverlay(true);
         setTimeout(() => setShowNopeOverlay(false), 1500);
       }
+      prevNopeChainLen.current = next.nopeWindow?.chain.length ?? 0;
     }
   }, [gameStatePush]);
 
@@ -212,16 +210,39 @@ export default function ExplodingKittensGame({
     } catch { return null; }
   }, [sessionId, playerIndex]);
 
+  // Detect explosion and shuffle whenever myHand or lastPlayedCard changes
+  useEffect(() => {
+    const prev = prevHandRef.current;
+    if (gs.myHand.length > prev.length) {
+      const hasNewEK = gs.myHand.some(c => c.type === 'exploding_kitten' && !prev.some(pc => pc.id === c.id));
+      if (hasNewEK) {
+        setShowExplosion(true);
+        setTimeout(() => setShowExplosion(false), 2000);
+      }
+    }
+    prevHandRef.current = gs.myHand;
+  }, [gs.myHand]);
+
+  useEffect(() => {
+    if (gs.lastPlayedCard?.type === 'shuffle' || gs.lastPlayedCard?.type === 'shuffle_now') {
+      if (gs.lastPlayedCard.playerIndex === playerIndex) {
+        setShowShuffle(true);
+        setTimeout(() => setShowShuffle(false), 2000);
+      }
+    }
+  }, [gs.lastPlayedCard]);
+
   // Show See/Share/Alter the Future popup when server sends card view data
   useEffect(() => {
-    if (gs.pendingCardView && gs.pendingCardView.cards.length > 0) {
+    if (gs.pendingCardView && gs.pendingCardView.cards.length > 0 && !dismissedFuture) {
       setShowFuture(gs.pendingCardView);
       setReorderedFuture(gs.pendingCardView.cards);
     } else if (!gs.pendingCardView) {
       setShowFuture(null);
       setReorderedFuture(null);
+      setDismissedFuture(false);
     }
-  }, [gs.pendingCardView]);
+  }, [gs.pendingCardView, dismissedFuture]);
 
   const isMyTurn = gs.turn.currentPlayerIndex === playerIndex;
   const turnPhase = gs.turn.phase;
@@ -232,7 +253,7 @@ export default function ExplodingKittensGame({
   const isDead = gs.opponents.find(o => o.index === playerIndex)?.dead ?? false;
 
   // Cat combo detection
-  const CAT_TYPES = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'feral_cat'];
+  const CAT_TYPES = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'rainbow_ralphing_cat', 'feral_cat'];
   const comboInfo = useMemo(() => {
     if (comboPileCards.length < 2) return null;
     const types = [...new Set(comboPileCards.map(c => c.type))];
@@ -834,13 +855,14 @@ export default function ExplodingKittensGame({
                     sendAction('RESOLVE_ALTER_FUTURE', { reorderedCards: reorderedFuture.map(c => c.id) });
                     setShowFuture(null);
                     setReorderedFuture(null);
+                    setDismissedFuture(true);
                   }} style={{
                     padding: '8px 24px', background: '#4ade80', color: '#000',
                     border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600,
                   }}>
                     ✓ Confirm Order
                   </button>
-                  <button onClick={() => { setShowFuture(null); setReorderedFuture(null); }} style={{
+                  <button onClick={() => { setShowFuture(null); setReorderedFuture(null); setDismissedFuture(true); }} style={{
                     padding: '8px 24px', background: '#555', color: '#fff',
                     border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13,
                   }}>
@@ -848,7 +870,7 @@ export default function ExplodingKittensGame({
                   </button>
                 </>
               ) : (
-                <button onClick={() => { setShowFuture(null); setReorderedFuture(null); }} style={{
+                <button onClick={() => { setShowFuture(null); setReorderedFuture(null); setDismissedFuture(true); }} style={{
                   padding: '8px 24px', background: '#e94560', color: '#fff',
                   border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600,
                 }}>
@@ -892,6 +914,54 @@ export default function ExplodingKittensGame({
             style={{ position: 'fixed', left: 0, top: 0, width: 75, height: 112, zIndex: 999, pointerEvents: 'none' }}
           >
             <CardBack nsfw={nsfw} size="medium" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Shuffle animation — riffle motion */}
+      <AnimatePresence>
+        {showShuffle && (
+          <motion.div
+            key="shuffle"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onAnimationComplete={() => setShowShuffle(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 998, pointerEvents: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.4)',
+            }}
+          >
+            <div style={{ position: 'relative', width: 120, height: 170 }}>
+              {/* Left half of deck */}
+              <motion.div
+                animate={{ x: [-60, -50, -55, -50, -60, -50, 0], rotate: [0, -15, -10, -15, -5, -10, 0] }}
+                transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 1] }}
+                style={{ position: 'absolute', left: 0, top: 0, zIndex: 2 }}
+              >
+                <CardBack size="medium" nsfw={nsfw} />
+              </motion.div>
+              {/* Right half of deck */}
+              <motion.div
+                animate={{ x: [60, 50, 55, 50, 60, 50, 0], rotate: [0, 15, 10, 15, 5, 10, 0] }}
+                transition={{ duration: 1.2, ease: 'easeInOut', times: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 1] }}
+                style={{ position: 'absolute', left: 0, top: 0, zIndex: 1 }}
+              >
+                <CardBack size="medium" nsfw={nsfw} />
+              </motion.div>
+              <motion.div
+                animate={{ scale: [0, 0.3, 0.6, 0.8, 1], opacity: [0, 0, 0.3, 0.6, 1] }}
+                transition={{ duration: 1.2, delay: 0.8, ease: 'easeOut' }}
+                style={{
+                  position: 'absolute', left: 22, top: 29, zIndex: 3,
+                  fontSize: 16, color: '#fbbf24', fontWeight: 700,
+                }}
+              >
+                🔀
+              </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

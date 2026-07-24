@@ -15,7 +15,7 @@ interface HandProps {
 }
 
 const CARD_W = 105;
-const CAT_TYPES = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'feral_cat'];
+const CAT_TYPES = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'rainbow_ralphing_cat', 'feral_cat'];
 
 export function Hand({ cards, selectedCardIds = [], onSelectCard, onSwipePlay, onSwipeCombo, disabled, markedCardIds, comboMode, onComboToggle }: HandProps) {
   const handRef = useRef<HTMLDivElement>(null);

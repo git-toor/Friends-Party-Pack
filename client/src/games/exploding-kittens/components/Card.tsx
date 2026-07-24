@@ -49,6 +49,7 @@ const FRAME_COLORS: Record<string, { bg: string; border: string; text: string; s
   hairy_potato_cat: { bg: '#886622', border: '#664400', text: '#ffffff', subtitle: '#bbaa88' },
   beard_cat: { bg: '#664422', border: '#442200', text: '#ffffff', subtitle: '#998866' },
   feral_cat: { bg: '#ccaa88', border: '#aa8866', text: '#000000', subtitle: '#776655' },
+  rainbow_ralphing_cat: { bg: '#ff66aa', border: '#dd4488', text: '#ffffff', subtitle: '#ffbbdd' },
 };
 
 const CARD_ICONS: Record<string, string> = {
@@ -64,6 +65,7 @@ const CARD_ICONS: Record<string, string> = {
   grave_robber: '💀', attack_of_the_dead: '💀⚔️',
   tacocat: '🌮', cattermelon: '🍉', hairy_potato_cat: '🥔', beard_cat: '🧔',
   feral_cat: '🐈',
+  rainbow_ralphing_cat: '🌈🤮',
 };
 
 const CARD_SUBTITLES: Record<string, string> = {
@@ -108,6 +110,7 @@ const CARD_SUBTITLES: Record<string, string> = {
   hairy_potato_cat: 'Cat combo card.',
   beard_cat: 'Cat combo card.',
   feral_cat: 'Wildcard cat.',
+  rainbow_ralphing_cat: 'Cat combo card.',
 };
 
 interface CardProps {

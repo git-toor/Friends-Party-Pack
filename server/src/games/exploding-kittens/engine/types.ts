@@ -1,7 +1,7 @@
 export type CardType =
   | 'exploding_kitten' | 'defuse' | 'attack' | 'skip' | 'favor'
   | 'shuffle' | 'see_future_3x' | 'nope'
-  | 'tacocat' | 'cattermelon' | 'hairy_potato_cat' | 'beard_cat'
+  | 'tacocat' | 'cattermelon' | 'hairy_potato_cat' | 'beard_cat' | 'rainbow_ralphing_cat'
   | 'imploding_kitten' | 'alter_future_3x' | 'draw_from_bottom'
   | 'reverse' | 'targeted_attack' | 'feral_cat'
   | 'streaking_kitten' | 'super_skip' | 'see_future_5x' | 'alter_future_5x'

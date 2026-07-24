@@ -230,7 +230,7 @@ registerEffect('DEFUSE_AND_INSERT', (state, _effect, _action, _callbacks) => {
 });
 
 // ─── CAT_COMBO (Two/Three/Five) ───────────────────────
-const CAT_TYPES: CardType[] = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'feral_cat'];
+const CAT_TYPES: CardType[] = ['tacocat', 'cattermelon', 'hairy_potato_cat', 'beard_cat', 'rainbow_ralphing_cat', 'feral_cat'];
 
 registerEffect('CAT_COMBO', (state, _effect, action, callbacks) => {
   const player = state.players[action.playerIndex];

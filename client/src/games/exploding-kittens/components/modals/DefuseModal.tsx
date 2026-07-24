@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../Card.js';
 import { CardBack } from '../../../../components/CardBack.js';
@@ -12,14 +12,24 @@ interface DefuseModalProps {
 
 export function DefuseModal({ deckSize, hasZombieOption, onInsertAt, onUseZombie }: DefuseModalProps) {
   const slots = Math.min(deckSize + 1, 15);
+  const center = (slots - 1) / 2;
+  const angleRange = 30;
   const cardW = 55;
-  const cardGap = 16;
-  const totalW = slots * cardW + (slots - 1) * cardGap;
+  const gapX = 20;
+  const totalW = slots * (cardW - gapX);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
-  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef(0);
 
-  const slotPositions = useMemo(() => {
-    return Array.from({ length: slots }, (_, i) => i * (cardW + cardGap));
+  const fan = useMemo(() => {
+    return Array.from({ length: slots }, (_, i) => {
+      const offset = i - center;
+      return {
+        left: totalW / 2 + offset * (cardW - gapX) - cardW / 2,
+        rotate: offset * (angleRange / Math.max(slots, 3)),
+        y: Math.abs(offset) * 8,
+        zIndex: i,
+      };
+    });
   }, [slots]);
 
   return (
@@ -35,61 +45,61 @@ export function DefuseModal({ deckSize, hasZombieOption, onInsertAt, onUseZombie
           🛡️ Defuse!
         </h3>
         <p style={{ color: '#aaa', margin: '0 0 16px', fontSize: 12 }}>
-          Drag the 💥 onto the deck to insert it in position
+          Drag the 💥 into the deck fan to insert it
         </p>
 
         {/* Deck fan */}
         <div style={{
-          position: 'relative', height: 100, margin: '0 auto',
-          width: totalW,
+          position: 'relative', height: 120, margin: '0 auto',
+          width: totalW + cardW,
         }}>
-          {/* Card backs in a row */}
-          <div style={{ position: 'absolute', left: 0, top: 0, display: 'flex', gap: cardGap }}>
-            {Array.from({ length: slots }, (_, i) => (
-              <div key={i} style={{ position: 'relative' }}>
-                <CardBack size="small" />
-                <div style={{
-                  position: 'absolute', bottom: -14, left: '50%', transform: 'translateX(-50%)',
-                  fontSize: 9, color: '#666', whiteSpace: 'nowrap',
-                }}>
-                  {i === 0 ? 'Top' : i === slots - 1 ? 'Bottom' : ''}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Drop zone highlight */}
+          {insertIndex !== null && (
+            <div style={{
+              position: 'absolute', left: fan[insertIndex].left + cardW / 2 - 3, top: -4,
+              width: 6, height: 90, borderRadius: 3,
+              background: '#4ade80', boxShadow: '0 0 16px #4ade80',
+              zIndex: 20, pointerEvents: 'none', transition: 'left 0.08s ease',
+            }} />
+          )}
 
-          {/* Drop zone indicators */}
-          <div style={{ position: 'absolute', left: 0, top: -8, display: 'flex', gap: cardGap, pointerEvents: 'none' }}>
-            {Array.from({ length: slots }, (_, i) => {
-              const isActive = insertIndex === i && dragging;
-              return (
-                <div key={i} style={{
-                  width: cardW, height: 4, borderRadius: 2,
-                  background: isActive ? '#4ade80' : 'transparent',
-                  boxShadow: isActive ? '0 0 12px #4ade80' : 'none',
-                  transition: 'all 0.15s ease',
-                }} />
-              );
-            })}
-          </div>
+          {/* Card backs in fan */}
+          {fan.map((pos, i) => (
+            <div
+              key={i}
+              style={{
+                position: 'absolute', left: pos.left, top: pos.y + 10,
+                transform: `rotate(${pos.rotate}deg)`,
+                zIndex: pos.zIndex, pointerEvents: 'none',
+              }}
+            >
+              <CardBack size="small" />
+              <div style={{
+                position: 'absolute', bottom: -14, left: '50%', transform: 'translateX(-50%)',
+                fontSize: 8, color: '#666', whiteSpace: 'nowrap',
+              }}>
+                {i === 0 ? 'Top' : i === slots - 1 ? 'Bottom' : `#${i + 1}`}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Draggable EK card */}
-        <div style={{ position: 'relative', height: 110, marginTop: 8 }}>
+        <div style={{ position: 'relative', height: 100, marginTop: 4 }}>
           <motion.div
             drag="x"
-            dragConstraints={{ left: -totalW / 2 + cardW, right: totalW / 2 - cardW }}
-            dragElastic={0.1}
-            onDragStart={() => setDragging(true)}
+            dragConstraints={{ left: -cardW, right: totalW }}
+            dragElastic={0.05}
             onDrag={(_, info) => {
+              dragRef.current = info.offset.x;
               const cx = info.offset.x + totalW / 2;
-              const idx = Math.max(0, Math.min(slots - 1, Math.round(cx / (cardW + cardGap))));
+              const idx = Math.max(0, Math.min(slots - 1, Math.round(cx / (cardW - gapX))));
               setInsertIndex(idx);
             }}
             onDragEnd={(_, info) => {
-              setDragging(false);
               const cx = info.offset.x + totalW / 2;
-              const idx = Math.max(0, Math.min(slots - 1, Math.round(cx / (cardW + cardGap))));
+              const idx = Math.max(0, Math.min(slots - 1, Math.round(cx / (cardW - gapX))));
+              setInsertIndex(null);
               onInsertAt(idx);
             }}
             style={{

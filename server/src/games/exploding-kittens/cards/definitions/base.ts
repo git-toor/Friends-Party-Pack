@@ -85,4 +85,11 @@ export const baseCards: CardDefinition[] = [
     effect: { type: 'CAT_COMBO' },
     category: 'cat',
   },
+  {
+    id: 'rainbow_ralphing_cat', name: 'Rainbow Ralphing Cat', expansion: 'base',
+    copies: 4,
+    playable: { requiresTarget: true },
+    effect: { type: 'CAT_COMBO' },
+    category: 'cat',
+  },
 ];
