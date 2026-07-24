@@ -8,9 +8,15 @@ import { Tile } from './Tile.js';
 import { Token } from './Token.js';
 
 const S = 40;
-const BOARD_SIZE = 600;
+const BOARD_SIZE = 640;
+const BOARD_OFFSET = 20;
 const PLAYER_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
-const PLAYER_NAMES = ['Red', 'Blue', 'Yellow', 'Green'];
+
+// Map player index to board color index (opposite sides for 2 players)
+export function playerColorIndex(playerIndex: number, totalPlayers: number): number {
+  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 2; // Red ↔ Yellow
+  return playerIndex; // Sequential for 3-4 players
+}
 
 interface TokenData {
   playerIndex: number;
@@ -26,6 +32,7 @@ interface LudoBoardProps {
   diceValue: number | null;
   phase: string;
   playerIndex: number;
+  totalPlayers: number;
   onTokenClick: (tokenIndex: number) => void;
   playerNames?: Record<number, string>;
 }
@@ -46,8 +53,9 @@ function CenterPiece() {
   );
 }
 
-function HomeZone({ player, tokens }: { player: number; tokens: TokenData[] }) {
-  const color = PLAYER_COLORS[player];
+function HomeZone({ player, tokens, totalPlayers }: { player: number; tokens: TokenData[]; totalPlayers: number }) {
+  const cIdx = playerColorIndex(player, totalPlayers);
+  const color = PLAYER_COLORS[cIdx];
   const homeTokens = tokens.filter(t => t.playerIndex === player && t.state === 'home');
   const finishedTokens = tokens.filter(t => t.playerIndex === player && t.state === 'finished');
   const zoneTiles = HOME_ZONES[player];
@@ -73,7 +81,7 @@ function HomeZone({ player, tokens }: { player: number; tokens: TokenData[] }) {
           <Token
             key={`home-${tok.tokenIndex}`}
             pos={pos}
-            colorIndex={tok.playerIndex}
+            colorIndex={playerColorIndex(tok.playerIndex, totalPlayers)}
             size={getTileSize()}
             movable={false}
             isDragging={false}
@@ -84,7 +92,7 @@ function HomeZone({ player, tokens }: { player: number; tokens: TokenData[] }) {
         <Token
           key={`fin-${tok.tokenIndex}`}
           pos={CENTER}
-          colorIndex={tok.playerIndex}
+          colorIndex={playerColorIndex(tok.playerIndex, totalPlayers)}
           size={getTileSize()}
           movable={false}
           isDragging={false}
@@ -94,8 +102,9 @@ function HomeZone({ player, tokens }: { player: number; tokens: TokenData[] }) {
   );
 }
 
-export function LudoBoard({ tokens, validMoves, currentPlayer, playerIndex, onTokenClick, playerNames = {} }: LudoBoardProps) {
+export function LudoBoard({ tokens, validMoves, currentPlayer, playerIndex, totalPlayers, onTokenClick, playerNames = {} }: LudoBoardProps) {
   const ts = getTileSize();
+  const colorIdx = (p: number) => playerColorIndex(p, totalPlayers);
 
   // Group path tokens by board position for stacking
   const pathTokenGroups = useMemo(() => {
@@ -123,7 +132,8 @@ export function LudoBoard({ tokens, validMoves, currentPlayer, playerIndex, onTo
 
   return (
     <svg viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`} style={{ width: '100%', height: 'auto', filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.3))' }}>
-      {/* Board background */}
+      <g transform={`translate(${BOARD_OFFSET}, ${BOARD_OFFSET})`}>
+        {/* Board background */}
       <rect width={BOARD_SIZE} height={BOARD_SIZE} fill="#1a1a2e" rx={8} />
 
       {/* Cross-shaped board surface */}
@@ -133,10 +143,10 @@ export function LudoBoard({ tokens, validMoves, currentPlayer, playerIndex, onTo
       <rect x={6*S} y={9*S} width={3*S} height={6*S} fill="#25254a" />
 
       {/* Home zones */}
-      <HomeZone player={0} tokens={tokens} />
-      <HomeZone player={1} tokens={tokens} />
-      <HomeZone player={2} tokens={tokens} />
-      <HomeZone player={3} tokens={tokens} />
+      <HomeZone player={0} tokens={tokens} totalPlayers={totalPlayers} />
+      <HomeZone player={1} tokens={tokens} totalPlayers={totalPlayers} />
+      <HomeZone player={2} tokens={tokens} totalPlayers={totalPlayers} />
+      <HomeZone player={3} tokens={tokens} totalPlayers={totalPlayers} />
 
       {/* Center */}
       <CenterPiece />
@@ -171,11 +181,12 @@ export function LudoBoard({ tokens, validMoves, currentPlayer, playerIndex, onTo
           const isMovable = validMoves.includes(tok.tokenIndex);
           return (
             <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`} style={{ cursor: isMovable ? 'pointer' : 'default' }} onClick={() => isMovable && onTokenClick(tok.tokenIndex)}>
-              <Token pos={positions[i]} colorIndex={tok.playerIndex} size={ts} movable={isMovable && tok.state !== 'finished'} isDragging={false} />
+              <Token pos={positions[i]} colorIndex={playerColorIndex(tok.playerIndex, totalPlayers)} size={ts} movable={isMovable && tok.state !== 'finished'} isDragging={false} />
             </g>
           );
         });
       })}
+      </g>
     </svg>
   );
 }

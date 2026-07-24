@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LudoBoard } from './LudoBoard.js';
+import { LudoBoard, playerColorIndex } from './LudoBoard.js';
 import { Dice } from './Dice.js';
 import { useLudoSounds } from './sounds.js';
 import type { ChatMessage } from '../../components/ChatBox.js';
@@ -172,11 +172,11 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
             borderRadius: 6, fontSize: 12,
-            background: i === gs.currentPlayer ? `${PLAYER_COLORS[i]}33` : 'transparent',
-            border: i === gs.currentPlayer ? `1px solid ${PLAYER_COLORS[i]}` : '1px solid transparent',
+            background: i === gs.currentPlayer ? `${PLAYER_COLORS[playerColorIndex(i, gs.players.length)]}33` : 'transparent',
+            border: i === gs.currentPlayer ? `1px solid ${PLAYER_COLORS[playerColorIndex(i, gs.players.length)]}` : '1px solid transparent',
           }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: PLAYER_COLORS[i] }} />
-            <span style={{ fontWeight: 600 }}>{playerNames[i] || `${COLOR_NAMES[i]} Player`}</span>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: PLAYER_COLORS[playerColorIndex(i, gs.players.length)] }} />
+            <span style={{ fontWeight: 600 }}>{playerNames[i] || `${COLOR_NAMES[playerColorIndex(i, gs.players.length)]} Player`}</span>
             <span style={{ fontSize: 10, color: '#aaa' }}>
               {gs.players[i]?.tokens.filter(t => t.state === 'finished').length}/4
             </span>
@@ -207,6 +207,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             diceValue={gs.diceValue}
             phase={gs.phase}
             playerIndex={playerIndex}
+            totalPlayers={gs.players.length}
             onTokenClick={handleTokenClick}
             playerNames={playerNames}
           />
@@ -239,7 +240,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         )}
         {!isMyTurn && gs.winner === null && (
           <div style={{ fontSize: 11, color: '#888' }}>
-            Waiting for {playerNames[gs.currentPlayer] || `${COLOR_NAMES[gs.currentPlayer]} Player`}...
+            Waiting for {playerNames[gs.currentPlayer] || `${COLOR_NAMES[playerColorIndex(gs.currentPlayer, gs.players.length)]} Player`}...
           </div>
         )}
       </div>
@@ -281,7 +282,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
           >
             <div style={{ fontSize: 60, marginBottom: 16 }}>🏆</div>
             <h2 style={{ color: '#fbbf24', margin: '0 0 8px', fontSize: 28 }}>
-              {gs.winner === playerIndex ? 'You Win!' : `${playerNames[gs.winner!] || `${COLOR_NAMES[gs.winner!]} Player`} Wins!`}
+              {gs.winner === playerIndex ? 'You Win!' : `${playerNames[gs.winner!] || `${COLOR_NAMES[playerColorIndex(gs.winner!, gs.players.length)]} Player`} Wins!`}
             </h2>
             <button onClick={handleRematch} style={{
               padding: '12px 32px', borderRadius: 8, border: 'none',
