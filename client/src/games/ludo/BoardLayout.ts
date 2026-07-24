@@ -16,12 +16,10 @@ const BASE_PATH: [number, number][] = [
   [7,0],
 ];
 
-// Reverse direction + rotate so Blue's entry [6,13] is tile 0
-const _rev = [...BASE_PATH].reverse();
-const _blueAt = _rev.findIndex(([c, r]) => c === 6 && r === 13);
+// Rotate: Blue entry (old[23]) → tile 0
 export const PATH: [number, number][] = [
-  ..._rev.slice(_blueAt),
-  ..._rev.slice(0, _blueAt),
+  ...BASE_PATH.slice(23),
+  ...BASE_PATH.slice(0, 23),
 ];
 
 // ─── Safe tiles ────────────────────────────────────────────────
@@ -47,24 +45,24 @@ export const PLAYER_CONFIG: Record<number, {
   },
   1: { // RED — Top Left
     name: 'Red',
-    startTile: 23,
-    homeEntry: 22,
+    startTile: 13,
+    homeEntry: 12,
     homeStretch: [[1,7],[2,7],[3,7],[4,7],[5,7]],
     homeZoneCol: 0,
     homeZoneRow: 0,
   },
   2: { // GREEN — Top Right
     name: 'Green',
-    startTile: 36,
-    homeEntry: 35,
+    startTile: 26,
+    homeEntry: 25,
     homeStretch: [[7,1],[7,2],[7,3],[7,4],[7,5]],
     homeZoneCol: 9,
     homeZoneRow: 0,
   },
   3: { // YELLOW — Bottom Right
     name: 'Yellow',
-    startTile: 49,
-    homeEntry: 48,
+    startTile: 39,
+    homeEntry: 38,
     homeStretch: [[13,7],[12,7],[11,7],[10,7],[9,7]],
     homeZoneCol: 9,
     homeZoneRow: 9,

@@ -46,7 +46,7 @@ export interface GameResult {
   validMoves?: number[];
 }
 
-const ALL_OFFSETS = [0, 23, 36, 49]; // Blue, Red, Green, Yellow
+const ALL_OFFSETS = [0, 13, 26, 39]; // Blue, Red, Green, Yellow
 const SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
 const PATH_LENGTH = 52;
 const STRETCH_START = 52;
@@ -68,7 +68,7 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
 }
 
 function playerOffset(playerIndex: number, totalPlayers: number): number {
-  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 36; // Blue & Green
+  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 26; // Blue & Green (offsets 0 & 26)
   return ALL_OFFSETS[playerIndex] ?? 0;
 }
 
