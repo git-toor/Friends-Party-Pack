@@ -71,13 +71,22 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
-    setGs({
-      players: newState.players || [],
-      currentPlayer: newState.currentPlayer ?? 0,
-      diceValue: newState.diceValue ?? null,
-      phase: newState.phase || 'waiting_for_roll',
-      winner: newState.winner ?? null,
-      validMoves: newState.validMoves || [],
+    setGs(prev => {
+      // Phase priority: waiting_for_roll(0) < rolling_dice(1) < waiting_for_move(2)
+      const phases = ['waiting_for_roll', 'rolling_dice', 'waiting_for_move', 'moving', 'turn_end'];
+      const curP = phases.indexOf(prev.phase);
+      const newP = phases.indexOf(newState.phase);
+      // Never regress phase (prevents stale ROLL_DICE response overwriting CONFIRM_DICE)
+      const phase = newP >= curP ? newState.phase : prev.phase;
+      const diceValue = phase === 'rolling_dice' ? (newState.diceValue ?? prev.diceValue) : (newState.diceValue ?? null);
+      return {
+        players: newState.players || prev.players,
+        currentPlayer: newState.currentPlayer ?? prev.currentPlayer,
+        diceValue,
+        phase,
+        winner: newState.winner ?? prev.winner,
+        validMoves: newState.phase === 'waiting_for_move' ? (newState.validMoves || []) : prev.validMoves,
+      };
     });
   }, []);
 
