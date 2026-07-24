@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   PATH, HOME_STRETCH, HOME_TOKENS, SAFE_ABS,
-  cellCenter, getBoardPosition,
+  getBoardPosition,
 } from './BoardLayout.js';
 
 const P_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
@@ -81,9 +81,9 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
 
   const cx = (col: number) => (col + 0.5) * G;
   const cy = (row: number) => (row + 0.5) * G;
+  const ex = (col: number) => col * G;  // exact grid edge
   const ts = G * 0.88; // tile visual size
-
-  const BASE_POSITIONS = [[0,0],[0,9],[9,9],[9,0]];
+  const starSize = G * 0.5;
 
   return (
     <svg viewBox="0 0 1 1" style={{ width: '100%', height: 'auto', display: 'block' }}>
@@ -133,13 +133,18 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
       <rect x={6*G} y={6*G} width={3*G} height={3*G}
         fill="#1a1a2e" stroke="rgba(255,255,255,0.06)" strokeWidth={0.002} />
 
-      {/* Center colored triangles — snug inside 3×3 box */}
-      <polygon points={`${cx(7.5)},${cy(7.5)} ${cx(6)},${cy(6)} ${cx(6)},${cy(9)}`} fill="rgba(231,76,60,0.2)" />
-      <polygon points={`${cx(7.5)},${cy(7.5)} ${cx(6)},${cy(6)} ${cx(9)},${cy(6)}`} fill="rgba(46,204,113,0.2)" />
-      <polygon points={`${cx(7.5)},${cy(7.5)} ${cx(9)},${cy(6)} ${cx(9)},${cy(9)}`} fill="rgba(241,196,15,0.2)" />
-      <polygon points={`${cx(7.5)},${cy(7.5)} ${cx(6)},${cy(9)} ${cx(9)},${cy(9)}`} fill="rgba(52,152,219,0.2)" />
-      {/* Center dot */}
-      <circle cx={cx(7.5)} cy={cy(7.5)} r={0.015} fill="rgba(255,255,255,0.1)" />
+      {/* Center colored triangles — anchored to exact 3×3 edges */}
+      {(() => {
+        const ctr = 7.5 * G; // dead center
+        const left = ex(6), right = ex(9), top = ex(6), bottom = ex(9);
+        return (<>
+          <polygon points={`${ctr},${ctr} ${left},${top} ${left},${bottom}`} fill="rgba(231,76,60,0.2)" />
+          <polygon points={`${ctr},${ctr} ${left},${top} ${right},${top}`} fill="rgba(46,204,113,0.2)" />
+          <polygon points={`${ctr},${ctr} ${right},${top} ${right},${bottom}`} fill="rgba(241,196,15,0.2)" />
+          <polygon points={`${ctr},${ctr} ${left},${bottom} ${right},${bottom}`} fill="rgba(52,152,219,0.2)" />
+          <circle cx={ctr} cy={ctr} r={0.015} fill="rgba(255,255,255,0.1)" />
+        </>);
+      })()}
 
       {/* Z-2: Home token starting circles */}
       {[0,1,2,3].map(p =>
@@ -149,9 +154,11 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         ))
       )}
 
-      {/* Z-3: Safe zone ★ stars */}
+      {/* Z-3: Safe zone ★ stars — programmatically bound to SAFE_ABS tile indices */}
       {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c,r]) => (
-        <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r)+G*0.3} textAnchor="middle" fontSize={G*0.55} fill="#f1c40f" opacity={0.85}>★</text>
+        <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r) + starSize * 0.5}
+          textAnchor="middle" fontSize={starSize} fill="#f1c40f" opacity={0.9}
+          style={{ userSelect: 'none' }}>★</text>
       ))}
 
       {/* Z-3: Path/stretch tokens with stacking */}

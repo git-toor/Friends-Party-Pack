@@ -3,10 +3,12 @@ import { createGame, handleAction, getValidMoves, type GameState, type GameResul
 
 function gameWithFixedRoll(state: GameState, playerIndex: number, value: number): GameResult {
   const prevSixes = state.consecutiveSixes;
+  const prevPlayer = state.currentPlayer;
   const result = handleAction(state, playerIndex, { type: 'ROLL_DICE' });
   if (result.valid) {
     state.diceValue = value;
-    // Override consecutiveSixes based on the forced value, ignoring random
+    // If handleAction already triggered the three-sixes penalty (random rolled 6), don't double-trigger
+    if (state.currentPlayer !== prevPlayer) return result;
     if (value === 6) {
       state.consecutiveSixes = prevSixes + 1;
       if (state.consecutiveSixes >= 3) {
