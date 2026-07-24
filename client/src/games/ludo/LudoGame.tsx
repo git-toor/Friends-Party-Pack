@@ -17,7 +17,7 @@ interface GameEvent {
 }
 
 const PLAYER_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
-const COLOR_NAMES = ['Red', 'Blue', 'Yellow', 'Green'];
+const COLOR_NAMES = ['Blue', 'Red', 'Green', 'Yellow'];
 
 interface LudoGameProps {
   playerCount?: number;

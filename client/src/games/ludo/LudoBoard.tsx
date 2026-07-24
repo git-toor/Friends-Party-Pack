@@ -5,7 +5,7 @@ import {
   getHomeStretchByQuadrant, playerQuadrant,
 } from './BoardLayout.js';
 
-const P_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
+const P_COLORS = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f'];
 const G = 1 / 15; // grid cell size in viewBox units
 
 export function playerColorIndex(playerIndex: number, totalPlayers: number): number {
@@ -105,7 +105,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
       ))}
 
       {/* Z-2: Colored base zones — all 4 quadrants, dim if inactive */}
-      {[[0,0,0],[0,9,1],[9,9,2],[9,0,3]].map(([c,r,q]) => {
+      {[[0,9,0],[0,0,1],[9,0,2],[9,9,3]].map(([c,r,q]) => {
         const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
         return (
           <rect key={`base-${q}`} x={c*G} y={r*G} width={6*G} height={6*G}
