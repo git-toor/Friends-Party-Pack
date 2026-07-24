@@ -10,7 +10,7 @@ import { WsServer } from './ws/WsServer.js';
 import { setupWsHandlers } from './ws/handlers.js';
 import { chatRouter, setWsServer } from './api/chatRouter.js';
 import type { CreateLobbyRequest } from './lobby/LobbyManager.js';
-import { gameRegistry, yahtzeeServer, explodingKittensServer } from './games/registry.js';
+import { gameRegistry, yahtzeeServer, explodingKittensServer, ludoServer } from './games/registry.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -26,6 +26,7 @@ const wsServer = new WsServer(server);
 setupWsHandlers(wsServer, lobbyManager);
 gameRegistry.register('yahtzee', yahtzeeServer);
 gameRegistry.register('exploding-kittens', explodingKittensServer);
+gameRegistry.register('ludo', ludoServer);
 
 // ─── Health Check ─────────────────────────────────────────
 app.get('/api/health', (_req, res) => {

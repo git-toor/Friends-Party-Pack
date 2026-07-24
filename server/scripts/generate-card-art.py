@@ -494,13 +494,15 @@ def main():
         for i, card in enumerate(cards):
             copies = card.get("copies", 1)
             for copy_num in range(copies):
-                print(f"\n[{i+1}/{total}] copy {copy_num+1}/{copies}", end="")
-                ok = generate_card(prompts, card["id"], "base", manifest, copy_num)
-                if not ok and args.continue_gen:
-                    print("  Skipping...")
-                    continue
                 if args.nsfw and "nsfw" in card:
+                    print(f"\n[{i+1}/{total}] copy {copy_num+1}/{copies}", end="")
                     generate_card(prompts, card["id"], "nsfw", manifest, copy_num)
+                else:
+                    print(f"\n[{i+1}/{total}] copy {copy_num+1}/{copies}", end="")
+                    ok = generate_card(prompts, card["id"], "base", manifest, copy_num)
+                    if not ok and args.continue_gen:
+                        print("  Skipping...")
+                        continue
 
     if not any([args.card, args.all, args.sample, args.back]):
         print("Usage:")

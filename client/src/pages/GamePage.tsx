@@ -5,10 +5,12 @@ import { getWs } from '../api/ws.js';
 
 const YahtzeeGame = lazy(() => import('../games/yahtzee/YahtzeeGame.js'));
 const ExplodingKittensGame = lazy(() => import('../games/exploding-kittens/ExplodingKittensGame.js'));
+const LudoGame = lazy(() => import('../games/ludo/LudoGame.js'));
 
 const GAME_COMPONENTS: Record<string, any> = {
   yahtzee: YahtzeeGame,
   'exploding-kittens': ExplodingKittensGame,
+  ludo: LudoGame,
 };
 
 export default function GamePage() {
