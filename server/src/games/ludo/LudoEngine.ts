@@ -46,7 +46,7 @@ export interface GameResult {
   validMoves?: number[];
 }
 
-const ALL_OFFSETS = [13, 0, 39, 26]; // Blue, Red, Green, Yellow
+const ALL_OFFSETS = [0, 13, 26, 39]; // Blue, Red, Green, Yellow (matches rotated PATH)
 const SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
 const PATH_LENGTH = 52;
 const STRETCH_START = 52;
