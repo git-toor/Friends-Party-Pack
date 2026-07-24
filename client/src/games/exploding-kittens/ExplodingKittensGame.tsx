@@ -60,7 +60,8 @@ export default function ExplodingKittensGame({
 }: EKGameProps) {
   const [gs, setGs] = useState<ClientGameState>(EMPTY_STATE);
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
-  const [favorGiveMode, setFavorGiveMode] = useState<{ selectedCardId: string | null } | null>(null);
+  const [pendingFavorGive, setPendingFavorGive] = useState(false);
+  const [favorGiveCard, setFavorGiveCard] = useState<{ id: string; type: string; name: string } | null>(null);
   const [showDefuse, setShowDefuse] = useState<{ deckSize: number; hasZombie: boolean } | null>(null);
   const [showZombieRevive, setShowZombieRevive] = useState<{ deadPlayers: { index: number; name: string }[] } | null>(null);
   const [showGameOver, setShowGameOver] = useState(false);
@@ -377,7 +378,7 @@ export default function ExplodingKittensGame({
   }, [sendAction]);
 
   const handleFavorChoose = useCallback(async (cardId: string) => {
-    setFavorGiveMode(null);
+    setFavorGiveCard(null);
     await sendAction('RESOLVE_FAVOR', { cardId, victimIndex: playerIndex });
   }, [sendAction, playerIndex]);
 
@@ -418,10 +419,11 @@ export default function ExplodingKittensGame({
   useEffect(() => {
     const pendingFavor = gs.actionStack.find(a => a.type === 'RESOLVE_FAVOR');
     if (pendingFavor && pendingFavor.playerIndex === playerIndex) {
-      setFavorGiveMode({ selectedCardId: null });
+      setPendingFavorGive(true);
     }
     if (!pendingFavor) {
-      setFavorGiveMode(null);
+      setPendingFavorGive(false);
+      setFavorGiveCard(null);
     }
   }, [gs.actionStack, playerIndex]);
 
@@ -529,6 +531,38 @@ export default function ExplodingKittensGame({
             </div>
           </div>
         )}
+        {/* Favor give card pile */}
+        {favorGiveCard && (
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            padding: '6px 10px', margin: '2px 0',
+          }}>
+            <div style={{ fontSize: 10, color: '#e94560', fontWeight: 700, letterSpacing: 1 }}>
+              🤝 Give Away
+            </div>
+            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+              <div key={favorGiveCard.id} style={{ position: 'relative' }}>
+                <Card card={favorGiveCard} size="small" nsfw={nsfw} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => handleFavorChoose(favorGiveCard.id)}
+                style={{
+                  padding: '4px 12px', borderRadius: 4, border: 'none', cursor: 'pointer',
+                  background: '#e94560', color: '#fff', fontSize: 11, fontWeight: 600,
+                }}>
+                Give
+              </button>
+              <button onClick={() => { setFavorGiveCard(null); }}
+                style={{
+                  padding: '4px 12px', borderRadius: 4, border: '1px solid #555', cursor: 'pointer',
+                  background: 'transparent', color: '#aaa', fontSize: 11,
+                }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       <PlayArea
         deckSize={gs.deckSize}
         discardCount={gs.discardCount}
@@ -588,41 +622,19 @@ export default function ExplodingKittensGame({
 
       {/* Player's hand */}
       <div style={{ position: 'relative', zIndex: 20, overflow: 'visible', background: 'rgba(22,33,62,0.4)', borderRadius: '8px 8px 0 0', margin: '0 4px' }}>
-        {favorGiveMode && (
-          <div style={{
-            padding: '8px 12px', textAlign: 'center', borderBottom: '1px solid rgba(233,69,96,0.3)',
-          }}>
-            <span style={{ color: '#e94560', fontSize: 13, fontWeight: 600 }}>
-              🤝 Select a card to give away
-            </span>
-            {favorGiveMode.selectedCardId && (
-              <button onClick={() => {
-                const sid = favorGiveMode.selectedCardId;
-                if (!sid) return;
-                handleFavorChoose(sid);
-              }}
-                style={{
-                  marginLeft: 8, padding: '4px 14px', background: '#e94560', color: '#fff',
-                  border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                  verticalAlign: 'middle',
-                }}>
-                Give Card
-              </button>
-            )}
+        {pendingFavorGive && !favorGiveCard && (
+          <div style={{ padding: '6px 12px', textAlign: 'center', fontSize: 11, color: '#e94560' }}>
+            🤝 Swipe a card to give away
           </div>
         )}
         <Hand
           cards={gs.myHand}
-          selectedCardIds={[...new Set([
-            ...selectedCardIds,
-            ...comboPileCards.map(c => c.id),
-            ...(favorGiveMode?.selectedCardId ? [favorGiveMode.selectedCardId] : []),
-          ])]}
-          onSelectCard={favorGiveMode ? (cardId) => {
-            setFavorGiveMode(prev => prev ? { selectedCardId: prev.selectedCardId === cardId ? null : cardId } : null);
-          } : handleSelectCard}
-          onSwipePlay={favorGiveMode ? (cardId) => {
-            handleFavorChoose(cardId);
+          selectedCardIds={[...new Set([...selectedCardIds, ...comboPileCards.map(c => c.id)])]}
+          onSelectCard={handleSelectCard}
+          onSwipePlay={pendingFavorGive ? (cardId) => {
+            const card = gs.myHand.find(c => c.id === cardId);
+            if (!card) return;
+            setFavorGiveCard({ id: card.id, type: card.type, name: card.name });
           } : (cardId, point) => {
             const card = gs.myHand.find(c => c.id === cardId);
             if (!card) return;
