@@ -44,18 +44,25 @@ export interface GameResult {
   diceValue?: number;
 }
 
-const PLAYER_OFFSETS = [0, 13, 26, 39];
+const ALL_OFFSETS = [0, 13, 26, 39];
 const SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
 const PATH_LENGTH = 52;
 const STRETCH_START = 52;
 const FINISH = 57;
 
-function absPath(progress: number, playerIndex: number): number {
-  return (progress + PLAYER_OFFSETS[playerIndex]) % PATH_LENGTH;
+// Map player index to path offset (2 players use opposite quadrants: Blue & Green)
+function playerOffset(playerIndex: number, totalPlayers: number): number {
+  if (totalPlayers === 2) return playerIndex === 0 ? 13 : 39;
+  return ALL_OFFSETS[playerIndex] ?? 0;
 }
 
-function isSafe(progress: number, playerIndex: number): boolean {
-  return SAFE_SQUARES.includes(absPath(progress, playerIndex));
+function absPath(progress: number, playerIndex: number, state: GameState): number {
+  const off = playerOffset(playerIndex, state.players.length);
+  return (progress + off) % PATH_LENGTH;
+}
+
+function isSafe(progress: number, playerIndex: number, state: GameState): boolean {
+  return SAFE_SQUARES.includes(absPath(progress, playerIndex, state));
 }
 
 function hasBlockAt(state: GameState, absPosition: number, excludePlayer: number): number | null {
@@ -63,7 +70,7 @@ function hasBlockAt(state: GameState, absPosition: number, excludePlayer: number
   for (let p = 0; p < state.players.length; p++) {
     if (p === excludePlayer) continue;
     const count = state.players[p].tokens.filter(
-      t => (t.state === 'path') && absPath(t.progress, p) === absPosition
+      t => (t.state === 'path') && absPath(t.progress, p, state) === absPosition
     ).length;
     if (count >= 2) return p;
   }
@@ -72,7 +79,7 @@ function hasBlockAt(state: GameState, absPosition: number, excludePlayer: number
 
 function checkBlockOnPath(state: GameState, playerIndex: number, from: number, to: number): { valid: boolean; error?: string } {
   for (let p = from + 1; p <= to; p++) {
-    const abs = absPath(p, playerIndex);
+    const abs = absPath(p, playerIndex, state);
     const blocked = hasBlockAt(state, abs, playerIndex);
     if (blocked !== null) {
       return { valid: false, error: 'Path is blocked' };
@@ -82,14 +89,14 @@ function checkBlockOnPath(state: GameState, playerIndex: number, from: number, t
 }
 
 function handleCapture(state: GameState, playerIndex: number, progress: number): GameEvent[] {
-  const abs = absPath(progress, playerIndex);
-  if (isSafe(progress, playerIndex)) return [];
+  const abs = absPath(progress, playerIndex, state);
+  if (isSafe(progress, playerIndex, state)) return [];
   const events: GameEvent[] = [];
   for (let p = 0; p < state.players.length; p++) {
     if (p === playerIndex) continue;
     for (let t = 0; t < state.players[p].tokens.length; t++) {
       const tok = state.players[p].tokens[t];
-      if (tok.state === 'path' && absPath(tok.progress, p) === abs) {
+      if (tok.state === 'path' && absPath(tok.progress, p, state) === abs) {
         tok.state = 'home';
         tok.progress = -1;
         events.push({ type: 'CAPTURE', playerIndex, tokenIndex: -1, victimPlayer: p, victimToken: t });
@@ -100,10 +107,10 @@ function handleCapture(state: GameState, playerIndex: number, progress: number):
 }
 
 function checkBlockFormed(state: GameState, playerIndex: number, progress: number): GameEvent | null {
-  if (isSafe(progress, playerIndex)) return null;
-  const abs = absPath(progress, playerIndex);
+  if (isSafe(progress, playerIndex, state)) return null;
+  const abs = absPath(progress, playerIndex, state);
   const sameTokens = state.players[playerIndex].tokens.filter(
-    t => (t.state === 'path') && absPath(t.progress, playerIndex) === abs
+    t => (t.state === 'path') && absPath(t.progress, playerIndex, state) === abs
   );
   if (sameTokens.length >= 2) {
     return { type: 'BLOCK_FORMED', playerIndex, tokenIndex: -1, position: progress };

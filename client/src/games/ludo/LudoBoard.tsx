@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
 import {
   PATH, HOME_STRETCH, HOME_TOKENS, SAFE_ABS,
-  getBoardPosition,
+  getBoardPosition, getHomeTokens, getHomeStretch, playerQuadrant,
 } from './BoardLayout.js';
 
 const P_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
 const G = 1 / 15; // grid cell size in viewBox units
 
 export function playerColorIndex(playerIndex: number, totalPlayers: number): number {
-  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 2;
-  return playerIndex;
+  return playerQuadrant(playerIndex, totalPlayers);
 }
 
 interface TokenData {
@@ -59,7 +58,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
     const groups = new Map<string, TokenData[]>();
     for (const tok of tokens) {
       if (tok.state !== 'path' && tok.state !== 'stretch') continue;
-      const pos = getBoardPosition(tok.playerIndex, tok.progress);
+      const pos = getBoardPosition(tok.playerIndex, tok.progress, totalPlayers);
       const key = `${pos.x.toFixed(5)},${pos.y.toFixed(5)}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(tok);
@@ -84,6 +83,9 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
   const ts = G * 0.88; // tile visual size
   const starSize = G * 0.5;
 
+  // Active quadrants for the current player count
+  const activeQuadrants = Array.from({ length: totalPlayers }, (_, i) => playerQuadrant(i, totalPlayers));
+
   return (
     <svg viewBox="0 0 1 1" style={{ width: '100%', height: 'auto', display: 'block' }}>
       {/* Z-1: Dark board background */}
@@ -96,19 +98,25 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         <rect key={`arm-${i}`} x={c*G} y={r*G} width={w*G} height={h*G} fill="#22224a" />
       ))}
 
-      {/* Z-2: Colored base zones */}
-      {[[0,0,0],[0,9,1],[9,9,2],[9,0,3]].map(([c,r,p]) => (
-        <rect key={`base-${p}`} x={c*G} y={r*G} width={6*G} height={6*G}
-          rx={0.015} fill={`${P_COLORS[p]}12`} stroke={`${P_COLORS[p]}35`} strokeWidth={0.003} />
-      ))}
+      {/* Z-2: Colored base zones — only active quadrants get full color */}
+      {[[0,0,0],[0,9,1],[9,9,2],[9,0,3]].map(([c,r,q]) => {
+        const isActive = activeQuadrants.includes(q);
+        return (
+          <rect key={`base-${q}`} x={c*G} y={r*G} width={6*G} height={6*G}
+            rx={0.015}
+            fill={isActive ? `${P_COLORS[q]}15` : `${P_COLORS[q]}06`}
+            stroke={isActive ? `${P_COLORS[q]}40` : `${P_COLORS[q]}15`}
+            strokeWidth={0.003} />
+        );
+      })}
 
-      {/* Z-2: Home stretch colored tiles (5 per player) */}
-      {[0,1,2,3].map(p =>
-        HOME_STRETCH[p].map(([c,r], i) => (
-          <rect key={`hs-${p}-${i}`}
+      {/* Z-2: Home stretch colored tiles — only for active quadrants */}
+      {activeQuadrants.map(q =>
+        (getHomeStretch(q) || []).map(([c,r], i) => (
+          <rect key={`hs-${q}-${i}`}
             x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
             width={ts} height={ts} rx={0.004}
-            fill={P_COLORS[p]} opacity={0.55}
+            fill={P_COLORS[q]} opacity={0.55}
           />
         ))
       )}
@@ -145,11 +153,11 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         </>);
       })()}
 
-      {/* Z-2: Home token starting circles — always show all 4 */}
-      {[0,1,2,3].map(p =>
-        HOME_TOKENS[p].map(([c,r], i) => (
-          <circle key={`ht-${p}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
-            fill={`${P_COLORS[p]}20`} stroke={`${P_COLORS[p]}35`} strokeWidth={0.002} />
+      {/* Z-2: Home token starting circles — only active quadrants */}
+      {activeQuadrants.map(q =>
+        (getHomeTokens(q) || []).map(([c,r], i) => (
+          <circle key={`ht-${q}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
+            fill={`${P_COLORS[q]}20`} stroke={`${P_COLORS[q]}35`} strokeWidth={0.002} />
         ))
       )}
 

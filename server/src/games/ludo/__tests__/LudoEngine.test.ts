@@ -32,15 +32,15 @@ describe('LudoEngine', () => {
   let game: GameState;
 
   beforeEach(() => {
-    game = createGame(2);
+    game = createGame(4);
   });
 
   // ─── createGame ────────────────────────────────────────
 
   describe('createGame', () => {
     it('creates correct number of players', () => {
-      expect(game.players.length).toBe(2);
-      expect(createGame(4).players.length).toBe(4);
+      expect(game.players.length).toBe(4);
+      expect(createGame(2).players.length).toBe(2);
     });
 
     it('each player has 4 tokens in home state', () => {
@@ -71,7 +71,7 @@ describe('LudoEngine', () => {
   describe('ROLL_DICE', () => {
     it('returns value 1-6', () => {
       for (let i = 0; i < 50; i++) {
-        const g = createGame(2);
+        const g = createGame(4);
         const r = handleAction(g, 0, { type: 'ROLL_DICE' });
         expect(r.valid).toBe(true);
         expect(r.diceValue).toBeGreaterThanOrEqual(1);
