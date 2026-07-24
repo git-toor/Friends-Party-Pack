@@ -54,6 +54,10 @@ ludoRouter.post('/action', (req, res) => {
   const broadcast = wsBroadcasts.get(sessionId);
   if (broadcast) {
     for (let i = 0; i < result.state.players.length; i++) {
+      // Don't broadcast to the acting player — they get state via HTTP response.
+      // Broadcasting to them causes a race where stale state from the other player's
+      // subsequent action can overwrite their current interactive state.
+      if (i === playerIndex) continue;
       broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i } });
     }
     if (action.type === 'ROLL_DICE' || action.type === 'DICE_LANDED') {
