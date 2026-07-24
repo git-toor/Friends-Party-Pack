@@ -59,6 +59,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
   const svRef = useRef(-1);
   const [stepAnim, setStepAnim] = useState<{ tokenIndex: number; from: number; to: number; playerIndex: number } | null>(null);
+  const prevPlayersRef = useRef<{ tokens: TokenView[]; finishedCount: number }[] | null>(null);
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
@@ -84,6 +85,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     if (!newState) return;
     if (newState._sv !== undefined && newState._sv <= svRef.current) return;
     if (newState._sv !== undefined) svRef.current = newState._sv;
+    if (newState.players) prevPlayersRef.current = newState.players;
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
@@ -119,14 +121,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     return () => window.removeEventListener('chat-message', handler as EventListener);
   }, []);
 
-  const prevPlayersRef = useRef<{ tokens: TokenView[]; finishedCount: number }[] | null>(null);
-
-  // ─── Add this BEFORE the gameStatePush effect ──
-  useEffect(() => {
-    // update prevPlayersRef whenever gs changes (via sendAction)
-    if (gs.players.length > 0) prevPlayersRef.current = gs.players;
-  }, [gs]);
-
   useEffect(() => {
     if (gameStatePush) {
       // detect token moves from broadcast (for other players)
@@ -137,8 +131,8 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
           for (let t = 0; t < 4; t++) {
             const pt = prev[p]?.tokens[t];
             const nt = next[p]?.tokens[t];
-            if (pt && nt && nt.state !== 'home' && (pt.progress !== nt.progress || pt.state !== nt.state)) {
-              setStepAnim({ tokenIndex: t, from: pt.progress >= 0 ? pt.progress : 0, to: nt.progress >= 0 ? nt.progress : 0, playerIndex: p });
+            if (pt && nt && (pt.progress !== nt.progress || pt.state !== nt.state)) {
+              setStepAnim({ tokenIndex: t, from: pt.progress >= 0 ? pt.progress : Math.max(nt.progress - 1, 0), to: nt.progress >= 0 ? nt.progress : 0, playerIndex: p });
             }
           }
         }

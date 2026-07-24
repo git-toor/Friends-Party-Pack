@@ -299,7 +299,6 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
 
   // Turn management
   if (wasSix) {
-    state.consecutiveSixes++;
     if (state.consecutiveSixes >= 3) {
       events.push({ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 });
       advanceTurn(state);

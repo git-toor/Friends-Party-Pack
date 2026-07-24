@@ -121,6 +121,8 @@ describe('LudoEngine', () => {
       rollWithFixedValue(game, 0, 6);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       rollWithFixedValue(game, 0, 6);
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 2 } });
+      rollWithFixedValue(game, 0, 6);
       expect(game.currentPlayer).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
     });
@@ -347,6 +349,8 @@ describe('LudoEngine', () => {
   describe('Three consecutive sixes', () => {
     it('loses turn on three consecutive sixes', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
+      rollWithFixedValue(game, 0, 6);
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       rollWithFixedValue(game, 0, 6);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       rollWithFixedValue(game, 0, 6);
