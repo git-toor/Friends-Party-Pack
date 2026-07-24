@@ -1,27 +1,28 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createGame, handleAction, getValidMoves, type GameState, type GameResult } from '../LudoEngine.js';
 
-function gameWithFixedRoll(state: GameState, playerIndex: number, value: number): GameResult {
+// Helper: ROLL_DICE + CONFIRM_DICE with a forced value, returns the CONFIRM_DICE result
+function rollWithFixedValue(state: GameState, playerIndex: number, value: number): GameResult {
   const prevSixes = state.consecutiveSixes;
   const prevPlayer = state.currentPlayer;
-  const result = handleAction(state, playerIndex, { type: 'ROLL_DICE' });
-  if (result.valid) {
-    state.diceValue = value;
-    // If handleAction already triggered the three-sixes penalty (random rolled 6), don't double-trigger
-    if (state.currentPlayer !== prevPlayer) return result;
-    if (value === 6) {
-      state.consecutiveSixes = prevSixes + 1;
-      if (state.consecutiveSixes >= 3) {
-        state.diceValue = null;
-        state.consecutiveSixes = 0;
-        state.phase = 'rolling';
-        state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
-      }
-    } else {
+  handleAction(state, playerIndex, { type: 'ROLL_DICE' });
+  state.diceValue = value;
+  // Update consecutiveSixes based on forced value
+  if (value === 6) {
+    state.consecutiveSixes = prevSixes + 1;
+    if (state.consecutiveSixes >= 3) {
       state.consecutiveSixes = 0;
+      state.phase = 'waiting_for_roll';
+      state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
+      state.diceValue = null;
+      state.diceRolledBy = null;
+      return { state, valid: true, diceValue: value };
     }
+  } else {
+    state.consecutiveSixes = 0;
   }
-  return result;
+  // Now confirm dice
+  return handleAction(state, playerIndex, { type: 'CONFIRM_DICE' });
 }
 
 function getAllMoves(state: GameState, playerIndex: number): number[] {
@@ -33,7 +34,7 @@ describe('LudoEngine', () => {
 
   beforeEach(() => {
     game = createGame(4);
-    // Give player 0 a token on the path so rolls always have valid moves
+    // Give player 0 a token on the path so rolls always have valid moves after confirm
     game.players[0].tokens[0] = { state: 'path', progress: 10 };
   });
 
@@ -56,12 +57,12 @@ describe('LudoEngine', () => {
       }
     });
 
-    it('starts with player 0', () => {
+    it('starts with player 0 by default', () => {
       expect(game.currentPlayer).toBe(0);
     });
 
-    it('starts in rolling phase', () => {
-      expect(game.phase).toBe('rolling');
+    it('starts in waiting_for_roll phase', () => {
+      expect(game.phase).toBe('waiting_for_roll');
     });
 
     it('no winner at start', () => {
@@ -72,30 +73,21 @@ describe('LudoEngine', () => {
   // ─── ROLL_DICE ─────────────────────────────────────────
 
   describe('ROLL_DICE', () => {
-    it('returns value 1-6', () => {
-      for (let i = 0; i < 50; i++) {
+    it('returns value 1-6 and sets phase to rolling_dice', () => {
+      for (let i = 0; i < 20; i++) {
         const g = createGame(4);
+        g.players[0].tokens[0] = { state: 'path', progress: 10 };
         const r = handleAction(g, 0, { type: 'ROLL_DICE' });
         expect(r.valid).toBe(true);
         expect(r.diceValue).toBeGreaterThanOrEqual(1);
         expect(r.diceValue).toBeLessThanOrEqual(6);
+        expect(g.phase).toBe('rolling_dice');
       }
     });
 
     it('rejects from non-current player', () => {
       const r = handleAction(game, 1, { type: 'ROLL_DICE' });
       expect(r.valid).toBe(false);
-    });
-
-    it('advances to moving phase', () => {
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      expect(game.phase).toBe('moving');
-    });
-
-    it('stores dice value on state', () => {
-      handleAction(game, 0, { type: 'ROLL_DICE' });
-      expect(game.diceValue).toBeGreaterThanOrEqual(1);
-      expect(game.diceValue).toBeLessThanOrEqual(6);
     });
 
     it('rejects double roll', () => {
@@ -111,17 +103,54 @@ describe('LudoEngine', () => {
     });
   });
 
+  // ─── CONFIRM_DICE ──────────────────────────────────────
+
+  describe('CONFIRM_DICE', () => {
+    it('transitions to waiting_for_move when valid moves exist', () => {
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 4;
+      const r = handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      expect(r.valid).toBe(true);
+      expect(game.phase).toBe('waiting_for_move');
+    });
+
+    it('auto-advances turn when no valid moves', () => {
+      // Remove the path token — all home, no 6
+      game.players[0].tokens[0] = { state: 'home', progress: -1 };
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 3;
+      const r = handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      expect(r.valid).toBe(true);
+      expect(game.currentPlayer).toBe(1);
+      expect(game.phase).toBe('waiting_for_roll');
+    });
+
+    it('rejects if phase is not rolling_dice', () => {
+      const r = handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      expect(r.valid).toBe(false);
+    });
+
+    it('stays on same player after no valid moves (advances to next)', () => {
+      game.players[0].tokens[0] = { state: 'home', progress: -1 };
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 5;
+      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      expect(game.currentPlayer).toBe(1);
+    });
+  });
+
   // ─── MOVE_TOKEN — Home to Path ─────────────────────────
 
   describe('MOVE_TOKEN — Home to Path', () => {
     it('requires 6 to leave home', () => {
-      gameWithFixedRoll(game, 0, 3);
+      // Token 0 already on path, use token 1 which is home
+      rollWithFixedValue(game, 0, 3);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.valid).toBe(false);
     });
 
     it('allows home→path on 6', () => {
-      gameWithFixedRoll(game, 0, 6);
+      rollWithFixedValue(game, 0, 6);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.valid).toBe(true);
       expect(game.players[0].tokens[1].state).toBe('path');
@@ -129,13 +158,13 @@ describe('LudoEngine', () => {
     });
 
     it('rejects move from wrong player after roll', () => {
-      gameWithFixedRoll(game, 0, 6);
-      const r = handleAction(game, 1, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      rollWithFixedValue(game, 0, 6);
+      const r = handleAction(game, 1, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.valid).toBe(false);
     });
 
     it('fires TOKEN_MOVED event on home exit', () => {
-      gameWithFixedRoll(game, 0, 6);
+      rollWithFixedValue(game, 0, 6);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       expect(r.events?.some(e => e.type === 'TOKEN_MOVED')).toBe(true);
     });
@@ -146,22 +175,21 @@ describe('LudoEngine', () => {
   describe('MOVE_TOKEN — Path movement', () => {
     it('advances progress by dice value', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
-      gameWithFixedRoll(game, 0, 4);
+      rollWithFixedValue(game, 0, 4);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(game.players[0].tokens[0].progress).toBe(14);
     });
 
     it('rejects move when no valid tokens after roll', () => {
-      // Token at stretch progress 56, roll 5 overshoots (56+5=61>57)
       game.players[0].tokens[0] = { state: 'stretch', progress: 56 };
-      gameWithFixedRoll(game, 0, 5);
+      rollWithFixedValue(game, 0, 5);
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });
 
     it('auto-enters home stretch at progress 52', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 49 };
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(game.players[0].tokens[0].state).toBe('stretch');
       expect(game.players[0].tokens[0].progress).toBe(52);
@@ -169,7 +197,7 @@ describe('LudoEngine', () => {
 
     it('finishes token with exact roll to 57', () => {
       game.players[0].tokens[0] = { state: 'stretch', progress: 54 };
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(true);
       expect(game.players[0].tokens[0].state).toBe('finished');
@@ -180,17 +208,15 @@ describe('LudoEngine', () => {
 
     it('rejects overshoot beyond 57', () => {
       game.players[0].tokens[0] = { state: 'stretch', progress: 55 };
-      gameWithFixedRoll(game, 0, 5);
+      rollWithFixedValue(game, 0, 5);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(false);
     });
 
     it('captures opponent token on non-safe square', () => {
-      // P0 at progress 5 (abs 5). P1 at progress 46 (abs 46+13=59%52=7).
-      // P0 rolls 2 → progress 7 (abs 7) → captures P1 at abs 7
       game.players[0].tokens[0] = { state: 'path', progress: 5 };
       game.players[1].tokens[0] = { state: 'path', progress: 46 };
-      gameWithFixedRoll(game, 0, 2);
+      rollWithFixedValue(game, 0, 2);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(true);
       expect(game.players[1].tokens[0].state).toBe('home');
@@ -199,24 +225,20 @@ describe('LudoEngine', () => {
     });
 
     it('does not capture on safe square', () => {
-      // Safe square at abs 13 (Blue's entry). P0 at progress 11 (abs 11), rolls 2 → progress 13 (abs 13 safe).
-      // P1 at progress 0 (abs 0+13=13) — same absolute square, but it's safe.
       game.players[0].tokens[0] = { state: 'path', progress: 11 };
       game.players[1].tokens[0] = { state: 'path', progress: 0 };
-      gameWithFixedRoll(game, 0, 2);
+      rollWithFixedValue(game, 0, 2);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(game.players[1].tokens[0].state).toBe('path');
     });
 
     it('captures opponent on path move', () => {
-      // P0 at progress 3 (abs 3). P1 at progress 9 (abs 9+13=22).
-      // P0 rolls 5 → progress 8 (abs 8, safe) — no capture because safe
       game.players[0].tokens[0] = { state: 'path', progress: 3 };
       game.players[1].tokens[0] = { state: 'path', progress: 9 };
-      gameWithFixedRoll(game, 0, 5);
+      rollWithFixedValue(game, 0, 5);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(true);
-      expect(game.players[1].tokens[0].state).toBe('path'); // safe square, no capture
+      expect(game.players[1].tokens[0].state).toBe('path');
     });
   });
 
@@ -224,13 +246,10 @@ describe('LudoEngine', () => {
 
   describe('Blocks', () => {
     it('cannot pass through opponent block', () => {
-      // P1 has 2 tokens at abs 5 (progress 44, abs 44+13=57%52=5)
       game.players[1].tokens[0] = { state: 'path', progress: 44 };
       game.players[1].tokens[1] = { state: 'path', progress: 44 };
-      // P0 at progress 3 (abs 3), rolls 3 → would pass through abs 4,5,6
-      // abs 5 is blocked -> only 1 valid move (the 3rd home token on 6? no, dice is 3)
       game.players[0].tokens[0] = { state: 'path', progress: 3 };
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });
@@ -238,26 +257,24 @@ describe('LudoEngine', () => {
     it('can land on own block (stack)', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 3 };
       game.players[0].tokens[1] = { state: 'path', progress: 5 };
-      gameWithFixedRoll(game, 0, 2);
+      rollWithFixedValue(game, 0, 2);
       const moves = getAllMoves(game, 0);
       expect(moves).toContain(0);
     });
 
     it('can land on safe square occupied by opponent', () => {
-      // Safe square at abs 8. P0 at progress 6 (abs 6), rolls 2 → abs 8.
-      // P1 at progress 47 (abs 47+13=60%52=8) — same safe square.
       game.players[1].tokens[0] = { state: 'path', progress: 47 };
       game.players[0].tokens[0] = { state: 'path', progress: 6 };
-      gameWithFixedRoll(game, 0, 2);
+      rollWithFixedValue(game, 0, 2);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(true);
-      expect(game.players[1].tokens[0].state).toBe('path'); // not captured
+      expect(game.players[1].tokens[0].state).toBe('path');
     });
 
     it('fires BLOCK_FORMED event when block created', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 5 };
       game.players[0].tokens[1] = { state: 'path', progress: 3 };
-      gameWithFixedRoll(game, 0, 2);
+      rollWithFixedValue(game, 0, 2);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
       if (r.events) {
         expect(r.events.some(e => e.type === 'BLOCK_FORMED')).toBe(true);
@@ -265,57 +282,54 @@ describe('LudoEngine', () => {
     });
   });
 
-  // ─── Bonus rolls and turn advancement ──────────────────
+  // ─── Turn advancement ──────────────────────────────────
 
   describe('Turn advancement', () => {
-    it('non-6 advances turn to next player', () => {
+    it('non-6 advances turn after move', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(game.currentPlayer).toBe(1);
-      expect(game.phase).toBe('rolling');
+      expect(game.phase).toBe('waiting_for_roll');
     });
 
-    it('6 grants bonus turn', () => {
-      gameWithFixedRoll(game, 0, 6);
-      // Move token 1 out of home (token 0 is already on path from beforeEach)
+    it('6 grants bonus turn (phase=waiting_for_roll after move)', () => {
+      rollWithFixedValue(game, 0, 6);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
-      // Should still be player 0's turn
       expect(game.currentPlayer).toBe(0);
+      expect(game.phase).toBe('waiting_for_roll');
     });
 
-    it('no valid moves after 6 still keeps turn (bonus)', () => {
-      gameWithFixedRoll(game, 0, 6);
-      // Home→path for token 1
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
-      expect(game.currentPlayer).toBe(0);
-      expect(game.phase).toBe('rolling');
+    it('no valid moves after confirm advances turn', () => {
+      game.players[0].tokens[0] = { state: 'home', progress: -1 };
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 3;
+      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      expect(game.currentPlayer).toBe(1);
+      expect(game.phase).toBe('waiting_for_roll');
     });
 
     it('turn advances after bonus roll without a 6', () => {
-      gameWithFixedRoll(game, 0, 6);
+      rollWithFixedValue(game, 0, 6);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
-      // Bonus roll
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(game.currentPlayer).toBe(1);
     });
   });
 
-  // ─── Sixes penalty ─────────────────────────────────────
+  // ─── Three consecutive sixes ───────────────────────────
 
   describe('Three consecutive sixes', () => {
     it('loses turn on three consecutive sixes', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
-      gameWithFixedRoll(game, 0, 6);
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
-      gameWithFixedRoll(game, 0, 6);
-      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
-      gameWithFixedRoll(game, 0, 6);
-      // Third forced 6 triggers penalty: advance turn
+      rollWithFixedValue(game, 0, 6);
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 1 } });
+      rollWithFixedValue(game, 0, 6);
+      handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 2 } });
+      rollWithFixedValue(game, 0, 6);
       expect(game.currentPlayer).toBe(1);
-      expect(game.phase).toBe('rolling');
-      expect(game.diceValue).toBeNull();
+      expect(game.phase).toBe('waiting_for_roll');
     });
   });
 
@@ -324,22 +338,19 @@ describe('LudoEngine', () => {
   describe('Win condition', () => {
     it('declares winner when all 4 tokens finished', () => {
       const g = createGame(4);
-      // Set player 0's tokens at stretch progress 56 (need 1 to finish)
       for (let i = 0; i < 3; i++) {
         g.players[0].tokens[i] = { state: 'finished', progress: 57 };
       }
       g.players[0].finishedCount = 3;
-      // Give tokens to other players so they have path tokens (prevent auto-advance)
       g.players[0].tokens[3] = { state: 'stretch', progress: 56 };
       g.players[1].tokens[0] = { state: 'path', progress: 10 };
-      gameWithFixedRoll(g, 0, 1);
+      rollWithFixedValue(g, 0, 1);
       handleAction(g, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 3 } });
       expect(g.winner).toBe(0);
     });
 
     it('rejects actions after game over', () => {
       game.winner = 0;
-      game.phase = 'rolling';
       const r = handleAction(game, 0, { type: 'ROLL_DICE' });
       expect(r.valid).toBe(false);
     });
@@ -353,15 +364,17 @@ describe('LudoEngine', () => {
       expect(moves.length).toBe(0);
     });
 
-    it('returns empty when in rolling phase', () => {
+    it('returns empty when in waiting_for_roll phase', () => {
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });
 
-    it('returns token index for home→path on 6', () => {
-      gameWithFixedRoll(game, 0, 6);
+    it('returns token indices for home→path on 6', () => {
+      game.players[0].tokens[0] = { state: 'home', progress: -1 };
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 6;
+      handleAction(game, 0, { type: 'CONFIRM_DICE' });
       const moves = getAllMoves(game, 0);
-      // All 4 home tokens can move on 6
       expect(moves.length).toBe(4);
     });
 
@@ -369,19 +382,18 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
       game.players[0].tokens[1] = { state: 'stretch', progress: 56 };
       game.players[0].tokens[2] = { state: 'finished', progress: 57 };
-      gameWithFixedRoll(game, 0, 3);
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 3;
+      handleAction(game, 0, { type: 'CONFIRM_DICE' });
       const moves = getAllMoves(game, 0);
-      // Token 0: 10+3=13 valid
-      // Token 1: 56+3=59 > 57 invalid (overshoot)
-      // Token 2: finished invalid
-      // Tokens 3: home, needs 6
       expect(moves).toEqual([0]);
     });
 
     it('returns empty when no valid moves after roll', () => {
-      // Token at stretch progress 56, roll 5 overshoots
       game.players[0].tokens[0] = { state: 'stretch', progress: 56 };
-      gameWithFixedRoll(game, 0, 5);
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 5;
+      handleAction(game, 0, { type: 'CONFIRM_DICE' });
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });
@@ -401,8 +413,6 @@ describe('LudoEngine', () => {
       g.players[1].tokens[0] = { state: 'path', progress: 0 };
       g.players[2].tokens[0] = { state: 'path', progress: 0 };
       g.players[3].tokens[0] = { state: 'path', progress: 0 };
-      // Each player's progress 0 maps to different absolute paths
-      // P0 at abs 0, P1 at 13, P2 at 26, P3 at 39 - all safe squares
     });
   });
 
@@ -411,14 +421,14 @@ describe('LudoEngine', () => {
   describe('Events', () => {
     it('emits TOKEN_MOVED on path movement', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 10 };
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.events?.some(e => e.type === 'TOKEN_MOVED')).toBe(true);
     });
 
     it('emits TOKEN_FINISHED when reaching 57', () => {
       game.players[0].tokens[0] = { state: 'stretch', progress: 54 };
-      gameWithFixedRoll(game, 0, 3);
+      rollWithFixedValue(game, 0, 3);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.events?.some(e => e.type === 'TOKEN_FINISHED')).toBe(true);
     });

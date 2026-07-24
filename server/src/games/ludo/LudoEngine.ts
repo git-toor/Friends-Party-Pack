@@ -1,5 +1,5 @@
 export type TokenState = 'home' | 'path' | 'stretch' | 'finished';
-export type TurnPhase = 'rolling' | 'moving';
+export type TurnPhase = 'waiting_for_roll' | 'rolling_dice' | 'waiting_for_move' | 'moving' | 'turn_end';
 
 export interface Token {
   state: TokenState;
@@ -15,13 +15,14 @@ export interface GameState {
   players: PlayerState[];
   currentPlayer: number;
   diceValue: number | null;
+  diceRolledBy: number | null;
   phase: TurnPhase;
   consecutiveSixes: number;
   winner: number | null;
 }
 
 export interface GameEvent {
-  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED';
+  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED' | 'TURN_ENDED';
   playerIndex: number;
   tokenIndex: number;
   from?: number;
@@ -32,7 +33,7 @@ export interface GameEvent {
 }
 
 export interface GameAction {
-  type: 'ROLL_DICE' | 'MOVE_TOKEN';
+  type: 'ROLL_DICE' | 'CONFIRM_DICE' | 'MOVE_TOKEN';
   payload?: { tokenIndex: number };
 }
 
@@ -42,6 +43,7 @@ export interface GameResult {
   error?: string;
   events?: GameEvent[];
   diceValue?: number;
+  validMoves?: number[];
 }
 
 const ALL_OFFSETS = [0, 13, 26, 39];
@@ -50,7 +52,21 @@ const PATH_LENGTH = 52;
 const STRETCH_START = 52;
 const FINISH = 57;
 
-// Map player index to path offset (2 players use opposite quadrants: Blue & Green)
+export function createGame(playerCount: number, startingPlayer?: number): GameState {
+  return {
+    players: Array.from({ length: playerCount }, () => ({
+      tokens: Array.from({ length: 4 }, () => ({ state: 'home' as TokenState, progress: -1 })),
+      finishedCount: 0,
+    })),
+    currentPlayer: startingPlayer ?? 0,
+    diceValue: null,
+    diceRolledBy: null,
+    phase: 'waiting_for_roll',
+    consecutiveSixes: 0,
+    winner: null,
+  };
+}
+
 function playerOffset(playerIndex: number, totalPlayers: number): number {
   if (totalPlayers === 2) return playerIndex === 0 ? 13 : 39;
   return ALL_OFFSETS[playerIndex] ?? 0;
@@ -120,7 +136,9 @@ function checkBlockFormed(state: GameState, playerIndex: number, progress: numbe
 
 function advanceTurn(state: GameState): void {
   state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
-  state.phase = 'rolling';
+  state.phase = 'waiting_for_roll';
+  state.diceValue = null;
+  state.diceRolledBy = null;
   state.consecutiveSixes = 0;
 }
 
@@ -128,65 +146,56 @@ function checkWin(state: GameState): void {
   for (let i = 0; i < state.players.length; i++) {
     if (state.players[i].finishedCount >= 4) {
       state.winner = i;
-      state.phase = 'rolling';
       return;
     }
   }
 }
 
-export function createGame(playerCount: number, startingPlayer?: number): GameState {
-  return {
-    players: Array.from({ length: playerCount }, () => ({
-      tokens: Array.from({ length: 4 }, () => ({ state: 'home' as TokenState, progress: -1 })),
-      finishedCount: 0,
-    })),
-    currentPlayer: startingPlayer ?? 0,
-    diceValue: null,
-    phase: 'rolling',
-    consecutiveSixes: 0,
-    winner: null,
-  };
-}
+// ─── Actions ────────────────────────────────────────────
 
 export function rollDice(state: GameState, playerIndex: number): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  if (state.phase !== 'rolling') return { state, valid: false, error: 'Already rolled' };
+  if (state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Already rolled' };
 
   const value = Math.floor(Math.random() * 6) + 1;
   state.diceValue = value;
+  state.diceRolledBy = playerIndex;
+  state.phase = 'rolling_dice';
 
-  if (value === 6) {
-    state.consecutiveSixes++;
-    if (state.consecutiveSixes >= 3) {
-      state.diceValue = null;
-      state.consecutiveSixes = 0;
-      advanceTurn(state);
-      console.log(`[Ludo] P${playerIndex} rolled 6 (3rd consecutive) → penalty, turn to P${state.currentPlayer}`);
-      return { state, valid: true, diceValue: value };
-    }
-    state.phase = 'moving';
-    console.log(`[Ludo] P${playerIndex} rolled 6 → bonus, phase=moving, diceValue=${value}`);
+  console.log(`[Ludo] P${playerIndex} ROLL_DICE → ${value}, phase=rolling_dice`);
+  return { state, valid: true, diceValue: value };
+}
+
+// Called by client after dice animation completes
+export function confirmDice(state: GameState, playerIndex: number): GameResult {
+  if (state.winner !== null) return { state, valid: false, error: 'Game over' };
+  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
+  if (state.phase !== 'rolling_dice') return { state, valid: false, error: 'Dice not rolling' };
+  if (state.diceValue === null) return { state, valid: false, error: 'No dice value' };
+
+  const moves = getValidMoves(state, playerIndex);
+  if (moves.length > 0) {
+    state.phase = 'waiting_for_move';
+    console.log(`[Ludo] P${playerIndex} CONFIRM_DICE → ${moves.length} valid moves, phase=waiting_for_move`);
   } else {
-    state.consecutiveSixes = 0;
-    state.phase = 'moving';
-    const validMoves = getValidMoves(state, playerIndex);
-    if (validMoves.length === 0) {
-      state.diceValue = null;
-      advanceTurn(state);
-      console.log(`[Ludo] P${playerIndex} rolled ${value} → no valid moves, auto-advance to P${state.currentPlayer}`);
-    } else {
-      console.log(`[Ludo] P${playerIndex} rolled ${value} → ${validMoves.length} valid moves: [${validMoves}]`);
-    }
+    // No valid moves — end turn
+    const value = state.diceValue;
+    const events: GameEvent[] = [{ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 }];
+    advanceTurn(state);
+    console.log(`[Ludo] P${playerIndex} CONFIRM_DICE → no valid moves (dice=${value}), turn to P${state.currentPlayer}`);
+    return { state, valid: true, events, diceValue: value };
   }
 
-  return { state, valid: true, diceValue: value };
+  return { state, valid: true, validMoves: moves };
 }
 
 export function getValidMoves(state: GameState, playerIndex: number): number[] {
   if (state.winner !== null) return [];
   if (state.currentPlayer !== playerIndex) return [];
-  if (state.phase !== 'moving' || state.diceValue === null) return [];
+  if (state.phase !== 'waiting_for_move' && state.phase !== 'rolling_dice') return [];
+  if (state.diceValue === null) return [];
+  if (state.diceValue === null) return [];
 
   const player = state.players[playerIndex];
   const dice = state.diceValue;
@@ -199,11 +208,8 @@ export function getValidMoves(state: GameState, playerIndex: number): number[] {
     } else if (tok.state === 'path' || tok.state === 'stretch') {
       const np = tok.progress + dice;
       if (np > FINISH) continue;
-      if (tok.state === 'path' && np > STRETCH_START) {
-        const blockCheck = checkBlockOnPath(state, playerIndex, tok.progress, STRETCH_START);
-        if (!blockCheck.valid) continue;
-      } else if (tok.state === 'path') {
-        const blockCheck = checkBlockOnPath(state, playerIndex, tok.progress, np);
+      if (tok.state === 'path') {
+        const blockCheck = checkBlockOnPath(state, playerIndex, tok.progress, Math.min(np, STRETCH_START));
         if (!blockCheck.valid) continue;
       }
       valid.push(i);
@@ -216,12 +222,13 @@ export function getValidMoves(state: GameState, playerIndex: number): number[] {
 export function moveToken(state: GameState, playerIndex: number, tokenIndex: number): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  if (state.phase !== 'moving' || state.diceValue === null) return { state, valid: false, error: 'Roll first' };
+  if (state.phase !== 'waiting_for_move' || state.diceValue === null) return { state, valid: false, error: 'Cannot move now' };
 
   const player = state.players[playerIndex];
   const token = player.tokens[tokenIndex];
   const dice = state.diceValue;
   const events: GameEvent[] = [];
+  const wasSix = dice === 6;
 
   if (token.state === 'home') {
     if (dice !== 6) return { state, valid: false, error: 'Need 6 to leave home' };
@@ -233,19 +240,14 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
     events.push(...capEvents);
     const blockEvent = checkBlockFormed(state, playerIndex, 0);
     if (blockEvent) events.push(blockEvent);
-    state.diceValue = null;
-    if (dice !== 6) advanceTurn(state); else state.phase = 'rolling';
-    return { state, valid: true, events };
-  }
-
-  if (token.state === 'path' || token.state === 'stretch') {
+  } else if (token.state === 'path' || token.state === 'stretch') {
     const from = token.progress;
     const np = token.progress + dice;
     if (np > FINISH) return { state, valid: false, error: 'Cannot overshoot finish' };
 
     if (token.state === 'path') {
       const blockCheck = checkBlockOnPath(state, playerIndex, token.progress, Math.min(np, STRETCH_START));
-      if (!blockCheck.valid) return { state, valid: false, error: blockCheck.error };
+      if (!blockCheck.valid) return { state, valid: false, error: 'Path is blocked' };
     }
 
     token.progress = np;
@@ -257,6 +259,7 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
       player.finishedCount++;
       events.push({ type: 'TOKEN_FINISHED', playerIndex, tokenIndex });
       checkWin(state);
+      if (state.winner !== null) return { state, valid: true, events };
     } else {
       events.push({ type: 'TOKEN_MOVED', playerIndex, tokenIndex, from, to: np });
     }
@@ -267,22 +270,39 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
       const blockEvent = checkBlockFormed(state, playerIndex, np);
       if (blockEvent) events.push(blockEvent);
     }
-
-    state.diceValue = null;
-    if (dice !== 6) advanceTurn(state); else state.phase = 'rolling';
-    return { state, valid: true, events };
+  } else {
+    return { state, valid: false, error: 'Token already finished' };
   }
 
-  return { state, valid: false, error: 'Token already finished' };
+  // Turn management
+  if (wasSix) {
+    state.consecutiveSixes++;
+    if (state.consecutiveSixes >= 3) {
+      events.push({ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 });
+      advanceTurn(state);
+      console.log(`[Ludo] P${playerIndex} 3 consecutive sixes → penalty, turn to P${state.currentPlayer}`);
+    } else {
+      state.phase = 'waiting_for_roll';
+      state.diceValue = null;
+      state.diceRolledBy = null;
+      console.log(`[Ludo] P${playerIndex} moved (rolled 6) → bonus roll, phase=waiting_for_roll`);
+    }
+  } else {
+    state.consecutiveSixes = 0;
+    events.push({ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 });
+    advanceTurn(state);
+    console.log(`[Ludo] P${playerIndex} moved (rolled ${dice}) → turn to P${state.currentPlayer}`);
+  }
+
+  return { state, valid: true, events };
 }
 
 export function handleAction(state: GameState, playerIndex: number, action: GameAction): GameResult {
-  if (state.winner !== null && action.type !== 'ROLL_DICE') {
-    return { state, valid: false, error: 'Game over' };
-  }
   switch (action.type) {
     case 'ROLL_DICE':
       return rollDice(state, playerIndex);
+    case 'CONFIRM_DICE':
+      return confirmDice(state, playerIndex);
     case 'MOVE_TOKEN':
       if (action.payload?.tokenIndex === undefined) return { state, valid: false, error: 'No token specified' };
       return moveToken(state, playerIndex, action.payload.tokenIndex);

@@ -26,7 +26,14 @@ ludoRouter.post('/create', (req, res) => {
     return res.status(400).json({ error: 'Player count must be 2-4' });
   }
   createLudoSession(sessionId, playerCount);
-  res.json({ sessionId, state: sanitizeState(sessions.get(sessionId)!, -1) });
+  const state = sessions.get(sessionId)!;
+  res.json({
+    success: true,
+    state: sanitizeState(state, -1),
+    currentPlayer: state.currentPlayer,
+    phase: state.phase,
+    diceValue: state.diceValue,
+  });
 });
 
 ludoRouter.post('/action', (req, res) => {
@@ -34,8 +41,13 @@ ludoRouter.post('/action', (req, res) => {
   const state = sessions.get(sessionId);
   if (!state) return res.status(404).json({ error: 'Session not found' });
 
+  console.log(`[Ludo] Action: ${action.type} P${playerIndex} (curP=${state.currentPlayer} phase=${state.phase} d=${state.diceValue})`);
+
   const result = handleAction(state, playerIndex, action);
-  if (!result.valid) return res.status(400).json({ error: result.error });
+  if (!result.valid) {
+    console.log(`[Ludo] REJECTED: ${result.error}`);
+    return res.status(400).json({ error: result.error, state: sanitizeState(state, playerIndex) });
+  }
 
   sessions.set(sessionId, result.state);
 
@@ -44,12 +56,22 @@ ludoRouter.post('/action', (req, res) => {
     for (let i = 0; i < result.state.players.length; i++) {
       broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i } });
     }
-    if (action.type === 'ROLL_DICE') {
-      broadcast({ type: 'DICE_ROLL', payload: { playerIndex, value: result.diceValue } });
+    if (action.type === 'ROLL_DICE' || action.type === 'CONFIRM_DICE') {
+      broadcast({ type: 'DICE_EVENT', payload: { action: action.type, playerIndex, value: result.diceValue } });
     }
   }
 
-  res.json({ valid: true, state: sanitizeState(result.state, playerIndex), diceValue: result.diceValue, events: result.events });
+  const resp = {
+    success: true,
+    state: sanitizeState(result.state, playerIndex),
+    diceValue: result.diceValue,
+    validMoves: result.validMoves ?? [],
+    events: result.events ?? [],
+    currentPlayer: result.state.currentPlayer,
+    phase: result.state.phase,
+    isMyTurn: playerIndex === result.state.currentPlayer,
+  };
+  res.json(resp);
 });
 
 ludoRouter.post('/rematch', (req, res) => {
@@ -68,7 +90,7 @@ ludoRouter.post('/rematch', (req, res) => {
     }
   }
 
-  res.json({ state: sanitizeState(newState, -1) });
+  res.json({ success: true, state: sanitizeState(newState, -1) });
 });
 
 ludoRouter.get('/state/:sessionId', (req, res) => {
@@ -80,16 +102,17 @@ ludoRouter.get('/state/:sessionId', (req, res) => {
 });
 
 function sanitizeState(state: GameState, playerIndex: number) {
+  const isMyTurn = playerIndex === state.currentPlayer;
+  const canMove = isMyTurn && state.phase === 'waiting_for_move' && state.diceValue !== null;
   return {
     players: state.players,
     currentPlayer: state.currentPlayer,
     diceValue: state.diceValue,
+    diceRolledBy: state.diceRolledBy,
     phase: state.phase,
     consecutiveSixes: state.consecutiveSixes,
     winner: state.winner,
-    isMyTurn: playerIndex === state.currentPlayer,
-    validMoves: playerIndex === state.currentPlayer && state.phase === 'moving' && state.diceValue !== null
-      ? getValidMoves(state, playerIndex)
-      : [],
+    isMyTurn,
+    validMoves: canMove ? getValidMoves(state, playerIndex) : [],
   };
 }
