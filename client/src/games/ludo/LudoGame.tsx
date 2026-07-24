@@ -41,6 +41,7 @@ interface LudoClientState {
   players: { tokens: TokenView[]; finishedCount: number }[];
   currentPlayer: number;
   diceValue: number | null;
+  diceRolledBy: number | null;
   phase: string;
   winner: number | null;
   validMoves: number[];
@@ -50,6 +51,7 @@ const EMPTY_STATE: LudoClientState = {
   players: [],
   currentPlayer: 0,
   diceValue: null,
+  diceRolledBy: null,
   phase: 'waiting_for_roll',
   winner: null,
   validMoves: [],
@@ -65,29 +67,24 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const playerNames = players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {};
 
-  // ─── Calculate isMyTurn locally (never trust server's isMyTurn) ──
+  // ─── Calculate isMyTurn locally ──
   const isMyTurn = playerIndex === gs.currentPlayer;
   const needsRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null;
+  const myDice = gs.diceRolledBy === playerIndex;
 
+  // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
-    setGs(prev => {
-      // Phase priority: waiting_for_roll(0) < rolling_dice(1) < waiting_for_move(2)
-      const phases = ['waiting_for_roll', 'rolling_dice', 'waiting_for_move', 'moving', 'turn_end'];
-      const curP = phases.indexOf(prev.phase);
-      const newP = phases.indexOf(newState.phase);
-      // Never regress phase (prevents stale ROLL_DICE response overwriting CONFIRM_DICE)
-      const phase = newP >= curP ? newState.phase : prev.phase;
-      const diceValue = phase === 'rolling_dice' ? (newState.diceValue ?? prev.diceValue) : (newState.diceValue ?? null);
-      return {
-        players: newState.players || prev.players,
-        currentPlayer: newState.currentPlayer ?? prev.currentPlayer,
-        diceValue,
-        phase,
-        winner: newState.winner ?? prev.winner,
-        validMoves: newState.phase === 'waiting_for_move' ? (newState.validMoves || []) : prev.validMoves,
-      };
+    setGs({
+      players: newState.players || [],
+      currentPlayer: newState.currentPlayer ?? 0,
+      diceValue: newState.diceValue ?? null,
+      diceRolledBy: newState.diceRolledBy ?? null,
+      phase: newState.phase || 'waiting_for_roll',
+      winner: newState.winner ?? null,
+      validMoves: newState.validMoves || [],
     });
+    console.log('[Ludo] State ←', newState.phase, 'cp:', newState.currentPlayer, 'dv:', newState.diceValue, 'drb:', newState.diceRolledBy);
   }, []);
 
   const fetchState = useCallback(async () => {
@@ -287,7 +284,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             🎲 Roll
           </button>
         )}
-        {gs.diceValue !== null && isMyTurn && (
+        {gs.diceValue !== null && myDice && (
           <motion.div
             key={gs.diceValue}
             initial={{ scale: 0.5, rotate: -180 }}
@@ -302,14 +299,14 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             {gs.diceValue}
           </motion.div>
         )}
-        {gs.diceValue !== null && isMyTurn && gs.phase === 'waiting_for_move' && (
+        {gs.diceValue !== null && myDice && gs.phase === 'waiting_for_move' && (
           <div style={{ fontSize: 11, color: '#fbbf24' }}>
             {gs.diceValue !== 6 && gs.players[playerIndex]?.tokens.every(t => t.state === 'home' || t.state === 'finished')
               ? `No 6, wait for your turn to try again`
               : `Rolled ${gs.diceValue} — Tap glowing token to move`}
           </div>
         )}
-        {gs.diceValue !== null && isMyTurn && !needsRoll && gs.phase !== 'waiting_for_move' && (
+        {gs.diceValue !== null && myDice && !needsRoll && gs.phase !== 'waiting_for_move' && (
           <div style={{ fontSize: 10, color: '#aaa' }}>
             Tap the board to dismiss dice
           </div>
