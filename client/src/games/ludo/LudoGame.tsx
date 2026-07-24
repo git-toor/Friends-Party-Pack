@@ -60,7 +60,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
-  const [activeRollId, setActiveRollId] = useState<string | null>(null);
+  const activeRollIdRef = useRef<string | null>(null);
   const diceRef = useRef<DiceHandle>(null);
   const sounds = useLudoSounds();
 
@@ -74,7 +74,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
-    if (newState.rollId) setActiveRollId(newState.rollId);
+    if (newState.rollId) activeRollIdRef.current = newState.rollId;
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
@@ -155,21 +155,24 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const handleRollResult = useCallback(async () => {
     if (!diceRef.current) return;
     sounds.playDiceRoll();
-    // Step 1: ROLL_DICE — server creates roll slot, NO RNG
     const rollData = await sendAction('ROLL_DICE');
     if (!rollData?.success) return;
-    if (rollData.rollId) setActiveRollId(rollData.rollId);
-    // Step 2: Start free 3D animation (no forced @value)
+    activeRollIdRef.current = rollData.rollId;
+    console.log('[ROLL] rollId=' + rollData.rollId);
     diceRef.current.roll();
   }, [sendAction, sounds]);
 
   // Fires when 3D physics animation settles
   const handleDiceLanded = useCallback(async () => {
-    if (!activeRollId) return;
-    // Step 3: DICE_LANDED — server generates RNG, transitions phase
-    await sendAction('DICE_LANDED', { rollId: activeRollId });
-    setActiveRollId(null);
-  }, [sendAction, activeRollId]);
+    const rollId = activeRollIdRef.current;
+    console.log('[DICE ANIMATION COMPLETE]', { rollId, phase: gs.phase, player: playerIndex });
+    if (!rollId) {
+      console.warn('[DICE_LANDED] Missing rollId');
+      return;
+    }
+    await sendAction('DICE_LANDED', { rollId });
+    activeRollIdRef.current = null;
+  }, [sendAction, gs.phase, playerIndex]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
     if (!isMyTurn || gs.phase !== 'waiting_for_move') return;
