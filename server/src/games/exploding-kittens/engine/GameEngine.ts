@@ -257,11 +257,15 @@ export function handleAction(
       if (currentIds !== newIds) {
         return { state, valid: false, error: 'Card mismatch' };
       }
-      state.deck.splice(0, viewCards.length, ...reordered.map((id: string) => {
+      const removed: Card[] = [];
+      for (const id of reordered) {
         const idx = state.deck.findIndex(c => c.id === id);
-        const [card] = state.deck.splice(idx, 1);
-        return card;
-      }));
+        if (idx !== -1) {
+          const [card] = state.deck.splice(idx, 1);
+          removed.push(card);
+        }
+      }
+      state.deck.splice(0, 0, ...removed);
       state.pendingCardView = null;
       return { state, valid: true };
     }

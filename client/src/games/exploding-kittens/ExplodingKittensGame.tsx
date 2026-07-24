@@ -143,16 +143,6 @@ export default function ExplodingKittensGame({
         setTimeout(() => setLastNotification(null), 3000);
       }
 
-      // Detect attack on me — pending turns increased
-      const prevMe = gs.opponents.find(o => o.index === playerIndex);
-      const nextMe = next.opponents.find(o => o.index === playerIndex);
-      if (prevMe && nextMe && nextMe.pendingTurns > prevMe.pendingTurns) {
-        setShowAttackOverlay(true);
-        setTimeout(() => setShowAttackOverlay(false), 1500);
-      }
-
-      // Detect draw from bottom animation
-
       // Detect draw from bottom animation
       if (next.lastDrawFromBottom && next.myHand.length > gs.myHand.length) {
         setDrawCard({ fromX: window.innerWidth / 2, fromY: window.innerHeight * 0.15 });
@@ -227,6 +217,16 @@ export default function ExplodingKittensGame({
       if (gs.lastPlayedCard.playerIndex === playerIndex) {
         setShowShuffle(true);
         setTimeout(() => setShowShuffle(false), 2000);
+      }
+    }
+  }, [gs.lastPlayedCard]);
+
+  // Detect attack on me
+  useEffect(() => {
+    if (gs.lastPlayedCard?.type === 'attack' || gs.lastPlayedCard?.type === 'targeted_attack') {
+      if (gs.lastPlayedCard.playerIndex !== playerIndex) {
+        setShowAttackOverlay(true);
+        setTimeout(() => setShowAttackOverlay(false), 1500);
       }
     }
   }, [gs.lastPlayedCard]);
@@ -448,17 +448,39 @@ export default function ExplodingKittensGame({
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      {/* Top bar */}
-      <div style={{ padding: '6px 12px', textAlign: 'center', background: 'rgba(26,26,46,0.85)', fontSize: 12, color: '#999' }}>
-        {gs.turn.phase === 'game_over'
-          ? <span style={{ color: '#e94560' }}>Game Over</span>
-          : (isMyTurn
-              ? <span><b style={{ color: '#e94560' }}>Your turn</b>{gs.turn.attackCount > 0 ? ` · Attack x${gs.turn.attackCount}` : ''}</span>
-              : `${playerNames[gs.turn.currentPlayerIndex] || gs.opponents.find(o => o.index === gs.turn.currentPlayerIndex)?.name || `Player ${gs.turn.currentPlayerIndex + 1}`}'s turn`
-          )
-        }
+      {/* Top bar — all players */}
+      <div style={{
+        display: 'flex', gap: 6, padding: '5px 8px', overflowX: 'auto',
+        background: 'rgba(22,33,62,0.7)',
+      }}>
+        {(() => {
+          const allPlayers = [
+            { index: playerIndex, name: 'You', cardCount: gs.myHand.length, alive: !isDead, pendingTurns: 0, isSelf: true } as const,
+            ...gs.opponents.map(o => ({ index: o.index, name: playerNames[o.index] || o.name, cardCount: o.cardCount, alive: o.alive, pendingTurns: o.pendingTurns, isSelf: false })),
+          ];
+          return allPlayers.map(p => (
+            <div key={p.index} style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              padding: '4px 10px', borderRadius: 6,
+              background: p.index === gs.turn.currentPlayerIndex ? 'rgba(233,69,96,0.2)' : 'transparent',
+              border: p.index === gs.turn.currentPlayerIndex ? '1px solid #e94560' : '1px solid transparent',
+              opacity: p.alive ? 1 : 0.4, fontSize: 12,
+            }}>
+              <span style={{ color: '#eee', fontWeight: 600 }}>
+                {p.isSelf ? 'You' : p.name}
+              </span>
+              <span style={{ color: '#fff', fontWeight: 700, marginLeft: 2 }}>{p.cardCount}</span>
+              {p.pendingTurns > 1 && (
+                <span style={{ color: '#ff8800', fontSize: 10, marginLeft: 2 }}>×{p.pendingTurns}</span>
+              )}
+              {p.index === gs.turn.currentPlayerIndex && gs.turn.attackCount > 0 && (
+                <span style={{ color: '#ff4444', fontSize: 10, marginLeft: 2 }}>⚔️{gs.turn.attackCount > 1 ? `×${gs.turn.attackCount}` : ''}</span>
+              )}
+            </div>
+          ));
+        })()}
         {gs.settings.expansions && gs.settings.expansions.length > 0 && (
-          <span style={{ marginLeft: 8, fontSize: 10, color: '#666' }}>
+          <span style={{ marginLeft: 'auto', fontSize: 10, color: '#666', alignSelf: 'center', whiteSpace: 'nowrap' }}>
             [{gs.settings.expansions.join(', ')}]
           </span>
         )}
@@ -874,11 +896,22 @@ export default function ExplodingKittensGame({
                     whileHover={isAlter ? { scale: 1.1, zIndex: 20 } : undefined}
                     whileTap={isAlter ? { scale: 1.15, zIndex: 20 } : undefined}
                   >
-                    <Card
-                      card={{ id: c.id, type: c.type, name: c.type.replace(/_/g, ' ') }}
-                      size="small"
-                      nsfw={nsfw}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <Card
+                        card={{ id: c.id, type: c.type, name: c.type.replace(/_/g, ' ') }}
+                        size="small"
+                        nsfw={nsfw}
+                      />
+                      <div style={{
+                        position: 'absolute', top: -6, left: -6, width: 20, height: 20,
+                        borderRadius: '50%', background: isAlter ? '#fbbf24' : '#e94560',
+                        color: '#000', fontSize: 10, fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid #fff', boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+                      }}>
+                        {i + 1}
+                      </div>
+                    </div>
                   </motion.div>
                 );
               })}
