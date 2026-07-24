@@ -143,10 +143,10 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     sounds.playDiceRoll();
     const data = await sendAction('ROLL_DICE');
     console.log('[Ludo] ROLL_DICE:', data?.success, 'dice:', data?.diceValue, 'phase:', data?.phase);
-    // Animate dice with the server value
-    if (data?.success && data?.diceValue && diceRef.current) {
-      await diceRef.current.rollWithValue(data.diceValue);
-      // After animation completes, confirm the dice
+    if (data?.success && data?.diceValue) {
+      // Start 3D animation (fire & forget — don't wait for it)
+      diceRef.current.rollWithValue(data.diceValue).catch(() => {});
+      // Immediately confirm dice — game state doesn't wait for animation
       const confirm = await sendAction('CONFIRM_DICE');
       console.log('[Ludo] CONFIRM_DICE:', confirm?.success, 'phase:', confirm?.phase, 'cp:', confirm?.currentPlayer);
     }
