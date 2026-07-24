@@ -118,13 +118,16 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   useEffect(() => {
     if (gameStatePush) {
+      // Skip broadcast if our current state is more advanced (waiting_for_move
+      // should not be overwritten by a stale waiting_for_roll from another player's broadcast)
+      if (gs.phase === 'waiting_for_move' && gameStatePush.phase !== 'waiting_for_move') return;
       updateState(gameStatePush);
       if (gameStatePush.winner !== null) {
         setShowWinner(true);
         sounds.playWin();
       }
     }
-  }, [gameStatePush, sounds, updateState]);
+  }, [gameStatePush, sounds, updateState, gs.phase]);
 
   // ─── Server action — only state update, no client logic ──────
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
