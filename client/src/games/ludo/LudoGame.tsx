@@ -57,7 +57,7 @@ const EMPTY_STATE: LudoClientState = {
 
 export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush }: LudoGameProps) {
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
-  const phaseRef = useRef('');
+  const svRef = useRef(-1);
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
@@ -81,7 +81,8 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
-    phaseRef.current = newState.phase || 'waiting_for_roll';
+    if (newState._sv !== undefined && newState._sv <= svRef.current) return;
+    if (newState._sv !== undefined) svRef.current = newState._sv;
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
@@ -120,7 +121,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   useEffect(() => {
     if (gameStatePush) {
-      if (phaseRef.current === 'waiting_for_move' && gameStatePush.phase !== 'waiting_for_move') return;
       updateState(gameStatePush);
       if (gameStatePush.winner !== null) {
         setShowWinner(true);

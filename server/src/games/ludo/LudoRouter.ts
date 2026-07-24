@@ -120,5 +120,6 @@ function sanitizeState(state: GameState, playerIndex: number) {
     winner: state.winner,
     isMyTurn,
     validMoves: canMove ? getValidMoves(state, playerIndex) : [],
+    _sv: state._sv,
   };
 }

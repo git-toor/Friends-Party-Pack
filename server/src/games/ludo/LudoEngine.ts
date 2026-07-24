@@ -20,6 +20,7 @@ export interface GameState {
   phase: TurnPhase;
   consecutiveSixes: number;
   winner: number | null;
+  _sv: number; // state version, incremented on every mutation
 }
 
 export interface GameEvent {
@@ -67,7 +68,13 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
     phase: 'waiting_for_roll',
     consecutiveSixes: 0,
     winner: null,
+    _sv: 0,
   };
+}
+
+// Call this after every state mutation to increment version
+function bump(state: GameState): void {
+  state._sv++;
 }
 
 function playerOffset(playerIndex: number, totalPlayers: number): number {
@@ -168,6 +175,7 @@ export function rollDice(state: GameState, playerIndex: number): GameResult {
   state.diceValue = null;
 
   console.log(`[Ludo] P${playerIndex} ROLL_DICE → rollId=${rollId.slice(0,8)}`);
+  bump(state);
   return { state, valid: true, rollId };
 }
 
@@ -191,6 +199,7 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
       state.diceValue = null;
       state.consecutiveSixes = 0;
       advanceTurn(state);
+      bump(state);
       console.log(`[Ludo] P${playerIndex} 3 consecutive sixes → penalty, turn to P${state.currentPlayer}`);
       return { state, valid: true, diceValue: value };
     }
@@ -200,6 +209,7 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
 
   const moves = getValidMoves(state, playerIndex);
   state.phase = 'waiting_for_move';
+  bump(state);
   console.log(`[Ludo] P${playerIndex} → ${moves.length} valid moves, phase=waiting_for_move`);
   return { state, valid: true, diceValue: value, validMoves: moves };
 }
@@ -293,18 +303,21 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
     if (state.consecutiveSixes >= 3) {
       events.push({ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 });
       advanceTurn(state);
+      bump(state);
       console.log(`[Ludo] P${playerIndex} 3 consecutive sixes → penalty, turn to P${state.currentPlayer}`);
     } else {
       state.phase = 'waiting_for_roll';
       state.diceValue = null;
       state.diceRolledBy = null;
       state.rollId = null;
+      bump(state);
       console.log(`[Ludo] P${playerIndex} moved (rolled 6) → bonus roll`);
     }
   } else {
     state.consecutiveSixes = 0;
     state.phase = 'waiting_for_roll';
     state.diceValue = null;
+    bump(state);
     // diceRolledBy stays set → client shows End Turn instead of Roll
     console.log(`[Ludo] P${playerIndex} moved (rolled ${dice}) → end turn to pass`);
   }
@@ -320,6 +333,7 @@ export function endTurn(state: GameState, playerIndex: number): GameResult {
 
   const events: GameEvent[] = [{ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 }];
   advanceTurn(state);
+  bump(state);
   console.log(`[Ludo] P${playerIndex} END_TURN → turn to P${state.currentPlayer}`);
   return { state, valid: true, events };
 }
