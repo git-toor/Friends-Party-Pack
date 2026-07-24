@@ -149,7 +149,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const handleBoardClick = useCallback(() => {
     if (diceRef.current) diceRef.current.clear();
-  }, []);
+    // Refresh state to ensure we have the latest (auto-advance may have fired)
+    fetchState();
+  }, [fetchState]);
 
   const handleRematch = useCallback(async () => {
     if (!sessionId) return;
