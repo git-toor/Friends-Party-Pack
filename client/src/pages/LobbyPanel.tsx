@@ -121,7 +121,7 @@ export default function LobbyPanel() {
 
       {(lobby?.gameId === 'yahtzee' || lobby?.gameId === 'ludo') && (
         <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
-          <DiceAppearanceSelector />
+          <DiceAppearanceSelector dieCount={lobby?.gameId === 'ludo' ? 1 : 5} />
         </div>
       )}
 

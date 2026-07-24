@@ -50,11 +50,12 @@ function saveAll(cfgs: Record<string, PerDieConfig>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cfgs));
 }
 
-export function DiceAppearanceSelector() {
+export function DiceAppearanceSelector({ dieCount = 5 }: { dieCount?: number }) {
+  const keys = DICE_KEYS.slice(0, dieCount);
   const [configs, setConfigs] = useState<Record<string, PerDieConfig>>(() => {
     const saved = loadDiceAppearance();
     const out: Record<string, PerDieConfig> = {};
-    for (const k of DICE_KEYS) {
+    for (const k of keys) {
       const idx = parseInt(k.split('_')[1]);
       out[k] = saved[k] || defaultConfigForDie(idx);
     }
@@ -75,7 +76,7 @@ export function DiceAppearanceSelector() {
 
       {/* Die tabs — Dice1 through Dice5 */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexWrap: 'wrap' }}>
-        {DICE_KEYS.map((k, i) => (
+        {keys.map((k, i) => (
           <button key={k} onClick={() => setOpen(k)}
             style={{
               padding: '4px 12px', borderRadius: 10, border: 'none', fontSize: 11, fontWeight: 600,
@@ -86,7 +87,7 @@ export function DiceAppearanceSelector() {
         ))}
       </div>
 
-      {DICE_KEYS.map((key, idx) => {
+      {keys.map((key, idx) => {
         if (open !== key) return null;
         const cfg = configs[key];
 
