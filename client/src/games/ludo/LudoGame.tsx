@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LudoBoard, playerColorIndex } from './LudoBoard.js';
 import { Dice, type DiceHandle } from './Dice.js';
 import { useLudoSounds } from './sounds.js';
+import { PLAYER_COLORS, COLOR_NAMES } from './constants.js';
 import type { ChatMessage } from '../../components/ChatBox.js';
 
 interface GameEvent {
@@ -15,9 +16,6 @@ interface GameEvent {
   victimToken?: number;
   position?: number;
 }
-
-const PLAYER_COLORS = ['#e74c3c', '#3498db', '#f1c40f', '#2ecc71'];
-const COLOR_NAMES = ['Blue', 'Red', 'Green', 'Yellow'];
 
 interface LudoGameProps {
   playerCount?: number;
@@ -62,6 +60,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
+  const [activeRollId, setActiveRollId] = useState<string | null>(null);
   const diceRef = useRef<DiceHandle>(null);
   const sounds = useLudoSounds();
 
@@ -75,6 +74,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
+    if (newState.rollId) setActiveRollId(newState.rollId);
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
@@ -84,7 +84,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       winner: newState.winner ?? null,
       validMoves: newState.validMoves || [],
     });
-    console.log('[Ludo] State ←', newState.phase, 'cp:', newState.currentPlayer, 'dv:', newState.diceValue, 'drb:', newState.diceRolledBy);
+    console.log('[Ludo] State ←', newState.phase, 'cp:', newState.currentPlayer, 'dv:', newState.diceValue, 'drb:', newState.diceRolledBy, 'rid:', newState.rollId?.slice(0,8));
   }, []);
 
   const fetchState = useCallback(async () => {
@@ -155,22 +155,21 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const handleRollResult = useCallback(async () => {
     if (!diceRef.current) return;
     sounds.playDiceRoll();
-    const data = await sendAction('ROLL_DICE');
-    console.log('[Ludo] ROLL_DICE:', data?.success, 'dice:', data?.diceValue, 'phase:', data?.phase);
-    if (data?.success && data?.diceValue) {
-      diceRef.current.rollWithValue(data.diceValue).catch(() => {});
-      const confirm = await sendAction('CONFIRM_DICE');
-      console.log('[LUDO] MOVE STATE', {
-        phase: confirm?.phase,
-        diceValue: confirm?.diceValue ?? confirm?.state?.diceValue,
-        validMoves: confirm?.validMoves ?? confirm?.state?.validMoves,
-        currentPlayer: confirm?.currentPlayer ?? confirm?.state?.currentPlayer,
-        myPlayer: playerIndex,
-        pieces: confirm?.state?.players?.[playerIndex]?.tokens?.map((t: any) => ({ state: t.state, progress: t.progress })),
-      });
-      console.log('[Ludo] CONFIRM_DICE:', confirm?.success, 'phase:', confirm?.phase, 'cp:', confirm?.currentPlayer);
-    }
+    // Step 1: ROLL_DICE — server creates roll slot, NO RNG
+    const rollData = await sendAction('ROLL_DICE');
+    if (!rollData?.success) return;
+    if (rollData.rollId) setActiveRollId(rollData.rollId);
+    // Step 2: Start free 3D animation (no forced @value)
+    diceRef.current.roll();
   }, [sendAction, sounds]);
+
+  // Fires when 3D physics animation settles
+  const handleDiceLanded = useCallback(async () => {
+    if (!activeRollId) return;
+    // Step 3: DICE_LANDED — server generates RNG, transitions phase
+    await sendAction('DICE_LANDED', { rollId: activeRollId });
+    setActiveRollId(null);
+  }, [sendAction, activeRollId]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
     if (!isMyTurn || gs.phase !== 'waiting_for_move') return;
@@ -269,7 +268,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       </div>
 
       {/* Dice overlay */}
-      <Dice ref={diceRef} />
+      <Dice ref={diceRef} onRollComplete={handleDiceLanded} />
 
       {/* Controls bar */}
       <div style={{

@@ -36,13 +36,15 @@ export interface DiceOverlayHandle {
   resetDieVisuals: () => void;
 }
 
-export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: number) => void }>(function DiceOverlay({ onDieTap: onDieTapProp }, ref) {
+export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: number) => void; onRollComplete?: () => void }>(function DiceOverlay({ onDieTap: onDieTapProp, onRollComplete: onRollCompleteProp }, ref) {
   const cr = useRef<HTMLDivElement>(null);
   const box = useRef<InstanceType<typeof DiceBox> | null>(null);
   const configRef = useRef<Record<string, PerDieConfig>>({});
   const texCache = useRef<Map<string, DiceTextureObject>>(new Map());
   const onDieTapRef = useRef(onDieTapProp);
-  onDieTapRef.current = onDieTapProp; // always keep ref updated
+  const onRollCompleteRef = useRef(onRollCompleteProp);
+  onDieTapRef.current = onDieTapProp;
+  onRollCompleteRef.current = onRollCompleteProp;
 
   const spawnCount = useRef(0);
 
@@ -108,7 +110,7 @@ export const DiceOverlay = forwardRef<DiceOverlayHandle, { onDieTap?: (index: nu
             factory.dice_material = userMaterial || 'none';
             factory.setMaterialInfo();
           },
-          onRollComplete: () => {},
+          onRollComplete: () => { if (!cancelled && onRollCompleteRef.current) onRollCompleteRef.current(); },
         });
         await diceBox.initialize();
         if (diceBox.renderer) {

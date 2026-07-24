@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { DiceOverlay } from '../../components/DiceOverlay.js';
 import type { DiceOverlayHandle, PerDieConfig } from '../../components/DiceOverlay.js';
 import { loadDiceAppearance } from '../../components/DiceAppearance.js';
@@ -11,11 +11,15 @@ const DEFAULT_CONFIG: PerDieConfig = {
 };
 
 export interface DiceHandle {
-  rollWithValue: (value: number) => Promise<void>;
+  roll: () => void;
   clear: () => void;
 }
 
-export const Dice = forwardRef<DiceHandle, {}>((_props, ref) => {
+interface DiceProps {
+  onRollComplete?: () => void;
+}
+
+export const Dice = forwardRef<DiceHandle, DiceProps>(({ onRollComplete }, ref) => {
   const diceRef = useRef<DiceOverlayHandle>(null);
 
   useEffect(() => {
@@ -32,16 +36,17 @@ export const Dice = forwardRef<DiceHandle, {}>((_props, ref) => {
   }, []);
 
   useImperativeHandle(ref, () => ({
-    rollWithValue: async (value: number) => {
+    roll: () => {
       if (!diceRef.current) return;
-      await diceRef.current.roll('d6', 1, `@${value}`);
+      // Free roll — no @ suffix, real physics
+      diceRef.current.roll('d6', 1).catch(() => {});
     },
     clear: () => {
       if (diceRef.current?.clear) diceRef.current.clear();
     },
   }));
 
-  return <DiceOverlay ref={diceRef} />;
+  return <DiceOverlay ref={diceRef} onRollComplete={onRollComplete} />;
 });
 
 Dice.displayName = 'Dice';

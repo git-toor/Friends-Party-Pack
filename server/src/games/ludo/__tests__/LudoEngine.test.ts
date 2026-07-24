@@ -1,28 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createGame, handleAction, getValidMoves, type GameState, type GameResult } from '../LudoEngine.js';
 
-// Helper: ROLL_DICE + CONFIRM_DICE with a forced value, returns the CONFIRM_DICE result
+// Helper: ROLL_DICE + DICE_LANDED with a forced value, returns the DICE_LANDED result
 function rollWithFixedValue(state: GameState, playerIndex: number, value: number): GameResult {
-  const prevSixes = state.consecutiveSixes;
-  const prevPlayer = state.currentPlayer;
   handleAction(state, playerIndex, { type: 'ROLL_DICE' });
   state.diceValue = value;
-  // Update consecutiveSixes based on forced value
-  if (value === 6) {
-    state.consecutiveSixes = prevSixes + 1;
-    if (state.consecutiveSixes >= 3) {
-      state.consecutiveSixes = 0;
-      state.phase = 'waiting_for_roll';
-      state.currentPlayer = (state.currentPlayer + 1) % state.players.length;
-      state.diceValue = null;
-      state.diceRolledBy = null;
-      return { state, valid: true, diceValue: value };
-    }
-  } else {
-    state.consecutiveSixes = 0;
-  }
-  // Now confirm dice
-  return handleAction(state, playerIndex, { type: 'CONFIRM_DICE' });
+  state.rollId = 'test-roll-id';
+  // Let DICE_LANDED handle consecutiveSixes internally
+  return handleAction(state, playerIndex, { type: 'DICE_LANDED', payload: { rollId: 'test-roll-id' } });
 }
 
 function getAllMoves(state: GameState, playerIndex: number): number[] {
@@ -73,15 +58,16 @@ describe('LudoEngine', () => {
   // ─── ROLL_DICE ─────────────────────────────────────────
 
   describe('ROLL_DICE', () => {
-    it('returns value 1-6 and sets phase to rolling_dice', () => {
+    it('sets phase to rolling_dice with rollId', () => {
       for (let i = 0; i < 20; i++) {
         const g = createGame(4);
         g.players[0].tokens[0] = { state: 'path', progress: 10 };
         const r = handleAction(g, 0, { type: 'ROLL_DICE' });
         expect(r.valid).toBe(true);
-        expect(r.diceValue).toBeGreaterThanOrEqual(1);
-        expect(r.diceValue).toBeLessThanOrEqual(6);
+        expect(r.diceValue).toBeUndefined();
+        expect(r.rollId).toBeTruthy();
         expect(g.phase).toBe('rolling_dice');
+        expect(g.diceValue).toBeNull();
       }
     });
 
@@ -103,13 +89,13 @@ describe('LudoEngine', () => {
     });
   });
 
-  // ─── CONFIRM_DICE ──────────────────────────────────────
+  // ─── DICE_LANDED ──────────────────────────────────────
 
-  describe('CONFIRM_DICE', () => {
+  describe('DICE_LANDED', () => {
     it('transitions to waiting_for_move when valid moves exist', () => {
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 4;
-      const r = handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      const r = handleAction(game, 0, { type: 'DICE_LANDED' });
       expect(r.valid).toBe(true);
       expect(game.phase).toBe('waiting_for_move');
     });
@@ -119,14 +105,14 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 3;
-      const r = handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      const r = handleAction(game, 0, { type: 'DICE_LANDED' });
       expect(r.valid).toBe(true);
       expect(game.currentPlayer).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
     });
 
     it('rejects if phase is not rolling_dice', () => {
-      const r = handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      const r = handleAction(game, 0, { type: 'DICE_LANDED' });
       expect(r.valid).toBe(false);
     });
 
@@ -134,8 +120,25 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 5;
-      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      handleAction(game, 0, { type: 'DICE_LANDED' });
       expect(game.currentPlayer).toBe(1);
+    });
+
+    it('does not allow move before DICE_LANDED', () => {
+      handleAction(game, 0, { type: 'ROLL_DICE' });
+      game.diceValue = 4;
+      const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
+      expect(r.valid).toBe(false);
+    });
+
+    it('does not advance turn while dice animation is running', () => {
+      const g = createGame(4);
+      g.players[0].tokens[0] = { state: 'path', progress: 10 };
+      // P0 rolls — phase becomes rolling_dice, currentPlayer stays 0
+      handleAction(g, 0, { type: 'ROLL_DICE' });
+      // P1 tries to roll — must be rejected
+      const r = handleAction(g, 1, { type: 'ROLL_DICE' });
+      expect(r.valid).toBe(false);
     });
   });
 
@@ -306,7 +309,7 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 3;
-      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      handleAction(game, 0, { type: 'DICE_LANDED' });
       expect(game.currentPlayer).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
     });
@@ -375,7 +378,7 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'home', progress: -1 };
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 6;
-      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      handleAction(game, 0, { type: 'DICE_LANDED' });
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(4);
     });
@@ -386,7 +389,7 @@ describe('LudoEngine', () => {
       game.players[0].tokens[2] = { state: 'finished', progress: 57 };
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 3;
-      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      handleAction(game, 0, { type: 'DICE_LANDED' });
       const moves = getAllMoves(game, 0);
       expect(moves).toEqual([0]);
     });
@@ -395,7 +398,7 @@ describe('LudoEngine', () => {
       game.players[0].tokens[0] = { state: 'stretch', progress: 56 };
       handleAction(game, 0, { type: 'ROLL_DICE' });
       game.diceValue = 5;
-      handleAction(game, 0, { type: 'CONFIRM_DICE' });
+      handleAction(game, 0, { type: 'DICE_LANDED' });
       const moves = getAllMoves(game, 0);
       expect(moves.length).toBe(0);
     });

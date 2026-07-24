@@ -4,8 +4,8 @@ import {
   getBoardPosition, getHomeTokens, getHomeTokensByQuadrant,
   getHomeStretchByQuadrant, playerQuadrant,
 } from './BoardLayout.js';
+import { PLAYER_COLORS } from './constants.js';
 
-const P_COLORS = ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f'];
 const G = 1 / 15; // grid cell size in viewBox units
 
 export function playerColorIndex(playerIndex: number, totalPlayers: number): number {
@@ -110,8 +110,8 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         return (
           <rect key={`base-${q}`} x={c*G} y={r*G} width={6*G} height={6*G}
             rx={0.015}
-            fill={isActive ? `${P_COLORS[q]}15` : `${P_COLORS[q]}06`}
-            stroke={isActive ? `${P_COLORS[q]}40` : `${P_COLORS[q]}15`}
+            fill={isActive ? `${PLAYER_COLORS[q]}15` : `${PLAYER_COLORS[q]}06`}
+            stroke={isActive ? `${PLAYER_COLORS[q]}40` : `${PLAYER_COLORS[q]}15`}
             strokeWidth={0.003} />
         );
       })}
@@ -123,7 +123,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
           <rect key={`hs-${q}-${i}`}
             x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
             width={ts} height={ts} rx={0.004}
-            fill={P_COLORS[q]} opacity={isActive ? 0.55 : 0.12}
+            fill={PLAYER_COLORS[q]} opacity={isActive ? 0.55 : 0.12}
           />
         ));
       })}
@@ -185,8 +185,8 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
         return (getHomeTokensByQuadrant(q) || []).map(([c,r], i) => (
           <circle key={`ht-${q}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
-            fill={isActive ? `${P_COLORS[q]}20` : `${P_COLORS[q]}10`}
-            stroke={isActive ? `${P_COLORS[q]}35` : `${P_COLORS[q]}15`}
+            fill={isActive ? `${PLAYER_COLORS[q]}20` : `${PLAYER_COLORS[q]}10`}
+            stroke={isActive ? `${PLAYER_COLORS[q]}35` : `${PLAYER_COLORS[q]}15`}
             strokeWidth={0.002} />
         ));
       })}
@@ -214,7 +214,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
             <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`}
               style={{ cursor: isMovable ? 'pointer' : 'default' }}
               onClick={() => isMovable && onTokenClick(tok.tokenIndex)}>
-              <Pawn cx={offsets[i].x} cy={offsets[i].y} color={P_COLORS[cIdx]} isMovable={isMovable} />
+              <Pawn cx={offsets[i].x} cy={offsets[i].y} color={PLAYER_COLORS[cIdx]} isMovable={isMovable} />
             </g>
           );
         });
@@ -232,7 +232,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
             style={{ cursor: isMovable ? 'pointer' : 'default' }}
             onClick={() => isMovable && onTokenClick(tok.tokenIndex)}
           >
-            <Pawn cx={cx(cell[0])} cy={cy(cell[1])} color={P_COLORS[cIdx]} isMovable={isMovable} />
+            <Pawn cx={cx(cell[0])} cy={cy(cell[1])} color={PLAYER_COLORS[cIdx]} isMovable={isMovable} />
           </g>
         );
       })}
@@ -243,7 +243,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         return (
           <circle key={`f-${tok.playerIndex}-${tok.tokenIndex}`}
             cx={cx(7.5)} cy={cy(7.5)} r={G*0.18}
-            fill={P_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} opacity={0.7} />
+            fill={PLAYER_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} opacity={0.7} />
         );
       })}
     </svg>

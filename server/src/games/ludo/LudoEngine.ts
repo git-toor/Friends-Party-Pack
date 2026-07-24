@@ -16,6 +16,7 @@ export interface GameState {
   currentPlayer: number;
   diceValue: number | null;
   diceRolledBy: number | null;
+  rollId: string | null;
   phase: TurnPhase;
   consecutiveSixes: number;
   winner: number | null;
@@ -33,8 +34,8 @@ export interface GameEvent {
 }
 
 export interface GameAction {
-  type: 'ROLL_DICE' | 'CONFIRM_DICE' | 'MOVE_TOKEN';
-  payload?: { tokenIndex: number };
+  type: 'ROLL_DICE' | 'DICE_LANDED' | 'MOVE_TOKEN';
+  payload?: { tokenIndex?: number; rollId?: string };
 }
 
 export interface GameResult {
@@ -43,10 +44,11 @@ export interface GameResult {
   error?: string;
   events?: GameEvent[];
   diceValue?: number;
+  rollId?: string;
   validMoves?: number[];
 }
 
-const ALL_OFFSETS = [0, 13, 26, 39]; // Blue, Red, Green, Yellow
+const ALL_OFFSETS = [0, 13, 26, 39];
 const SAFE_SQUARES = [0, 8, 13, 21, 26, 34, 39, 47];
 const PATH_LENGTH = 52;
 const STRETCH_START = 52;
@@ -61,6 +63,7 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
     currentPlayer: startingPlayer ?? 0,
     diceValue: null,
     diceRolledBy: null,
+    rollId: null,
     phase: 'waiting_for_roll',
     consecutiveSixes: 0,
     winner: null,
@@ -68,7 +71,7 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
 }
 
 function playerOffset(playerIndex: number, totalPlayers: number): number {
-  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 26; // Blue & Green (offsets 0 & 26)
+  if (totalPlayers === 2) return playerIndex === 0 ? 0 : 26;
   return ALL_OFFSETS[playerIndex] ?? 0;
 }
 
@@ -139,6 +142,7 @@ function advanceTurn(state: GameState): void {
   state.phase = 'waiting_for_roll';
   state.diceValue = null;
   state.diceRolledBy = null;
+  state.rollId = null;
   state.consecutiveSixes = 0;
 }
 
@@ -151,50 +155,68 @@ function checkWin(state: GameState): void {
   }
 }
 
-// ─── Actions ────────────────────────────────────────────
-
+// ─── ROLL_DICE: server only validates and creates a roll slot. NO RNG. ──
 export function rollDice(state: GameState, playerIndex: number): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   if (state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Already rolled' };
 
-  const value = Math.floor(Math.random() * 6) + 1;
-  state.diceValue = value;
-  state.diceRolledBy = playerIndex;
+  const rollId = crypto.randomUUID();
   state.phase = 'rolling_dice';
+  state.diceRolledBy = playerIndex;
+  state.rollId = rollId;
+  state.diceValue = null; // explicitly null
 
-  console.log(`[Ludo] P${playerIndex} ROLL_DICE → ${value}, phase=rolling_dice`);
-  return { state, valid: true, diceValue: value };
+  console.log(`[Ludo] P${playerIndex} ROLL_DICE → rollId=${rollId.slice(0,8)}`);
+  return { state, valid: true, rollId };
 }
 
-// Called by client after dice animation completes
-export function confirmDice(state: GameState, playerIndex: number): GameResult {
+// ─── DICE_LANDED: called after animation completes. Server generates RNG now. ──
+export function diceLanded(state: GameState, playerIndex: number, payload?: { rollId?: string }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  if (state.phase !== 'rolling_dice') return { state, valid: false, error: 'Dice not rolling' };
-  if (state.diceValue === null) return { state, valid: false, error: 'No dice value' };
+  if (state.phase !== 'rolling_dice') return { state, valid: false, error: 'No active dice roll' };
+  if (state.diceRolledBy !== playerIndex) return { state, valid: false, error: 'Not your dice' };
+  if (payload?.rollId && payload.rollId !== state.rollId) return { state, valid: false, error: 'Stale roll' };
+
+  if (state.diceValue === null) {
+    state.diceValue = Math.floor(Math.random() * 6) + 1;
+  }
+  const value = state.diceValue;
+
+  console.log(`[Ludo] P${playerIndex} DICE_LANDED → ${value}`);
+
+  if (value === 6) {
+    state.consecutiveSixes++;
+    if (state.consecutiveSixes >= 3) {
+      state.diceValue = null;
+      state.consecutiveSixes = 0;
+      advanceTurn(state);
+      console.log(`[Ludo] P${playerIndex} 3 consecutive sixes → penalty, turn to P${state.currentPlayer}`);
+      return { state, valid: true, diceValue: value };
+    }
+  } else {
+    state.consecutiveSixes = 0;
+  }
 
   const moves = getValidMoves(state, playerIndex);
   if (moves.length > 0) {
     state.phase = 'waiting_for_move';
-    console.log(`[Ludo] P${playerIndex} CONFIRM_DICE → ${moves.length} valid moves, phase=waiting_for_move`);
-  } else {
-    // No valid moves — end turn
-    const value = state.diceValue;
-    const events: GameEvent[] = [{ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 }];
-    advanceTurn(state);
-    console.log(`[Ludo] P${playerIndex} CONFIRM_DICE → no valid moves (dice=${value}), turn to P${state.currentPlayer}`);
-    return { state, valid: true, events, diceValue: value };
+    console.log(`[Ludo] P${playerIndex} → ${moves.length} valid moves, phase=waiting_for_move`);
+    return { state, valid: true, diceValue: value, validMoves: moves };
   }
 
-  return { state, valid: true, validMoves: moves };
+  // No valid moves — auto-advance
+  const events: GameEvent[] = [{ type: 'TURN_ENDED', playerIndex, tokenIndex: -1 }];
+  advanceTurn(state);
+  console.log(`[Ludo] P${playerIndex} → no valid moves (dice=${value}), turn to P${state.currentPlayer}`);
+  return { state, valid: true, diceValue: value, events };
 }
 
 export function getValidMoves(state: GameState, playerIndex: number): number[] {
   if (state.winner !== null) return [];
   if (state.currentPlayer !== playerIndex) return [];
   if (state.phase !== 'waiting_for_move' && state.phase !== 'rolling_dice') return [];
-  if (state.diceValue === null) return [];
   if (state.diceValue === null) return [];
 
   const player = state.players[playerIndex];
@@ -285,7 +307,8 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
       state.phase = 'waiting_for_roll';
       state.diceValue = null;
       state.diceRolledBy = null;
-      console.log(`[Ludo] P${playerIndex} moved (rolled 6) → bonus roll, phase=waiting_for_roll`);
+      state.rollId = null;
+      console.log(`[Ludo] P${playerIndex} moved (rolled 6) → bonus roll`);
     }
   } else {
     state.consecutiveSixes = 0;
@@ -301,8 +324,8 @@ export function handleAction(state: GameState, playerIndex: number, action: Game
   switch (action.type) {
     case 'ROLL_DICE':
       return rollDice(state, playerIndex);
-    case 'CONFIRM_DICE':
-      return confirmDice(state, playerIndex);
+    case 'DICE_LANDED':
+      return diceLanded(state, playerIndex, action.payload);
     case 'MOVE_TOKEN':
       if (action.payload?.tokenIndex === undefined) return { state, valid: false, error: 'No token specified' };
       return moveToken(state, playerIndex, action.payload.tokenIndex);
