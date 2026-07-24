@@ -13,6 +13,7 @@ const GAME_INFO: Record<string, { name: string; icon: string; minPlayers: number
       { id: 'custom', name: '🤪 Custom', desc: 'Choose expansions manually' },
     ],
   },
+  ludo: { name: 'Ludo', icon: '🎲', minPlayers: 2, maxPlayers: 4 },
 };
 
 const EXPANSIONS = ['imploding', 'streaking', 'barking', 'zombie'];

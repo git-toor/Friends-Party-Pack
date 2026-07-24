@@ -4,6 +4,7 @@ import { Button } from '../components/Button.js';
 const GAMES = [
   { id: 'yahtzee', name: 'Yahtzee', icon: '🎯', description: 'Classic 5-dice score game. Roll, keep, and score your way to victory!' },
   { id: 'exploding-kittens', name: 'Exploding Kittens', icon: '💣', description: 'Russian roulette with kittens. Draw, defuse, and avoid exploding!' },
+  { id: 'ludo', name: 'Ludo', icon: '🎲', description: 'Classic board race game. Roll, move, capture, and get all tokens home!' },
 ];
 
 const pageStyle: React.CSSProperties = {

@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LudoBoard } from './LudoBoard.js';
 import { Dice } from './Dice.js';
 import { useLudoSounds } from './sounds.js';
+import type { ChatMessage } from '../../components/ChatBox.js';
+
 interface GameEvent {
   type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED';
   playerIndex: number;
@@ -60,7 +62,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   const [animatingTokens, setAnimatingTokens] = useState<Set<string>>(new Set());
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
-  const [notification, setNotification] = useState<string | null>(null);
+  const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
   const sounds = useLudoSounds();
 
   const playerNames = players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {};
@@ -82,9 +84,16 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   }, [sessionId, fetchState]);
 
   useEffect(() => {
+    const handler = (e: Event) => {
+      setChatMsgs(prev => [...prev, (e as CustomEvent).detail as ChatMessage]);
+    };
+    window.addEventListener('chat-message', handler as EventListener);
+    return () => window.removeEventListener('chat-message', handler as EventListener);
+  }, []);
+
+  useEffect(() => {
     if (gameStatePush) {
       setGs(gameStatePush);
-      // Check for winner
       if (gameStatePush.winner !== null) {
         setShowWinner(true);
         sounds.playWin();
@@ -148,26 +157,23 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     fetchState();
   }, [sessionId, fetchState]);
 
-  // Collect all tokens for the board
   const allTokens: TokenView[] = gs.players.flatMap((p, i) =>
     p.tokens.map((t, j) => ({ playerIndex: i, tokenIndex: j, state: t.state, progress: t.progress }))
   );
 
   const isMyTurn = gs.isMyTurn;
   const needsRoll = isMyTurn && gs.phase === 'rolling' && gs.winner === null;
-  const needsMove = isMyTurn && gs.phase === 'moving';
 
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1a1a2e', color: '#eee', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1a1a2e', color: '#eee', position: 'relative', overflow: 'auto' }}>
       {/* Top bar — players */}
-      <div style={{ display: 'flex', gap: 8, padding: '8px 12px', overflowX: 'auto', background: 'rgba(0,0,0,0.3)' }}>
+      <div style={{ display: 'flex', gap: 8, padding: '8px 12px', overflowX: 'auto', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
         {gs.players.map((_, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
             borderRadius: 6, fontSize: 12,
             background: i === gs.currentPlayer ? `${PLAYER_COLORS[i]}33` : 'transparent',
             border: i === gs.currentPlayer ? `1px solid ${PLAYER_COLORS[i]}` : '1px solid transparent',
-            opacity: gs.players[i]?.tokens.some(t => t.state !== 'finished') ? 1 : 0.4,
           }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: PLAYER_COLORS[i] }} />
             <span style={{ fontWeight: 600 }}>{playerNames[i] || `${COLOR_NAMES[i]} Player`}</span>
@@ -178,41 +184,61 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         ))}
       </div>
 
-      {/* Board */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
-        <LudoBoard
-          tokens={allTokens}
-          validMoves={gs.validMoves}
-          currentPlayer={gs.currentPlayer}
-          diceValue={gs.diceValue}
-          phase={gs.phase}
-          playerIndex={playerIndex}
-          onTokenClick={handleTokenClick}
-        />
+      {/* Chat messages overlay */}
+      <div style={{ position: 'absolute', top: 48, right: 8, zIndex: 100, display: 'flex', flexDirection: 'column', gap: 4, pointerEvents: 'none', maxWidth: 240 }}>
+        {chatMsgs.slice(-4).map((m, i) => (
+          <div key={i} style={{
+            background: 'rgba(15,20,40,0.85)', borderRadius: 6, padding: '4px 10px',
+            fontSize: 11, animation: 'fadeIn 0.3s ease',
+          }}>
+            <span style={{ color: '#e94560', fontWeight: 600 }}>{m.playerName}</span>
+            <span style={{ color: '#ccc', marginLeft: 4 }}>{m.text}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Dice and controls */}
+      {/* Board area — with dice and controls layered above */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px', position: 'relative', minHeight: 0 }}>
+        <div style={{ width: '100%', maxWidth: 500 }}>
+          <LudoBoard
+            tokens={allTokens}
+            validMoves={gs.validMoves}
+            currentPlayer={gs.currentPlayer}
+            diceValue={gs.diceValue}
+            phase={gs.phase}
+            playerIndex={playerIndex}
+            onTokenClick={handleTokenClick}
+            playerNames={playerNames}
+          />
+        </div>
+      </div>
+
+      {/* Controls bar — always visible above chat */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-        padding: '12px 16px', background: 'rgba(0,0,0,0.3)',
+        padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0,
       }}>
         {gs.diceValue !== null && (
-          <div style={{
-            width: 48, height: 48, borderRadius: 8, background: '#fff', color: '#000',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 22, fontWeight: 800,
-          }}>
+          <motion.div
+            key={gs.diceValue}
+            initial={{ scale: 0.5, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 12 }}
+            style={{
+              width: 44, height: 44, borderRadius: 8, background: '#fff', color: '#000',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, fontWeight: 800, boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            }}
+          >
             {gs.diceValue}
-          </div>
+          </motion.div>
         )}
-        {needsRoll && (
-          <Dice onRollResult={handleRollResult} enabled={!rollPending} playerIndex={playerIndex} />
-        )}
-        {needsMove && (
-          <div style={{ fontSize: 12, color: '#fbbf24' }}>Tap a glowing token to move</div>
+        {needsRoll && <Dice onRollResult={handleRollResult} enabled={!rollPending} playerIndex={playerIndex} />}
+        {isMyTurn && gs.phase === 'moving' && (
+          <div style={{ fontSize: 11, color: '#fbbf24' }}>Tap a glowing token to move it</div>
         )}
         {!isMyTurn && gs.winner === null && (
-          <div style={{ fontSize: 12, color: '#888' }}>
+          <div style={{ fontSize: 11, color: '#888' }}>
             Waiting for {playerNames[gs.currentPlayer] || `${COLOR_NAMES[gs.currentPlayer]} Player`}...
           </div>
         )}
@@ -232,11 +258,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <div style={{
-              fontSize: 60, fontWeight: 900, color: '#ff4444',
-              textShadow: '0 0 40px #ff0000',
-              transform: 'rotate(-10deg)',
-            }}>
+            <div style={{ fontSize: 60, fontWeight: 900, color: '#ff4444', textShadow: '0 0 40px #ff0000', transform: 'rotate(-10deg)' }}>
               💥 CAPTURE!
             </div>
           </motion.div>
@@ -270,6 +292,9 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Spacer for fixed chat bar */}
+      <div style={{ height: 50, flexShrink: 0 }} />
     </div>
   );
 }
