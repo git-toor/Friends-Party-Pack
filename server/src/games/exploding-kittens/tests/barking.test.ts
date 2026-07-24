@@ -121,13 +121,60 @@ describe('Barking Kittens Expansion', () => {
   });
 
   describe('Tower of Power', () => {
-    it('can be played', () => {
+    it('takes a card from deck and pushes RESOLVE_TOWER_OF_POWER action', () => {
       const game = createGameWithBarking(3);
       const current = game.turn.currentPlayerIndex;
       const top = findCardByType(game.players[current].hand, 'tower_of_power');
       if (!top) return;
-      const result = handleAction(game, current, 'PLAY_CARD', { cardId: top });
-      expect(result.valid).toBe(true);
+      const handBefore = game.players[current].hand.length;
+      const deckBefore = game.deck.length;
+      handleAction(game, current, 'PLAY_CARD', { cardId: top });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      // Card from deck added to hand, Tower of Power card discarded
+      expect(game.players[current].hand.length).toBe(handBefore);
+      expect(game.deck.length).toBe(deckBefore - 1);
+      expect(game.actionStack.some(a => a.type === 'RESOLVE_TOWER_OF_POWER')).toBe(true);
+    });
+
+    it('keeps card in hand when resolved with keep: true', () => {
+      const game = createGameWithBarking(3);
+      const current = game.turn.currentPlayerIndex;
+      const top = findCardByType(game.players[current].hand, 'tower_of_power');
+      if (!top) return;
+      const handBefore = game.players[current].hand.length;
+      handleAction(game, current, 'PLAY_CARD', { cardId: top });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      // Keep the card
+      handleAction(game, current, 'RESOLVE_TOWER_OF_POWER', { keep: true });
+      expect(game.players[current].hand.length).toBe(handBefore);
+    });
+
+    it('returns card to deck top when resolved with keep: false', () => {
+      const game = createGameWithBarking(3);
+      const current = game.turn.currentPlayerIndex;
+      const top = findCardByType(game.players[current].hand, 'tower_of_power');
+      if (!top) return;
+      const handBefore = game.players[current].hand.length;
+      const deckTopBefore = game.deck[0]?.type;
+      handleAction(game, current, 'PLAY_CARD', { cardId: top });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      const addedCard = game.players[current].hand.find(c => !c.definition || !top);
+      handleAction(game, current, 'RESOLVE_TOWER_OF_POWER', { keep: false });
+      expect(game.players[current].hand.length).toBe(handBefore - 1);
+    });
+  });
+
+  describe('Share the Future', () => {
+    it('sets pendingCardView for the current player', () => {
+      const game = createGameWithBarking(3);
+      const current = game.turn.currentPlayerIndex;
+      const share = findCardByType(game.players[current].hand, 'share_future_3x');
+      if (!share) return;
+      handleAction(game, current, 'PLAY_CARD', { cardId: share });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      expect(game.pendingCardView).not.toBeNull();
+      expect(game.pendingCardView!.cards.length).toBe(3);
+      expect(game.pendingCardView!.viewType).toBe('share');
     });
   });
 });

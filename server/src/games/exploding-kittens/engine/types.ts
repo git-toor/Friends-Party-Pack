@@ -89,6 +89,7 @@ export type ActionType =
   | 'RESOLVE_NOPE_TIMEOUT' | 'RESOLVE_ALTER_FUTURE'
   | 'RESOLVE_GARBAGE_COLLECTION'
   | 'RESOLVE_ZOMBIE_REVIVE'
+  | 'RESOLVE_TOWER_OF_POWER'
   | 'PLAY_COMBO';
 
 export interface GameAction {
@@ -97,6 +98,7 @@ export interface GameAction {
   type: ActionType;
   payload?: {
     cardId?: string;
+    card?: { id: string; type: string; name: string };
     targetIndex?: number;
     insertIndex?: number;
     cardIds?: string[];

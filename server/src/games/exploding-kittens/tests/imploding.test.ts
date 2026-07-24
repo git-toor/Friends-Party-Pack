@@ -172,4 +172,18 @@ describe('Imploding Kittens Expansion', () => {
       expect(game.deck.length).toBe(deckSizeBefore - 1);
     });
   });
+
+  describe('Alter the Future (3x)', () => {
+    it('sets pendingCardView with alter viewType and 3 cards', () => {
+      const game = createGameWithImploding(3);
+      const current = game.turn.currentPlayerIndex;
+      const alter = findCardByType(game.players[current].hand, 'alter_future_3x');
+      if (!alter) return;
+      handleAction(game, current, 'PLAY_CARD', { cardId: alter });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      expect(game.pendingCardView).not.toBeNull();
+      expect(game.pendingCardView!.cards.length).toBe(3);
+      expect(game.pendingCardView!.viewType).toBe('alter');
+    });
+  });
 });

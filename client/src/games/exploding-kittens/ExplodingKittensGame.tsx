@@ -79,6 +79,7 @@ export default function ExplodingKittensGame({
   const [showAttackOverlay, setShowAttackOverlay] = useState(false);
   const [showNopeOverlay, setShowNopeOverlay] = useState(false);
   const [showClairvoyancePopup, setShowClairvoyancePopup] = useState(false);
+  const [showTowerCard, setShowTowerCard] = useState<{ id: string; type: string; name: string } | null>(null);
   const nopeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nopeStartRef = useRef<number>(0);
   const lastHandSize = useRef(0);
@@ -475,6 +476,26 @@ export default function ExplodingKittensGame({
       setShowZombieRevive(null);
     }
   }, [gs.actionStack, gs.opponents, playerIndex]);
+
+  // Tower of Power detection
+  useEffect(() => {
+    const towerAction = gs.actionStack.find(a => a.type === 'RESOLVE_TOWER_OF_POWER');
+    if (towerAction && towerAction.playerIndex === playerIndex) {
+      setShowTowerCard(towerAction.payload?.card ?? null);
+    } else if (!towerAction) {
+      setShowTowerCard(null);
+    }
+  }, [gs.actionStack, playerIndex]);
+
+  const handleTowerKeep = useCallback(async () => {
+    setShowTowerCard(null);
+    await sendAction('RESOLVE_TOWER_OF_POWER', { keep: true });
+  }, [sendAction]);
+
+  const handleTowerReturn = useCallback(async () => {
+    setShowTowerCard(null);
+    await sendAction('RESOLVE_TOWER_OF_POWER', { keep: false });
+  }, [sendAction]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -1246,6 +1267,57 @@ export default function ExplodingKittensGame({
                     background: 'transparent', color: '#aaa', fontSize: 13,
                   }}>
                   Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tower of Power modal */}
+      <AnimatePresence>
+        {showTowerCard && (
+          <motion.div
+            key="tower"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 950,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.6)',
+            }}
+          >
+            <div style={{
+              background: '#1a2a4a', borderRadius: 12, padding: 24, maxWidth: 300, width: '90%',
+              textAlign: 'center', border: '2px solid #fbbf24',
+            }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🗼</div>
+              <h3 style={{ color: '#fbbf24', margin: '0 0 8px', fontSize: 16 }}>Tower of Power</h3>
+              <p style={{ color: '#ccc', margin: '0 0 12px', fontSize: 12 }}>
+                You drew the top card of the deck. Keep it or return it?
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <Card
+                  card={{ id: showTowerCard.id, type: showTowerCard.type, name: showTowerCard.name }}
+                  size="medium"
+                  nsfw={nsfw}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                <button onClick={handleTowerKeep}
+                  style={{
+                    padding: '8px 24px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: '#4ade80', color: '#000', fontSize: 13, fontWeight: 600,
+                  }}>
+                  ✅ Keep It
+                </button>
+                <button onClick={handleTowerReturn}
+                  style={{
+                    padding: '8px 20px', borderRadius: 6, border: '1px solid #555', cursor: 'pointer',
+                    background: 'transparent', color: '#aaa', fontSize: 13,
+                  }}>
+                  ↩️ Return to Top
                 </button>
               </div>
             </div>

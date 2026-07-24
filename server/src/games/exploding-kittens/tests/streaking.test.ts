@@ -175,4 +175,31 @@ describe('Streaking Kittens Expansion', () => {
       expect(game.players[target].cursed).toBe(true);
     });
   });
+
+  describe('See the Future (5x)', () => {
+    it('sets pendingCardView with 5 cards', () => {
+      const game = createGameWithStreaking(3);
+      const current = game.turn.currentPlayerIndex;
+      const sf5 = findCardByType(game.players[current].hand, 'see_future_5x');
+      if (!sf5) return;
+      handleAction(game, current, 'PLAY_CARD', { cardId: sf5 });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      expect(game.pendingCardView).not.toBeNull();
+      expect(game.pendingCardView!.cards.length).toBe(5);
+    });
+  });
+
+  describe('Alter the Future (5x)', () => {
+    it('sets pendingCardView with alter viewType and 5 cards', () => {
+      const game = createGameWithStreaking(3);
+      const current = game.turn.currentPlayerIndex;
+      const af5 = findCardByType(game.players[current].hand, 'alter_future_5x');
+      if (!af5) return;
+      handleAction(game, current, 'PLAY_CARD', { cardId: af5 });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      expect(game.pendingCardView).not.toBeNull();
+      expect(game.pendingCardView!.cards.length).toBe(5);
+      expect(game.pendingCardView!.viewType).toBe('alter');
+    });
+  });
 });

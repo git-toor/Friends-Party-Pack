@@ -307,6 +307,24 @@ export function handleAction(
       return { state, valid: true };
     }
 
+    case 'RESOLVE_TOWER_OF_POWER': {
+      const towerAction = state.actionStack.find(a => a.type === 'RESOLVE_TOWER_OF_POWER');
+      if (!towerAction) return { state, valid: false, error: 'No tower action pending' };
+      const player = state.players[playerIndex];
+      const cardData = towerAction.payload?.card as { id: string; type: string; name: string } | undefined;
+      if (!cardData) return { state, valid: false, error: 'No card data' };
+      const keep = payload?.keep !== false;
+      if (!keep) {
+        const ci = player.hand.findIndex(c => c.id === cardData.id);
+        if (ci !== -1) {
+          const [returned] = player.hand.splice(ci, 1);
+          state.deck.unshift(returned);
+        }
+      }
+      state.actionStack = state.actionStack.filter(a => a.type !== 'RESOLVE_TOWER_OF_POWER');
+      return { state, valid: true };
+    }
+
     case 'RESOLVE_FAVOR': {
       const favorAction = state.actionStack.find(a => a.type === 'RESOLVE_FAVOR');
       const victimIdx = payload?.victimIndex ?? favorAction?.playerIndex;

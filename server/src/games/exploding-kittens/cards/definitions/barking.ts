@@ -29,18 +29,4 @@ export const barkingCards: CardDefinition[] = [
     effect: { type: 'BURY' },
     category: 'action',
   },
-  {
-    id: 'personal_attack', name: 'Personal Attack', expansion: 'barking',
-    copies: 4,
-    playable: {},
-    effect: { type: 'ADD_TURNS', amount: 3, stackable: true, selfTarget: true },
-    category: 'action',
-  },
-  {
-    id: 'share_future_3x', name: 'Share the Future', expansion: 'barking',
-    copies: 2,
-    playable: {},
-    effect: { type: 'SHARE_FUTURE', amount: 3 },
-    category: 'action',
-  },
 ];

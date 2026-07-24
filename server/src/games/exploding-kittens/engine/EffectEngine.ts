@@ -514,9 +514,24 @@ registerEffect('BARKING_KITTEN', (state, _effect, action, callbacks) => {
 
 // ─── TOWER_OF_POWER ────────────────────────────────────
 registerEffect('TOWER_OF_POWER', (state, _effect, action, callbacks) => {
+  if (state.deck.length === 0) return { success: false, error: 'Deck is empty' };
+  const topCard = state.deck.shift()!;
   const player = state.players[action.playerIndex];
-  callbacks.broadcast('TOWER_OF_POWER_ACTIVATED', { playerIndex: action.playerIndex });
-  return { success: true, nopeable: true };
+  player.hand.push(topCard);
+  const towerAction: GameAction = {
+    id: crypto.randomUUID(),
+    playerIndex: action.playerIndex,
+    type: 'RESOLVE_TOWER_OF_POWER',
+    payload: { card: { id: topCard.id, type: topCard.type, name: topCard.definition.name } },
+    status: 'awaiting_response',
+    createdAt: Date.now(),
+  };
+  callbacks.pushAction(towerAction);
+  callbacks.broadcast('TOWER_OF_POWER_RESULT', {
+    playerIndex: action.playerIndex,
+    cardType: topCard.type,
+  });
+  return { success: true, nopeable: true, requiresResponse: true };
 });
 
 // ─── POTLUCK ───────────────────────────────────────────

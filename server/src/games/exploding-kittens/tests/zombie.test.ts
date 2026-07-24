@@ -148,4 +148,73 @@ describe('Zombie Kittens Expansion', () => {
       expect(game.pendingCardView).not.toBeNull();
     });
   });
+
+  describe('Clairvoyance', () => {
+    it('rejects play when clairvoyanceAvailable is false', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      const clair = findCardByType(game.players[current].hand, 'clairvoyance');
+      if (!clair) return;
+      const result = handleAction(game, current, 'PLAY_CARD', { cardId: clair });
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain('Defuse');
+    });
+
+    it('allows play when clairvoyanceAvailable is true', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      const clair = findCardByType(game.players[current].hand, 'clairvoyance');
+      if (!clair) return;
+      game.clairvoyanceAvailable = true;
+      const result = handleAction(game, current, 'PLAY_CARD', { cardId: clair });
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe('Grave Robber', () => {
+    it('takes cards from dead players', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      // Kill a player
+      const dead = game.players.find(p => p.index !== current)!;
+      dead.alive = false;
+      dead.dead = true;
+      const deadHandSize = dead.hand.length;
+      const robber = findCardByType(game.players[current].hand, 'grave_robber');
+      if (!robber) return;
+      handleAction(game, current, 'PLAY_CARD', { cardId: robber });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      // Grave robber should take 1 random card from dead player's hand
+      expect(dead.hand.length).toBe(deadHandSize - 1);
+    });
+  });
+
+  describe('Attack of the Dead', () => {
+    it('can only be played by dead players', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      const aod = findCardByType(game.players[current].hand, 'attack_of_the_dead');
+      if (!aod) return;
+      // Living player cannot play it (effect will fail since they're not dead)
+      const result = handleAction(game, current, 'PLAY_CARD', { cardId: aod });
+      // Card gets removed from hand during PLAY_CARD, effect runs in nope timeout
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      // Should still have the card since effect returned to hand on failure
+      expect(game.players[current].hand.some(c => c.type === 'attack_of_the_dead')).toBe(true);
+    });
+
+    it('adds pending turns when played by dead player', () => {
+      const game = createGameWithZombie(3);
+      const current = game.turn.currentPlayerIndex;
+      // Kill the current player
+      game.players[current].alive = false;
+      game.players[current].dead = true;
+      const aod = findCardByType(game.players[current].hand, 'attack_of_the_dead');
+      if (!aod) return;
+      const turnTarget = game.turn.currentPlayerIndex;
+      handleAction(game, current, 'PLAY_CARD', { cardId: aod });
+      handleAction(game, current, 'RESOLVE_NOPE_TIMEOUT');
+      expect(game.players[turnTarget].pendingTurns).toBeGreaterThan(0);
+    });
+  });
 });
