@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { DiceOverlay } from '../../components/DiceOverlay.js';
 import type { DiceOverlayHandle, PerDieConfig } from '../../components/DiceOverlay.js';
 import { loadDiceAppearance } from '../../components/DiceAppearance.js';
@@ -10,26 +10,20 @@ const DEFAULT_CONFIG: PerDieConfig = {
   textColor: '#ffffff',
 };
 
-interface DiceProps {
-  onRollResult: (value: number) => void;
-  enabled: boolean;
-  playerIndex: number;
+export interface DiceHandle {
+  rollWithValue: (value: number) => Promise<void>;
+  clear: () => void;
 }
 
-export interface LudoDiceHandle {
-  roll: () => Promise<number>;
-}
-
-export const Dice = forwardRef<LudoDiceHandle, DiceProps>(({ onRollResult, enabled }, ref) => {
+export const Dice = forwardRef<DiceHandle, {}>((_props, ref) => {
   const diceRef = useRef<DiceOverlayHandle>(null);
+  const [showDice, setShowDice] = useState(false);
+  const rollingRef = useRef(false);
 
-  // Load dice appearance from localStorage and configure
   useEffect(() => {
     const saved = loadDiceAppearance();
-    // Use dice_0 config if saved, otherwise use defaults
     const config: Record<string, PerDieConfig> = {};
     config['dice_0'] = saved['dice_0'] || saved['dice_1'] || DEFAULT_CONFIG;
-    // Configure the DiceOverlay once it's ready
     const t = setInterval(async () => {
       if (diceRef.current?.configure) {
         await diceRef.current.configure(config);
@@ -40,40 +34,34 @@ export const Dice = forwardRef<LudoDiceHandle, DiceProps>(({ onRollResult, enabl
   }, []);
 
   useImperativeHandle(ref, () => ({
-    roll: async () => {
-      if (!diceRef.current) return 0;
-      const [value] = await diceRef.current.roll('d6', 1);
-      return value;
+    rollWithValue: async (value: number) => {
+      if (!diceRef.current || rollingRef.current) return;
+      rollingRef.current = true;
+      await diceRef.current.roll('d6', 1, `@${value}`);
+      setShowDice(true);
+      rollingRef.current = false;
+    },
+    clear: () => {
+      setShowDice(false);
+      if (diceRef.current?.clear) diceRef.current.clear();
     },
   }));
 
-  const handleRoll = useCallback(async () => {
-    if (!diceRef.current) return;
-    const [value] = await diceRef.current.roll('d6', 1);
-    onRollResult(value);
-  }, [onRollResult]);
+  const handleOverlayClick = useCallback(() => {
+    if (rollingRef.current) return;
+    setShowDice(false);
+    if (diceRef.current?.clear) diceRef.current.clear();
+  }, []);
 
   return (
     <>
       <DiceOverlay ref={diceRef} />
-      <button
-        onClick={handleRoll}
-        disabled={!enabled}
-        style={{
-          padding: '12px 24px',
-          fontSize: 18,
-          fontWeight: 700,
-          borderRadius: 8,
-          border: 'none',
-          background: enabled ? '#e94560' : '#555',
-          color: '#fff',
-          cursor: enabled ? 'pointer' : 'default',
-          opacity: enabled ? 1 : 0.5,
-          transition: 'opacity 0.2s',
-        }}
-      >
-        🎲 Roll
-      </button>
+      {showDice && (
+        <div onClick={handleOverlayClick} style={{
+          position: 'fixed', inset: 0, zIndex: 1001, cursor: 'pointer',
+          background: 'rgba(0,0,0,0.1)',
+        }} />
+      )}
     </>
   );
 });

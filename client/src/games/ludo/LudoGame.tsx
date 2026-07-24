@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LudoBoard, playerColorIndex } from './LudoBoard.js';
-import { Dice } from './Dice.js';
+import { Dice, type DiceHandle } from './Dice.js';
 import { useLudoSounds } from './sounds.js';
 import type { ChatMessage } from '../../components/ChatBox.js';
 
@@ -23,6 +23,7 @@ interface LudoGameProps {
   playerCount?: number;
   playerIndex?: number;
   playerName?: string;
+  playerId?: string;
   sessionId?: string;
   players?: { name: string; index: number; id?: string }[];
   gameStatePush?: any;
@@ -56,13 +57,12 @@ const EMPTY_STATE: LudoClientState = {
   validMoves: [],
 };
 
-export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', sessionId, players, gameStatePush }: LudoGameProps) {
+export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush }: LudoGameProps) {
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
-  const [rollPending, setRollPending] = useState(false);
-  const [animatingTokens, setAnimatingTokens] = useState<Set<string>>(new Set());
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
+  const diceRef = useRef<DiceHandle>(null);
   const sounds = useLudoSounds();
 
   const playerNames = players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {};
@@ -127,23 +127,22 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     } catch { return null; }
   }, [sessionId, playerIndex, sounds]);
 
-  const handleRollResult = useCallback(async (value: number) => {
-    setRollPending(false);
+  const handleRollResult = useCallback(async () => {
+    if (!diceRef.current) return;
     sounds.playDiceRoll();
-    await sendAction('ROLL_DICE');
+    // Send roll to server first
+    const data = await sendAction('ROLL_DICE');
+    if (data?.diceValue) {
+      // Animate 3D dice with the server value
+      await diceRef.current.rollWithValue(data.diceValue);
+    }
   }, [sendAction, sounds]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
     if (!gs.isMyTurn || gs.phase !== 'moving') return;
     if (!gs.validMoves.includes(tokenIndex)) return;
-    setAnimatingTokens(prev => new Set(prev).add(`${playerIndex}-${tokenIndex}`));
     sounds.playTokenMove();
     await sendAction('MOVE_TOKEN', { tokenIndex });
-    setAnimatingTokens(prev => {
-      const next = new Set(prev);
-      next.delete(`${playerIndex}-${tokenIndex}`);
-      return next;
-    });
   }, [gs, playerIndex, sendAction, sounds]);
 
   const handleRematch = useCallback(async () => {
@@ -186,15 +185,20 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
       {/* Chat messages overlay — centered above board */}
       <div style={{ position: 'absolute', top: 48, left: '50%', transform: 'translateX(-50%)', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 4, pointerEvents: 'none', maxWidth: 300, width: '90%', alignItems: 'center' }}>
-        {chatMsgs.slice(-4).map((m, i) => (
-          <div key={i} style={{
-            background: 'rgba(15,20,40,0.85)', borderRadius: 6, padding: '4px 14px',
-            fontSize: 11, animation: 'fadeIn 0.3s ease', textAlign: 'center',
-          }}>
-            <span style={{ color: '#e94560', fontWeight: 600 }}>{m.playerName}</span>
-            <span style={{ color: '#ccc', marginLeft: 4 }}>{m.text}</span>
-          </div>
-        ))}
+        {chatMsgs.slice(-4).map((m, i) => {
+          const isMe = m.playerId === playerId;
+          return (
+            <div key={i} style={{
+              background: 'rgba(15,20,40,0.85)', borderRadius: 6, padding: '4px 14px',
+              fontSize: 11, animation: 'fadeIn 0.3s ease', textAlign: 'center',
+            }}>
+              <span style={{ color: '#e94560', fontWeight: 600 }}>
+                {isMe ? 'You' : m.playerName}
+              </span>
+              <span style={{ color: '#ccc', marginLeft: 4 }}>{m.text}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Board area — with dice and controls layered above */}
@@ -211,11 +215,19 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         </div>
       </div>
 
-      {/* Controls bar — always visible above chat */}
+      {/* Controls bar */}
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-        padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+        padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0, flexWrap: 'wrap',
       }}>
+        {needsRoll && (
+          <button onClick={handleRollResult} style={{
+            padding: '10px 22px', fontSize: 16, fontWeight: 700, borderRadius: 8,
+            border: 'none', background: '#e94560', color: '#fff', cursor: 'pointer',
+          }}>
+            🎲 Roll
+          </button>
+        )}
         {gs.diceValue !== null && (
           <motion.div
             key={gs.diceValue}
@@ -223,17 +235,20 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 12 }}
             style={{
-              width: 44, height: 44, borderRadius: 8, background: '#fff', color: '#000',
+              width: 40, height: 40, borderRadius: 6, background: '#fff', color: '#000',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 800, boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              fontSize: 18, fontWeight: 800,
             }}
           >
             {gs.diceValue}
           </motion.div>
         )}
-        {needsRoll && <Dice onRollResult={handleRollResult} enabled={!rollPending} playerIndex={playerIndex} />}
-        {isMyTurn && gs.phase === 'moving' && (
-          <div style={{ fontSize: 11, color: '#fbbf24' }}>Tap a glowing token to move it</div>
+        {gs.diceValue !== null && isMyTurn && gs.phase === 'moving' && (
+          <div style={{ fontSize: 11, color: '#fbbf24' }}>
+            {gs.diceValue !== 6 && gs.players[playerIndex]?.tokens.every(t => t.state === 'home' || t.state === 'finished')
+              ? `No 6, wait for your turn to roll 6`
+              : `Rolled ${gs.diceValue} — Tap a glowing token to move it`}
+          </div>
         )}
         {!isMyTurn && gs.winner === null && (
           <div style={{ fontSize: 11, color: '#888' }}>
