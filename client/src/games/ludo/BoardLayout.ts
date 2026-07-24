@@ -20,8 +20,8 @@ const _P: [number, number][] = [
 
 export const PATH: [number, number][] = _P;
 
-// ─── Safe squares ──────────────────────────────────────────────
-export const SAFE_ABS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+// ─── Safe squares — shifted forward 2 tiles from entry points ───
+export const SAFE_ABS = new Set([2, 10, 15, 23, 28, 36, 41, 49]);
 export function isSafeSquare(absPos: number): boolean { return SAFE_ABS.has(absPos); }
 
 // ─── Player offsets ────────────────────────────────────────────
