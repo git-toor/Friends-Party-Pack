@@ -17,8 +17,8 @@ export function CardBack({ nsfw = false, size = 'medium' }: CardBackProps) {
       setArtUrl(nsfw ? (m.card_back.nsfw || m.card_back.base) : m.card_back.base);
       return;
     }
-    // Fallback: fetch manifest directly
-    fetch('/cards/manifest.json').then(r => r.ok ? r.json() : null).then(data => {
+    // Fallback: fetch manifest with cache bust
+    fetch(`/cards/manifest.json?t=${Date.now()}`).then(r => r.ok ? r.json() : null).then(data => {
       if (data?.card_back) {
         (window as any).__CARD_MANIFEST__ = data;
         setArtUrl(nsfw ? (data.card_back.nsfw || data.card_back.base) : data.card_back.base);

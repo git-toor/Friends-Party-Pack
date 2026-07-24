@@ -81,6 +81,7 @@ export function resolveDrawCard(state: GameState, playerIndex: number, callbacks
 
   const card = drawFromBottom ? state.deck.pop()! : state.deck.shift()!;
   player.hand.push(card);
+  state.lastDrawFromBottom = drawFromBottom || undefined;
   callbacks.broadcast('CARD_DRAWN', { playerIndex, hasCard: true, cardType: card.type });
 
   if (card.type === 'exploding_kitten') {

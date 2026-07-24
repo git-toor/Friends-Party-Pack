@@ -106,6 +106,7 @@ export interface GameAction {
     comboType?: 'pair' | 'triple' | 'five';
     namedCard?: string;
     chosenCardId?: string;
+    reorderedCards?: string[];
   };
   status: 'pending' | 'awaiting_response' | 'resolving' | 'resolved' | 'noped';
   createdAt: number;
@@ -117,6 +118,7 @@ export interface GameAction {
 export interface GameSettings {
   playerCount: number;
   expansions?: string[];
+  nopeWindowDuration?: number;
 }
 
 export interface TurnState {
@@ -141,7 +143,10 @@ export interface GameState {
   settings: GameSettings;
   winner: number | null;
   implodingKittenFaceUp: boolean;
-  pendingCardView: { cards: { id: string; type: string }[]; forPlayerIndex: number } | null;
+  pendingCardView: { cards: { id: string; type: string }[]; forPlayerIndex: number; viewType?: 'see' | 'alter' | 'share' } | null;
+  lastStolenCard: { type: string; name: string; fromPlayerIndex: number; toPlayerIndex: number } | null;
+  lastPlayedCard: { type: string; name: string; playerIndex: number } | null;
+  lastDrawFromBottom?: boolean;
 }
 
 export interface GameResult {

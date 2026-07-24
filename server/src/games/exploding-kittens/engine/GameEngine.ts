@@ -35,6 +35,8 @@ export function createGame(settings: GameSettings): GameState {
     winner: null,
     implodingKittenFaceUp: false,
     pendingCardView: null,
+    lastStolenCard: null,
+    lastPlayedCard: null,
   };
 
   state.deck = buildDeck(playerCount, settings.expansions);
@@ -80,7 +82,7 @@ export function handleAction(
       state.actionStack.push(action);
     },
     queueNopeWindow: (actionId: string) => {
-      const windowMs = 3000;
+      const windowMs = state.settings.nopeWindowDuration ?? 5000;
       state.nopeWindow = {
         expiresAt: Date.now() + windowMs,
         targetActionId: actionId,
@@ -95,6 +97,11 @@ export function handleAction(
       advanceTurn(state);
     },
   });
+
+  // Clear one-time notification flags at the start of each action
+  state.lastStolenCard = null;
+  state.lastPlayedCard = null;
+  state.lastDrawFromBottom = undefined;
 
   switch (actionType) {
     case 'PLAY_CARD': {
@@ -113,6 +120,9 @@ export function handleAction(
       const cardIndex = player.hand.findIndex(c => c.id === cardId);
       if (cardIndex === -1) return { state, valid: false, error: 'Card not in hand' };
       const card = player.hand.splice(cardIndex, 1)[0];
+
+      // Show played card immediately for all players
+      state.lastPlayedCard = { type: card.type, name: card.definition.name, playerIndex };
 
       const action = createAction('PLAY_CARD', playerIndex, payload);
       const eff = card.definition.effect;
@@ -145,8 +155,9 @@ export function handleAction(
         action.pendingCard = card;
         action.status = 'pending';
         state.actionStack.push(action);
+        const nopeMs = state.settings.nopeWindowDuration ?? 5000;
         state.nopeWindow = {
-          expiresAt: Date.now() + 3000,
+          expiresAt: Date.now() + nopeMs,
           targetActionId: action.id,
           chain: [],
         };
@@ -219,6 +230,32 @@ export function handleAction(
       return { state, valid: true };
     }
 
+    case 'RESOLVE_ALTER_FUTURE': {
+      if (state.turn.currentPlayerIndex !== playerIndex) {
+        return { state, valid: false, error: 'Not your turn' };
+      }
+      const viewCards = (state.pendingCardView as GameState['pendingCardView'])?.cards;
+      if (!viewCards) {
+        return { state, valid: false, error: 'No pending card view' };
+      }
+      const reordered = payload?.reorderedCards;
+      if (!reordered || reordered.length !== viewCards.length) {
+        return { state, valid: false, error: 'Invalid reordered cards' };
+      }
+      const currentIds = viewCards.map(c => c.id).sort().join(',');
+      const newIds = [...reordered].sort().join(',');
+      if (currentIds !== newIds) {
+        return { state, valid: false, error: 'Card mismatch' };
+      }
+      state.deck.splice(0, viewCards.length, ...reordered.map((id: string) => {
+        const idx = state.deck.findIndex(c => c.id === id);
+        const [card] = state.deck.splice(idx, 1);
+        return card;
+      }));
+      state.pendingCardView = null;
+      return { state, valid: true };
+    }
+
     case 'RESOLVE_ZOMBIE_REVIVE': {
       const player = state.players[playerIndex];
       const deadPlayers = state.players.filter(p => p.dead);
@@ -254,12 +291,12 @@ export function handleAction(
       if (cardIndex === -1) return { state, valid: false, error: 'Card not found in victim hand' };
       const stolenCard = victim.hand.splice(cardIndex, 1)[0];
       state.players[attackerIdx].hand.push(stolenCard);
+      state.lastStolenCard = { type: stolenCard.type, name: stolenCard.definition.name, fromPlayerIndex: victimIdx, toPlayerIndex: attackerIdx };
       const favorActions = state.actionStack.filter(a => a.type === 'RESOLVE_FAVOR');
       for (const fa of favorActions) {
         fa.status = 'resolved';
       }
       state.actionStack = state.actionStack.filter(a => !(a.type === 'RESOLVE_FAVOR'));
-      advanceTurn(state);
       return { state, valid: true };
     }
 
@@ -273,7 +310,7 @@ export function handleAction(
       if (state.nopeWindow.timeout) {
         clearTimeout(state.nopeWindow.timeout);
       }
-      state.nopeWindow.expiresAt = Date.now() + 3000;
+      state.nopeWindow.expiresAt = Date.now() + (state.settings.nopeWindowDuration ?? 5000);
       return { state, valid: true };
     }
 
@@ -342,8 +379,9 @@ export function handleAction(
       (comboAction as any).pendingCards = cards;
       comboAction.status = 'pending';
       state.actionStack.push(comboAction);
+      const nopeMsEnd = state.settings.nopeWindowDuration ?? 5000;
       state.nopeWindow = {
-        expiresAt: Date.now() + 3000,
+        expiresAt: Date.now() + nopeMsEnd,
         targetActionId: comboAction.id,
         chain: [],
       };

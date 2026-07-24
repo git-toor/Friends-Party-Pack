@@ -139,19 +139,64 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
     return () => { mounted.current = false; };
   }, []);
 
+  function resolveArtUrl(entry: unknown, seed?: string): string | null {
+    if (!entry) return null;
+    if (typeof entry === 'string') return entry;
+    if (Array.isArray(entry) && entry.length > 0) {
+      if (seed && entry.length > 1) {
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+          hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+          hash |= 0;
+        }
+        return entry[Math.abs(hash) % entry.length];
+      }
+      return entry[0];
+    }
+    return null;
+  }
+
+  // Fallback expansion map for direct URL construction
+  const CARD_EXPANSION: Record<string, string> = {
+    exploding_kitten: 'base', defuse: 'base', attack: 'base', skip: 'base',
+    favor: 'base', shuffle: 'base', nope: 'base', see_future_3x: 'base',
+    tacocat: 'base', cattermelon: 'base', hairy_potato_cat: 'base',
+    beard_cat: 'base', rainbow_ralphing_cat: 'base',
+    imploding_kitten: 'imploding', reverse: 'imploding', alter_future_3x: 'imploding',
+    draw_from_bottom: 'imploding', targeted_attack: 'imploding', feral_cat: 'imploding',
+    streaking_kitten: 'streaking', exploding_kitten_extra: 'streaking',
+    super_skip: 'streaking', see_future_5x: 'streaking', alter_future_5x: 'streaking',
+    swap_top_bottom: 'streaking', garbage_collection: 'streaking', catomic_bomb: 'streaking',
+    mark: 'streaking', curse_cat_butt: 'streaking',
+    barking_kitten: 'barking', tower_of_power: 'barking', personal_attack: 'barking',
+    potluck: 'barking', bury: 'barking', share_future_3x: 'barking',
+    ill_take_that: 'barking', super_skip_barking: 'barking', alter_future_3x_barking: 'barking',
+    zombie_kitten: 'zombie', exploding_kitten_z: 'zombie', defuse_z: 'zombie',
+    attack_z: 'zombie', skip_z: 'zombie', shuffle_z: 'zombie',
+    see_future_3x_z: 'zombie', nope_z: 'zombie', clairvoyance: 'zombie',
+    clone: 'zombie', dig_deeper: 'zombie', feed_the_dead: 'zombie',
+    grave_robber: 'zombie', attack_of_the_dead: 'zombie', shuffle_now: 'zombie',
+    favor_z: 'zombie',
+  };
+
   useEffect(() => {
     if (!faceUp || !card.type) return;
-    // Load art from manifest
     const manifest = (window as any).__CARD_MANIFEST__;
-    const url = manifest?.cards?.[card.type]?.[nsfw ? 'nsfw' : 'base'];
+    const entry = manifest?.cards?.[card.type]?.[nsfw ? 'nsfw' : 'base'];
+    const url = resolveArtUrl(entry, card.id);
     if (url) { setArtUrl(url); return; }
-    // Fetch manifest if not loaded
-    fetch('/cards/manifest.json').then(r => r.ok ? r.json() : null).then(data => {
+    // Fallback: construct URL directly
+    const exp = CARD_EXPANSION[card.type] || 'base';
+    const fallbackUrl = `/art/${exp}/${card.type}_001.webp`;
+    setArtUrl(fallbackUrl);
+    // Try to fetch manifest with cache bust for next time
+    fetch(`/cards/manifest.json?t=${Date.now()}`).then(r => r.ok ? r.json() : null).then(data => {
       if (!mounted.current) return;
       if (data) {
         (window as any).__CARD_MANIFEST__ = data;
-        const u = data.cards?.[card.type]?.[nsfw ? 'nsfw' : 'base'];
-        if (u) setArtUrl(u);
+        const e = data.cards?.[card.type]?.[nsfw ? 'nsfw' : 'base'];
+        const u = resolveArtUrl(e, card.id);
+        if (u && u !== fallbackUrl) setArtUrl(u);
       }
     }).catch(() => {});
   }, [card.type, faceUp, nsfw]);
@@ -164,7 +209,7 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         border: nsfw ? '2px solid #661111' : '2px solid #333366',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         boxShadow: selected ? '0 8px 32px rgba(233,69,96,0.6)' : '0 2px 6px rgba(0,0,0,0.3)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        transition: 'box-shadow 0.25s ease',
         transform: selected ? 'translateY(-24px)' : 'none',
       }}>
         <svg width={dims.w * 0.4} height={dims.h * 0.3} viewBox="0 0 40 40">
@@ -180,12 +225,11 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
       width: dims.w, height: dims.h, borderRadius: 6, cursor: onClick ? 'pointer' : 'default',
       display: 'flex', flexDirection: 'column',
       userSelect: 'none', flexShrink: 0, position: 'relative',
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      transform: selected ? 'translateY(-24px)' : 'none',
-      boxShadow: selected ? '0 8px 32px rgba(233,69,96,0.6)' : (disabled ? 'none' : '0 2px 6px rgba(0,0,0,0.3)'),
-      opacity: disabled ? 0.45 : 1,
+      transition: 'box-shadow 0.25s ease',
+      transform: 'none',
+      boxShadow: selected ? '0 8px 32px rgba(233,69,96,0.6)' : (disabled ? '0 1px 3px rgba(0,0,0,0.15)' : '0 2px 6px rgba(0,0,0,0.3)'),
       background: colors.bg,
-      border: 'none',
+      border: disabled ? '1px solid rgba(255,255,255,0.08)' : 'none',
     }}>
       {/* Card Title Bar */}
       <div style={{

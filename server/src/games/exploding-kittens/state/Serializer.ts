@@ -39,10 +39,13 @@ export interface ClientGameState {
     expiresAt: number;
     chain: { playerIndex: number }[];
   } | null;
-  settings: { playerCount: number; expansions?: string[] };
+  settings: { playerCount: number; expansions?: string[]; nopeWindowDuration?: number };
   winner: number | null;
   implodingKittenFaceUp: boolean;
-  pendingCardView: { cards: { id: string; type: string }[] } | null;
+  pendingCardView: { cards: { id: string; type: string }[]; viewType?: 'see' | 'alter' | 'share' } | null;
+  lastStolenCard: { type: string; name: string; fromPlayerIndex: number; toPlayerIndex: number } | null;
+  lastPlayedCard: { type: string; name: string; playerIndex: number } | null;
+  lastDrawFromBottom?: boolean;
 }
 
 export function serializeState(state: GameState, playerIndex: number): ClientGameState {
@@ -77,9 +80,7 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
       })),
     deckSize: state.deck.length,
     discardCount: state.discardPile.length,
-    discardPileCards: playerIndex === state.turn.currentPlayerIndex
-      ? state.discardPile.map(c => ({ id: c.id, type: c.type, name: c.definition.name }))
-      : undefined,
+    discardPileCards: state.discardPile.map(c => ({ id: c.id, type: c.type, name: c.definition.name })),
     turn: {
       currentPlayerIndex: state.turn.currentPlayerIndex,
       direction: state.turn.direction,
@@ -105,7 +106,10 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
     winner: state.winner,
     implodingKittenFaceUp: state.implodingKittenFaceUp,
     pendingCardView: state.pendingCardView?.forPlayerIndex === playerIndex
-      ? { cards: state.pendingCardView.cards }
+      ? { cards: state.pendingCardView.cards, viewType: state.pendingCardView.viewType }
       : null,
+    lastStolenCard: state.lastStolenCard,
+    lastPlayedCard: state.lastPlayedCard,
+    lastDrawFromBottom: state.lastDrawFromBottom,
   };
 }

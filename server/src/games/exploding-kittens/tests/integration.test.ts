@@ -140,8 +140,8 @@ describe('Integration: Full Card Flows', () => {
       // Card moved from victim to attacker
       expect(game.players[p1].hand.length).toBe(p1CardCount - 1);
       expect(game.players[p0].hand.some(c => c.id === victimCardId)).toBe(true);
-      // Turn advanced to next player (p1 after p0→advanceTurn moves to opponent)
-      expect(game.turn.currentPlayerIndex).toBe(p1);
+      // Turn stays with attacker — they must still draw a card to end their turn
+      expect(game.turn.currentPlayerIndex).toBe(p0);
     });
   });
 

@@ -14,9 +14,11 @@ interface OpponentView {
 interface OpponentBarProps {
   opponents: OpponentView[];
   currentPlayerIndex: number;
+  playerNames?: Record<number, string>;
 }
 
-export function OpponentBar({ opponents, currentPlayerIndex }: OpponentBarProps) {
+export function OpponentBar({ opponents, currentPlayerIndex, playerNames = {} }: OpponentBarProps) {
+  const displayName = (opp: OpponentView) => playerNames[opp.index] || opp.name;
   return (
     <div style={{
       display: 'flex', gap: 6, padding: '6px 8px', overflowX: 'auto',
@@ -31,7 +33,7 @@ export function OpponentBar({ opponents, currentPlayerIndex }: OpponentBarProps)
           opacity: opp.alive ? 1 : 0.4,
         }}>
           <div style={{ fontSize: 10, color: '#ccc', fontWeight: 600, textAlign: 'center', maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {opp.name}
+            {displayName(opp)}
           </div>
           <div style={{ fontSize: 16, fontWeight: 700, color: opp.dead ? '#ff4444' : '#fff', marginTop: 2 }}>
             {opp.cardCount}
