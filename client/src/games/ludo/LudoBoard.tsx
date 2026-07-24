@@ -66,6 +66,14 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
     return groups;
   }, [tokens]);
 
+  // Helper: get mapped quadrant for a player
+  const pq = (pi: number) => playerQuadrant(pi, totalPlayers);
+  // All 4 quadrants with their active state
+  const allQuadrants = [0, 1, 2, 3].map(q => ({
+    q,
+    isActive: Array.from({ length: totalPlayers }, (_, i) => pq(i)).includes(q),
+  }));
+
   const stackPos = (count: number, cx: number, cy: number) => {
     const d = G * 0.018;
     if (count === 1) return [{ x: cx, y: cy }];
@@ -83,9 +91,6 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
   const ts = G * 0.88; // tile visual size
   const starSize = G * 0.5;
 
-  // Active quadrants for the current player count
-  const activeQuadrants = Array.from({ length: totalPlayers }, (_, i) => playerQuadrant(i, totalPlayers));
-
   return (
     <svg viewBox="0 0 1 1" style={{ width: '100%', height: 'auto', display: 'block' }}>
       {/* Z-1: Dark board background */}
@@ -98,9 +103,9 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         <rect key={`arm-${i}`} x={c*G} y={r*G} width={w*G} height={h*G} fill="#22224a" />
       ))}
 
-      {/* Z-2: Colored base zones — only active quadrants get full color */}
+      {/* Z-2: Colored base zones — all 4 quadrants, dim if inactive */}
       {[[0,0,0],[0,9,1],[9,9,2],[9,0,3]].map(([c,r,q]) => {
-        const isActive = activeQuadrants.includes(q);
+        const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
         return (
           <rect key={`base-${q}`} x={c*G} y={r*G} width={6*G} height={6*G}
             rx={0.015}
@@ -110,16 +115,17 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         );
       })}
 
-      {/* Z-2: Home stretch colored tiles — only for active quadrants */}
-      {activeQuadrants.map(q =>
-        (getHomeStretch(q) || []).map(([c,r], i) => (
+      {/* Z-2: Home stretch colored tiles — all 4 quadrants, dim if inactive */}
+      {[0,1,2,3].map(q => {
+        const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
+        return (getHomeStretch(q) || []).map(([c,r], i) => (
           <rect key={`hs-${q}-${i}`}
             x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
             width={ts} height={ts} rx={0.004}
-            fill={P_COLORS[q]} opacity={0.55}
+            fill={P_COLORS[q]} opacity={isActive ? 0.55 : 0.12}
           />
-        ))
-      )}
+        ));
+      })}
 
       {/* Z-2: Outer path tiles with visible borders */}
       {PATH.map(([c,r], i) => {
@@ -153,13 +159,16 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         </>);
       })()}
 
-      {/* Z-2: Home token starting circles — only active quadrants */}
-      {activeQuadrants.map(q =>
-        (getHomeTokens(q) || []).map(([c,r], i) => (
+      {/* Z-2: Home token starting circles — all 4 quadrants, dim if inactive */}
+      {[0,1,2,3].map(q => {
+        const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
+        return (getHomeTokens(q) || []).map(([c,r], i) => (
           <circle key={`ht-${q}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
-            fill={`${P_COLORS[q]}20`} stroke={`${P_COLORS[q]}35`} strokeWidth={0.002} />
-        ))
-      )}
+            fill={isActive ? `${P_COLORS[q]}20` : `${P_COLORS[q]}10`}
+            stroke={isActive ? `${P_COLORS[q]}35` : `${P_COLORS[q]}15`}
+            strokeWidth={0.002} />
+        ));
+      })}
 
       {/* Z-3: Safe zone ★ stars — centered in tile */}
       {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c,r]) => (
@@ -188,7 +197,8 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
 
       {/* Home tokens (idle in base) */}
       {tokens.filter(t => t.state === 'home').map(tok => {
-        const cell = HOME_TOKENS[tok.playerIndex]?.[tok.tokenIndex % 4];
+        const q = pq(tok.playerIndex);
+        const cell = getHomeTokens(q)[tok.tokenIndex % 4];
         if (!cell) return null;
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
         return (
