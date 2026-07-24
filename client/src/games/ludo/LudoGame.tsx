@@ -57,6 +57,7 @@ const EMPTY_STATE: LudoClientState = {
 
 export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush }: LudoGameProps) {
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
+  const phaseRef = useRef('');
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
@@ -80,6 +81,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   // ─── Authoritative state update: every API response is applied directly ──
   const updateState = useCallback((newState: any) => {
     if (!newState) return;
+    phaseRef.current = newState.phase || 'waiting_for_roll';
     setGs({
       players: newState.players || [],
       currentPlayer: newState.currentPlayer ?? 0,
@@ -118,16 +120,14 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   useEffect(() => {
     if (gameStatePush) {
-      // Skip broadcast if our current state is more advanced (waiting_for_move
-      // should not be overwritten by a stale waiting_for_roll from another player's broadcast)
-      if (gs.phase === 'waiting_for_move' && gameStatePush.phase !== 'waiting_for_move') return;
+      if (phaseRef.current === 'waiting_for_move' && gameStatePush.phase !== 'waiting_for_move') return;
       updateState(gameStatePush);
       if (gameStatePush.winner !== null) {
         setShowWinner(true);
         sounds.playWin();
       }
     }
-  }, [gameStatePush, sounds, updateState, gs.phase]);
+  }, [gameStatePush, sounds, updateState]);
 
   // ─── Server action — only state update, no client logic ──────
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
@@ -162,6 +162,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const handleRollResult = useCallback(async () => {
     if (rollingRef.current) return;
+    console.log('[ROLL CLICK]', { phase: gs.phase, cp: gs.currentPlayer, drb: gs.diceRolledBy, dv: gs.diceValue, pi: playerIndex, canRoll });
     if (gs.phase !== 'waiting_for_roll') return;
     if (!diceRef.current) return;
     rollingRef.current = true;
