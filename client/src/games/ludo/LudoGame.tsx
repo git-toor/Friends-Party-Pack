@@ -37,20 +37,12 @@ interface TokenView {
   progress: number;
 }
 
-function compareState(next: LudoClientState, prev: LudoClientState): LudoClientState {
-  if (next.currentPlayer === prev.currentPlayer && next.phase === prev.phase && next.diceValue === prev.diceValue) {
-    return prev;
-  }
-  return next;
-}
-
 interface LudoClientState {
   players: { tokens: TokenView[]; finishedCount: number }[];
   currentPlayer: number;
   diceValue: number | null;
   phase: string;
   winner: number | null;
-  isMyTurn: boolean;
   validMoves: number[];
 }
 
@@ -60,7 +52,6 @@ const EMPTY_STATE: LudoClientState = {
   diceValue: null,
   phase: 'waiting_for_roll',
   winner: null,
-  isMyTurn: false,
   validMoves: [],
 };
 
@@ -74,14 +65,30 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   const playerNames = players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {};
 
+  // ─── Calculate isMyTurn locally (never trust server's isMyTurn) ──
+  const isMyTurn = playerIndex === gs.currentPlayer;
+  const needsRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null;
+
+  const updateState = useCallback((newState: any) => {
+    if (!newState) return;
+    setGs({
+      players: newState.players || [],
+      currentPlayer: newState.currentPlayer ?? 0,
+      diceValue: newState.diceValue ?? null,
+      phase: newState.phase || 'waiting_for_roll',
+      winner: newState.winner ?? null,
+      validMoves: newState.validMoves || [],
+    });
+  }, []);
+
   const fetchState = useCallback(async () => {
     if (!sessionId) return;
     try {
       const r = await fetch(`/api/games/ludo/state/${sessionId}?playerIndex=${playerIndex}&t=${Date.now()}`);
       const data = await r.json();
-      if (data) setGs(prev => compareState(data, prev));
+      updateState(data);
     } catch {}
-  }, [sessionId, playerIndex]);
+  }, [sessionId, playerIndex, updateState]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -100,14 +107,15 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   useEffect(() => {
     if (gameStatePush) {
-      setGs(gameStatePush);
+      updateState(gameStatePush);
       if (gameStatePush.winner !== null) {
         setShowWinner(true);
         sounds.playWin();
       }
     }
-  }, [gameStatePush, sounds]);
+  }, [gameStatePush, sounds, updateState]);
 
+  // ─── Server action — only state update, no client logic ──────
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
     if (!sessionId) return;
     try {
@@ -122,7 +130,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         return data;
       }
       if (data.state) {
-        setGs(prev => compareState(data.state, prev));
+        updateState(data.state);
         if (data.events) {
           for (const ev of data.events as GameEvent[]) {
             if (ev.type === 'CAPTURE') {
@@ -136,7 +144,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       }
       return data;
     } catch { return null; }
-  }, [sessionId, playerIndex, sounds]);
+  }, [sessionId, playerIndex, sounds, updateState]);
 
   const handleRollResult = useCallback(async () => {
     if (!diceRef.current) return;
@@ -144,28 +152,24 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     const data = await sendAction('ROLL_DICE');
     console.log('[Ludo] ROLL_DICE:', data?.success, 'dice:', data?.diceValue, 'phase:', data?.phase);
     if (data?.success && data?.diceValue) {
-      // Start 3D animation (fire & forget — don't wait for it)
       diceRef.current.rollWithValue(data.diceValue).catch(() => {});
-      // Immediately confirm dice — game state doesn't wait for animation
       const confirm = await sendAction('CONFIRM_DICE');
       console.log('[Ludo] CONFIRM_DICE:', confirm?.success, 'phase:', confirm?.phase, 'cp:', confirm?.currentPlayer);
     }
   }, [sendAction, sounds]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
-    if (!gs.isMyTurn || gs.phase !== 'waiting_for_move') return;
+    if (!isMyTurn || gs.phase !== 'waiting_for_move') return;
     if (!gs.validMoves.includes(tokenIndex)) return;
-    // Clear dice visual
     if (diceRef.current) diceRef.current.clear();
     sounds.playTokenMove();
     await sendAction('MOVE_TOKEN', { tokenIndex });
-  }, [gs, playerIndex, sendAction, sounds]);
+  }, [isMyTurn, gs.phase, gs.validMoves, sendAction, sounds]);
 
   const handleBoardClick = useCallback(() => {
+    // Only dismiss the 3D dice visual — never modify game state
     if (diceRef.current) diceRef.current.clear();
-    // Refresh state to ensure we have the latest (auto-advance may have fired)
-    fetchState();
-  }, [fetchState]);
+  }, []);
 
   const handleRematch = useCallback(async () => {
     if (!sessionId) return;
@@ -182,28 +186,39 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     p.tokens.map((t, j) => ({ playerIndex: i, tokenIndex: j, state: t.state, progress: t.progress }))
   );
 
-  const isMyTurn = gs.isMyTurn;
-  const needsRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null;
+  const hasPlayers = gs.players.length > 0;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1a1a2e', color: '#eee', position: 'relative', overflow: 'auto' }}>
-      {/* Top bar — players */}
-      <div style={{ display: 'flex', gap: 8, padding: '8px 12px', overflowX: 'auto', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
-        {gs.players.map((_, i) => (
-          <div key={i} style={{
-            display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
-            borderRadius: 6, fontSize: 12,
-            background: i === gs.currentPlayer ? `${PLAYER_COLORS[playerColorIndex(i, gs.players.length)]}33` : 'transparent',
-            border: i === gs.currentPlayer ? `1px solid ${PLAYER_COLORS[playerColorIndex(i, gs.players.length)]}` : '1px solid transparent',
-          }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: PLAYER_COLORS[playerColorIndex(i, gs.players.length)] }} />
-            <span style={{ fontWeight: 600 }}>{playerNames[i] || `${COLOR_NAMES[playerColorIndex(i, gs.players.length)]} Player`}</span>
-            <span style={{ fontSize: 10, color: '#aaa' }}>
-              {gs.players[i]?.tokens.filter(t => t.state === 'finished').length}/4
-            </span>
-          </div>
-        ))}
-      </div>
+      {/* Debug overlay */}
+      {isMyTurn && (
+        <div style={{ position: 'absolute', top: 4, left: 4, zIndex: 9999, fontSize: 9, color: '#666', background: 'rgba(0,0,0,0.7)', padding: '2px 6px', borderRadius: 4, pointerEvents: 'none' }}>
+          P{gs.currentPlayer} {gs.phase} d:{gs.diceValue ?? '-'} myP:{playerIndex}
+        </div>
+      )}
+
+      {/* Top bar — players (always renders when players exist) */}
+      {hasPlayers && (
+        <div style={{ display: 'flex', gap: 8, padding: '8px 12px', overflowX: 'auto', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+          {gs.players.map((_, i) => {
+            const isActive = i === gs.currentPlayer;
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px',
+                borderRadius: 6, fontSize: 12,
+                background: isActive ? `${PLAYER_COLORS[playerColorIndex(i, gs.players.length)]}33` : 'transparent',
+                border: isActive ? `1px solid ${PLAYER_COLORS[playerColorIndex(i, gs.players.length)]}` : '1px solid transparent',
+              }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: PLAYER_COLORS[playerColorIndex(i, gs.players.length)] }} />
+                <span style={{ fontWeight: 600 }}>{playerNames[i] || `${COLOR_NAMES[playerColorIndex(i, gs.players.length)]} Player`}</span>
+                <span style={{ fontSize: 10, color: '#aaa' }}>
+                  {gs.players[i]?.tokens.filter(t => t.state === 'finished').length}/4
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Chat messages overlay — centered above board */}
       <div style={{ position: 'absolute', top: 48, left: '50%', transform: 'translateX(-50%)', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 4, pointerEvents: 'none', maxWidth: 300, width: '90%', alignItems: 'center' }}>
@@ -223,21 +238,23 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         })}
       </div>
 
-      {/* Board area — click to dismiss dice */}
+      {/* Board area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4px', position: 'relative', minHeight: 0 }} onClick={handleBoardClick}>
-        <div style={{ width: '100%', maxWidth: 500 }}>
-          <LudoBoard
-            tokens={allTokens}
-            validMoves={gs.validMoves}
-            currentPlayer={gs.currentPlayer}
-            playerIndex={playerIndex}
-            totalPlayers={gs.players.length}
-            onTokenClick={handleTokenClick}
-          />
-        </div>
+        {hasPlayers && (
+          <div style={{ width: '100%', maxWidth: 500 }}>
+            <LudoBoard
+              tokens={allTokens}
+              validMoves={gs.validMoves}
+              currentPlayer={gs.currentPlayer}
+              playerIndex={playerIndex}
+              totalPlayers={gs.players.length}
+              onTokenClick={handleTokenClick}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Dice overlay (hidden until roll) */}
+      {/* Dice overlay */}
       <Dice ref={diceRef} />
 
       {/* Controls bar */}
@@ -245,9 +262,6 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
         padding: '8px 16px', background: 'rgba(0,0,0,0.4)', flexShrink: 0, flexWrap: 'wrap',
       }}>
-        {isMyTurn && <div style={{ fontSize: 10, color: '#666' }}>
-          P{gs.currentPlayer} {gs.phase} d:{gs.diceValue ?? '-'}
-        </div>}
         {needsRoll && (
           <button onClick={handleRollResult} style={{
             padding: '10px 22px', fontSize: 16, fontWeight: 700, borderRadius: 8,
