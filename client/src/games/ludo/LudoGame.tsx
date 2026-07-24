@@ -186,20 +186,12 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     });
 
     rollingRef.current = false;
-    console.log('[CLIENT STATE]', {
-      phase: gs.phase,
-      currentPlayer: gs.currentPlayer,
-      diceValue: gs.diceValue,
-      validMoves: gs.validMoves,
-      playerIndex,
-      isMyTurn,
-    });
   }, [sendAction, sounds, gs.phase]);
 
   const handleTokenClick = useCallback(async (tokenIndex: number) => {
-    if (!isMyTurn) { console.log('[TOKEN CLICK] blocked: not my turn', { tokenIndex, playerIndex, currentPlayer: gs.currentPlayer }); return; }
-    if (gs.phase !== 'waiting_for_move') { console.log('[TOKEN CLICK] blocked: wrong phase', { tokenIndex, phase: gs.phase }); return; }
-    if (!gs.validMoves.includes(tokenIndex)) { console.log('[TOKEN CLICK] blocked: not in validMoves', { tokenIndex, validMoves: gs.validMoves }); return; }
+    if (!isMyTurn) return;
+    if (gs.phase !== 'waiting_for_move') return;
+    if (!gs.validMoves.includes(tokenIndex)) return;
     if (diceRef.current) diceRef.current.clear();
     sounds.playTokenMove();
     await sendAction('MOVE_TOKEN', { tokenIndex });

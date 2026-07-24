@@ -227,9 +227,6 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         if (!cell) return null;
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
         const isMovable = validMoves.includes(tok.tokenIndex);
-        if (tok.playerIndex === totalPlayers - 1 || tok.playerIndex === 0) {
-          console.log('[HOME TOKEN]', { player: tok.playerIndex, token: tok.tokenIndex, state: tok.state, isMovable, validMoves, vmLen: validMoves.length });
-        }
         return (
           <g key={`h-${tok.playerIndex}-${tok.tokenIndex}`}
             style={{ cursor: isMovable ? 'pointer' : 'default' }}
