@@ -33,12 +33,19 @@ export function absPath(progress: number, quadIdx: number): number {
   return (progress + (QUAD_OFFSETS[quadIdx] ?? 0)) % 52;
 }
 
-export const HOME_STRETCH: Record<number, GridPos[]> = {
-  0: [[1,7],[2,7],[3,7],[4,7],[5,7]],     // Q2 Red — left
-  1: [[7,13],[7,12],[7,11],[7,10],[7,9]], // Q1 Blue — bottom
-  2: [[13,7],[12,7],[11,7],[10,7],[9,7]], // Q4 Yellow — right
-  3: [[7,1],[7,2],[7,3],[7,4],[7,5]],     // Q3 Green — top
+// ─── Home stretches — keyed by path OFFSET (0, 13, 26, 39) ──
+// Each stretch starts at the tile after the player's path exit and goes toward center
+const HOME_STRETCH_BY_OFFSET: Record<number, GridPos[]> = {
+  0:  [[7,1],[7,2],[7,3],[7,4],[7,5]],     // offset 0 → column 7 DOWN
+  13: [[1,7],[2,7],[3,7],[4,7],[5,7]],    // offset 13 → row 7 RIGHT
+  26: [[7,13],[7,12],[7,11],[7,10],[7,9]], // offset 26 → column 7 UP
+  39: [[13,7],[12,7],[11,7],[10,7],[9,7]], // offset 39 → row 7 LEFT
 };
+
+export function getHomeStretch(quadrant: number): GridPos[] {
+  const off = QUAD_OFFSETS[quadrant] ?? 0;
+  return HOME_STRETCH_BY_OFFSET[off] ?? HOME_STRETCH_BY_OFFSET[0];
+}
 
 function homeTokens(col0: number, row0: number): GridPos[] {
   return [[2,2],[3,2],[2,3],[3,3]].map(([c, r]) => [col0 + c, row0 + r] as GridPos);
@@ -52,10 +59,6 @@ export const HOME_TOKENS: Record<number, GridPos[]> = {
 
 export function getHomeTokens(quadrant: number): GridPos[] {
   return HOME_TOKENS[quadrant] ?? HOME_TOKENS[0];
-}
-
-export function getHomeStretch(quadrant: number): GridPos[] {
-  return HOME_STRETCH[quadrant] ?? HOME_STRETCH[0];
 }
 
 // ─── Grid helpers ────────────────────────────────────────────────

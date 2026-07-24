@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  PATH, HOME_STRETCH, HOME_TOKENS, SAFE_ABS,
+  PATH, HOME_TOKENS, SAFE_ABS,
   getBoardPosition, getHomeTokens, getHomeStretch, playerQuadrant,
 } from './BoardLayout.js';
 
