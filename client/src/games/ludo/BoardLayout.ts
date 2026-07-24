@@ -1,14 +1,6 @@
-// ─── Ludo Board Coordinate System ───────────────────────────────
-// Single source of truth. Tile 0 = BLUE's starting safe square.
-// 52-tile clockwise track. Do NOT modify movement math — only coordinates.
-
-export type GridPos = [number, number];
-
-// ─── Main track (52 tiles, clockwise) ──────────────────────────
-// Tile 0 = Blue's starting safe square (bottom-left)
-// Tile 13 = Red's starting safe square (top-left)
-// Tile 26 = Green's starting safe square (top-right)
-// Tile 39 = Yellow's starting safe square (bottom-right)
+// ─── Main track (52 tiles, clockwise from Blue start) ─────────
+// Tile 0 = Blue's starting safe square [6,13]
+// Reversed from base so tile sequence goes clockwise.
 const BASE_PATH: [number, number][] = [
   [6,0],[6,1],[6,2],[6,3],[6,4],[6,5],
   [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -24,83 +16,78 @@ const BASE_PATH: [number, number][] = [
   [7,0],
 ];
 
-// Rotate: Blue entry (old[23]) → tile 0
+// Reverse direction + rotate so Blue's entry [6,13] is tile 0
+const _rev = [...BASE_PATH].reverse();
+const _blueAt = _rev.findIndex(([c, r]) => c === 6 && r === 13);
 export const PATH: [number, number][] = [
-  ...BASE_PATH.slice(23),
-  ...BASE_PATH.slice(0, 23),
+  ..._rev.slice(_blueAt),
+  ..._rev.slice(0, _blueAt),
 ];
 
-// ─── Safe tiles (indices in the rotated PATH) ───────────────────
-// Positions: 0, 8, 13, 21, 26, 34, 39, 47
+// ─── Safe tiles ────────────────────────────────────────────────
 export const SAFE_ABS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 export function isSafeSquare(absPos: number): boolean { return SAFE_ABS.has(absPos); }
 
-// ─── Player configuration — single source of truth ──────────────
+// ─── Player configuration ──────────────────────────────────────
 export const PLAYER_CONFIG: Record<number, {
   name: string;
-  startTile: number;    // absolute path index where pieces enter on a 6
-  homeEntry: number;    // absolute path index where piece exits to home stretch
-  homeStretch: GridPos[]; // 5 tiles leading toward center
+  startTile: number;    // path index where pieces enter on a 6
+  homeEntry: number;    // path index where piece exits to home stretch
+  homeStretch: [number, number][]; // 5 tiles leading toward center
   homeZoneCol: number;  // 6x6 home zone top-left column
-  homeZoneRow: number;  // 6x6 home zone top-left row
+  homeZoneRow: number;
 }> = {
   0: { // BLUE — Bottom Left
     name: 'Blue',
     startTile: 0,
-    homeEntry: 50,
+    homeEntry: 51,
     homeStretch: [[7,13],[7,12],[7,11],[7,10],[7,9]],
     homeZoneCol: 0,
     homeZoneRow: 9,
   },
   1: { // RED — Top Left
     name: 'Red',
-    startTile: 13,
-    homeEntry: 11,
+    startTile: 23,
+    homeEntry: 22,
     homeStretch: [[1,7],[2,7],[3,7],[4,7],[5,7]],
     homeZoneCol: 0,
     homeZoneRow: 0,
   },
   2: { // GREEN — Top Right
     name: 'Green',
-    startTile: 26,
-    homeEntry: 24,
+    startTile: 36,
+    homeEntry: 35,
     homeStretch: [[7,1],[7,2],[7,3],[7,4],[7,5]],
     homeZoneCol: 9,
     homeZoneRow: 0,
   },
   3: { // YELLOW — Bottom Right
     name: 'Yellow',
-    startTile: 39,
-    homeEntry: 37,
+    startTile: 49,
+    homeEntry: 48,
     homeStretch: [[13,7],[12,7],[11,7],[10,7],[9,7]],
     homeZoneCol: 9,
     homeZoneRow: 9,
   },
 };
 
-// ─── Derived mappings ────────────────────────────────────────────
-export function playerOffset(playerIndex: number): number {
-  return PLAYER_CONFIG[playerIndex]?.startTile ?? 0;
+function homeTokens(col0: number, row0: number): [number, number][] {
+  return [[2,2],[3,2],[2,3],[3,3]].map(([c, r]) => [col0 + c, row0 + r] as [number, number]);
 }
 
-export function getHomeStretch(playerIndex: number): GridPos[] {
-  return PLAYER_CONFIG[playerIndex]?.homeStretch ?? PLAYER_CONFIG[0].homeStretch;
-}
-
-function homeTokens(col0: number, row0: number): GridPos[] {
-  return [[2,2],[3,2],[2,3],[3,3]].map(([c, r]) => [col0 + c, row0 + r] as GridPos);
-}
-
-export const HOME_TOKENS: Record<number, GridPos[]> = {};
+export const HOME_TOKENS: Record<number, [number, number][]> = {};
 for (let i = 0; i < 4; i++) {
   HOME_TOKENS[i] = homeTokens(PLAYER_CONFIG[i].homeZoneCol, PLAYER_CONFIG[i].homeZoneRow);
 }
 
 // ─── Quadrant mapping for multi-player ───────────────────────────
-// 2 players: Blue & Green (opposites). 3 players: Blue, Red, Green.
 export function playerQuadrant(playerIndex: number, totalPlayers: number): number {
   if (totalPlayers === 2) return playerIndex === 0 ? 0 : 2;
   return playerIndex;
+}
+
+export function playerOffset(playerIndex: number): number {
+  return PLAYER_CONFIG[playerIndex]?.startTile ?? 0;
 }
 
 export function absPath(progress: number, playerIndex: number, totalPlayers: number): number {
@@ -108,16 +95,20 @@ export function absPath(progress: number, playerIndex: number, totalPlayers: num
   return (progress + playerOffset(q)) % 52;
 }
 
-export function getHomeTokens(playerIndex: number, totalPlayers: number): GridPos[] {
+export function getHomeStretch(playerIndex: number): [number, number][] {
+  return PLAYER_CONFIG[playerIndex]?.homeStretch ?? PLAYER_CONFIG[0].homeStretch;
+}
+
+export function getHomeTokens(playerIndex: number, totalPlayers: number): [number, number][] {
   const q = playerQuadrant(playerIndex, totalPlayers);
   return HOME_TOKENS[q] ?? HOME_TOKENS[0];
 }
 
-export function getHomeTokensByQuadrant(quadrant: number): GridPos[] {
+export function getHomeTokensByQuadrant(quadrant: number): [number, number][] {
   return HOME_TOKENS[quadrant] ?? HOME_TOKENS[0];
 }
 
-export function getHomeStretchByQuadrant(quadrant: number): GridPos[] {
+export function getHomeStretchByQuadrant(quadrant: number): [number, number][] {
   return PLAYER_CONFIG[quadrant]?.homeStretch ?? PLAYER_CONFIG[0].homeStretch;
 }
 

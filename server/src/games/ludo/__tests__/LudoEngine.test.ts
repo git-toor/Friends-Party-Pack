@@ -215,7 +215,7 @@ describe('LudoEngine', () => {
 
     it('captures opponent token on non-safe square', () => {
       game.players[0].tokens[0] = { state: 'path', progress: 5 };
-      game.players[1].tokens[0] = { state: 'path', progress: 46 };
+      game.players[1].tokens[0] = { state: 'path', progress: 36 };
       rollWithFixedValue(game, 0, 2);
       const r = handleAction(game, 0, { type: 'MOVE_TOKEN', payload: { tokenIndex: 0 } });
       expect(r.valid).toBe(true);
@@ -246,9 +246,9 @@ describe('LudoEngine', () => {
 
   describe('Blocks', () => {
     it('cannot pass through opponent block', () => {
-      // P1 (Red, offset 13) has 2 tokens at abs 5 (progress 44)
-      game.players[1].tokens[0] = { state: 'path', progress: 44 };
-      game.players[1].tokens[1] = { state: 'path', progress: 44 };
+      // P1 (Red, offset 23) has 2 tokens at abs 5 (progress 34)
+      game.players[1].tokens[0] = { state: 'path', progress: 34 };
+      game.players[1].tokens[1] = { state: 'path', progress: 34 };
       // P0 (Blue, offset 0) at progress 3 (abs 3), rolls 3 → would pass through abs 4,5,6
       game.players[0].tokens[0] = { state: 'path', progress: 3 };
       rollWithFixedValue(game, 0, 3);
