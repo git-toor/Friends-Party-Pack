@@ -1,25 +1,17 @@
-// ─── Main track (52 tiles, clockwise from Blue start) ─────────
-// Tile 0 = Blue's starting safe square [6,13]
-// Reversed from base so tile sequence goes clockwise.
-const BASE_PATH: [number, number][] = [
-  [6,0],[6,1],[6,2],[6,3],[6,4],[6,5],
-  [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
-  [0,7],[0,8],
-  [1,8],[2,8],[3,8],[4,8],[5,8],
-  [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
-  [7,14],[8,14],
-  [8,13],[8,12],[8,11],[8,10],[8,9],
-  [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-  [14,7],[14,6],
-  [13,6],[12,6],[11,6],[10,6],[9,6],
-  [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
-  [7,0],
-];
-
-// Rotate: Blue entry (old[23]) → tile 0
+// ─── Main track (52 tiles, Blue→Red→Green→Yellow→Blue) ─────
+// Tile  0 = Blue start    [6,13]   Tile 51 = below 0   [6,14]
+// Tile 13 = Red start     [1,6]    Tile 26 = Green start [8,1]
+// Tile 39 = Yellow start  [13,8]
+// Safe tiles at indices: 0,8,13,21,26,34,39,47
 export const PATH: [number, number][] = [
-  ...BASE_PATH.slice(23),
-  ...BASE_PATH.slice(0, 23),
+  [6,13],[6,12],[6,11],[6,10],[6,9],
+  [5,8],[4,8],[3,8],[2,8],[1,8],[0,8],[0,7],[0,6],
+  [1,6],[2,6],[3,6],[4,6],[5,6],
+  [6,5],[6,4],[6,3],[6,2],[6,1],[6,0],[7,0],[8,0],
+  [8,1],[8,2],[8,3],[8,4],[8,5],
+  [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[14,7],[14,8],
+  [13,8],[12,8],[11,8],[10,8],[9,8],
+  [8,9],[8,10],[8,11],[8,12],[8,13],[8,14],[7,14],[6,14],
 ];
 
 // ─── Safe tiles ────────────────────────────────────────────────
@@ -38,7 +30,7 @@ export const PLAYER_CONFIG: Record<number, {
   0: { // BLUE — Bottom Left
     name: 'Blue',
     startTile: 0,
-    homeEntry: 51,
+    homeEntry: 50,
     homeStretch: [[7,13],[7,12],[7,11],[7,10],[7,9]],
     homeZoneCol: 0,
     homeZoneRow: 9,
@@ -46,7 +38,7 @@ export const PLAYER_CONFIG: Record<number, {
   1: { // RED — Top Left
     name: 'Red',
     startTile: 13,
-    homeEntry: 12,
+    homeEntry: 11,
     homeStretch: [[1,7],[2,7],[3,7],[4,7],[5,7]],
     homeZoneCol: 0,
     homeZoneRow: 0,
@@ -54,7 +46,7 @@ export const PLAYER_CONFIG: Record<number, {
   2: { // GREEN — Top Right
     name: 'Green',
     startTile: 26,
-    homeEntry: 25,
+    homeEntry: 24,
     homeStretch: [[7,1],[7,2],[7,3],[7,4],[7,5]],
     homeZoneCol: 9,
     homeZoneRow: 0,
@@ -62,7 +54,7 @@ export const PLAYER_CONFIG: Record<number, {
   3: { // YELLOW — Bottom Right
     name: 'Yellow',
     startTile: 39,
-    homeEntry: 38,
+    homeEntry: 37,
     homeStretch: [[13,7],[12,7],[11,7],[10,7],[9,7]],
     homeZoneCol: 9,
     homeZoneRow: 9,

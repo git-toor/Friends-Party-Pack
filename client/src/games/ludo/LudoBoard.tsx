@@ -141,11 +141,25 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
               width={ts} height={ts} rx={0.003}
               fill={fill} stroke={borderColor} strokeWidth={borderW}
             />
-            {/* Debug: tile index */}
             <text x={cx(c)} y={cy(r)+G*0.12} textAnchor="middle" fontSize={G*0.3} fill="rgba(255,255,255,0.2)" style={{ pointerEvents: 'none', userSelect: 'none' }}>
               {i}
             </text>
           </g>
+        );
+      })}
+
+      {/* Direction arrows: 0→1→2→3→4 and 48→49→50→51→0 */}
+      {[[0,1],[1,2],[2,3],[3,4],[48,49],[49,50],[50,51],[51,0]].map(([from, to]) => {
+        const f = PATH[from], t = PATH[to];
+        const fx = cx(f[0]), fy = cy(f[1]);
+        const tx = cx(t[0]), ty = cy(t[1]);
+        const mx = (fx + tx) / 2, my = (fy + ty) / 2;
+        const angle = Math.atan2(ty - fy, tx - fx) * 180 / Math.PI;
+        return (
+          <text key={`arr-${from}-${to}`} x={mx} y={my + G*0.12}
+            textAnchor="middle" fontSize={G*0.35} fill="#f1c40f" opacity={0.6}
+            transform={`rotate(${angle}, ${mx}, ${my})`}
+            style={{ pointerEvents: 'none', userSelect: 'none' }}>→</text>
         );
       })}
 
