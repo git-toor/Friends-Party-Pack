@@ -253,6 +253,7 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
       <div style={{
         flex: 1, position: 'relative', overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
+        filter: nsfw ? 'saturate(1.3) hue-rotate(10deg)' : 'none',
       }}>
         {artUrl ? (
           <picture>

@@ -7,10 +7,22 @@
         "/art/imploding/reverse_002.webp",
         "/art/imploding/reverse_003.webp",
         "/art/imploding/reverse_004.webp"
+      ],
+      "nsfw": [
+        "/art/imploding/reverse_001.webp",
+        "/art/imploding/reverse_002.webp",
+        "/art/imploding/reverse_003.webp",
+        "/art/imploding/reverse_004.webp"
       ]
     },
     "exploding_kitten": {
       "base": [
+        "/art/base/exploding_kitten_001.webp",
+        "/art/base/exploding_kitten_002.webp",
+        "/art/base/exploding_kitten_003.webp",
+        "/art/base/exploding_kitten_004.webp"
+      ],
+      "nsfw": [
         "/art/base/exploding_kitten_001.webp",
         "/art/base/exploding_kitten_002.webp",
         "/art/base/exploding_kitten_003.webp",
@@ -25,10 +37,24 @@
         "/art/base/defuse_004.webp",
         "/art/base/defuse_005.webp",
         "/art/base/defuse_006.webp"
+      ],
+      "nsfw": [
+        "/art/base/defuse_001.webp",
+        "/art/base/defuse_002.webp",
+        "/art/base/defuse_003.webp",
+        "/art/base/defuse_004.webp",
+        "/art/base/defuse_005.webp",
+        "/art/base/defuse_006.webp"
       ]
     },
     "attack": {
       "base": [
+        "/art/base/attack_001.webp",
+        "/art/base/attack_002.webp",
+        "/art/base/attack_003.webp",
+        "/art/base/attack_004.webp"
+      ],
+      "nsfw": [
         "/art/base/attack_001.webp",
         "/art/base/attack_002.webp",
         "/art/base/attack_003.webp",
@@ -41,10 +67,22 @@
         "/art/base/skip_002.webp",
         "/art/base/skip_003.webp",
         "/art/base/skip_004.webp"
+      ],
+      "nsfw": [
+        "/art/base/skip_001.webp",
+        "/art/base/skip_002.webp",
+        "/art/base/skip_003.webp",
+        "/art/base/skip_004.webp"
       ]
     },
     "favor": {
       "base": [
+        "/art/base/favor_001.webp",
+        "/art/base/favor_002.webp",
+        "/art/base/favor_003.webp",
+        "/art/base/favor_004.webp"
+      ],
+      "nsfw": [
         "/art/base/favor_001.webp",
         "/art/base/favor_002.webp",
         "/art/base/favor_003.webp",
@@ -57,10 +95,23 @@
         "/art/base/shuffle_002.webp",
         "/art/base/shuffle_003.webp",
         "/art/base/shuffle_004.webp"
+      ],
+      "nsfw": [
+        "/art/base/shuffle_001.webp",
+        "/art/base/shuffle_002.webp",
+        "/art/base/shuffle_003.webp",
+        "/art/base/shuffle_004.webp"
       ]
     },
     "nope": {
       "base": [
+        "/art/base/nope_001.webp",
+        "/art/base/nope_002.webp",
+        "/art/base/nope_003.webp",
+        "/art/base/nope_004.webp",
+        "/art/base/nope_005.webp"
+      ],
+      "nsfw": [
         "/art/base/nope_001.webp",
         "/art/base/nope_002.webp",
         "/art/base/nope_003.webp",
@@ -75,10 +126,23 @@
         "/art/base/see_future_3x_003.webp",
         "/art/base/see_future_3x_004.webp",
         "/art/base/see_future_3x_005.webp"
+      ],
+      "nsfw": [
+        "/art/base/see_future_3x_001.webp",
+        "/art/base/see_future_3x_002.webp",
+        "/art/base/see_future_3x_003.webp",
+        "/art/base/see_future_3x_004.webp",
+        "/art/base/see_future_3x_005.webp"
       ]
     },
     "tacocat": {
       "base": [
+        "/art/base/tacocat_001.webp",
+        "/art/base/tacocat_002.webp",
+        "/art/base/tacocat_003.webp",
+        "/art/base/tacocat_004.webp"
+      ],
+      "nsfw": [
         "/art/base/tacocat_001.webp",
         "/art/base/tacocat_002.webp",
         "/art/base/tacocat_003.webp",
@@ -91,10 +155,22 @@
         "/art/base/cattermelon_002.webp",
         "/art/base/cattermelon_003.webp",
         "/art/base/cattermelon_004.webp"
+      ],
+      "nsfw": [
+        "/art/base/cattermelon_001.webp",
+        "/art/base/cattermelon_002.webp",
+        "/art/base/cattermelon_003.webp",
+        "/art/base/cattermelon_004.webp"
       ]
     },
     "hairy_potato_cat": {
       "base": [
+        "/art/base/hairy_potato_cat_001.webp",
+        "/art/base/hairy_potato_cat_002.webp",
+        "/art/base/hairy_potato_cat_003.webp",
+        "/art/base/hairy_potato_cat_004.webp"
+      ],
+      "nsfw": [
         "/art/base/hairy_potato_cat_001.webp",
         "/art/base/hairy_potato_cat_002.webp",
         "/art/base/hairy_potato_cat_003.webp",
@@ -107,10 +183,22 @@
         "/art/base/beard_cat_002.webp",
         "/art/base/beard_cat_003.webp",
         "/art/base/beard_cat_004.webp"
+      ],
+      "nsfw": [
+        "/art/base/beard_cat_001.webp",
+        "/art/base/beard_cat_002.webp",
+        "/art/base/beard_cat_003.webp",
+        "/art/base/beard_cat_004.webp"
       ]
     },
     "rainbow_ralphing_cat": {
       "base": [
+        "/art/base/rainbow_ralphing_cat_001.webp",
+        "/art/base/rainbow_ralphing_cat_002.webp",
+        "/art/base/rainbow_ralphing_cat_003.webp",
+        "/art/base/rainbow_ralphing_cat_004.webp"
+      ],
+      "nsfw": [
         "/art/base/rainbow_ralphing_cat_001.webp",
         "/art/base/rainbow_ralphing_cat_002.webp",
         "/art/base/rainbow_ralphing_cat_003.webp",
@@ -120,10 +208,19 @@
     "imploding_kitten": {
       "base": [
         "/art/imploding/imploding_kitten_001.webp"
+      ],
+      "nsfw": [
+        "/art/imploding/imploding_kitten_001.webp"
       ]
     },
     "alter_future_3x": {
       "base": [
+        "/art/imploding/alter_future_3x_001.webp",
+        "/art/imploding/alter_future_3x_002.webp",
+        "/art/imploding/alter_future_3x_003.webp",
+        "/art/imploding/alter_future_3x_004.webp"
+      ],
+      "nsfw": [
         "/art/imploding/alter_future_3x_001.webp",
         "/art/imploding/alter_future_3x_002.webp",
         "/art/imploding/alter_future_3x_003.webp",
@@ -136,10 +233,21 @@
         "/art/imploding/draw_from_bottom_002.webp",
         "/art/imploding/draw_from_bottom_003.webp",
         "/art/imploding/draw_from_bottom_004.webp"
+      ],
+      "nsfw": [
+        "/art/imploding/draw_from_bottom_001.webp",
+        "/art/imploding/draw_from_bottom_002.webp",
+        "/art/imploding/draw_from_bottom_003.webp",
+        "/art/imploding/draw_from_bottom_004.webp"
       ]
     },
     "targeted_attack": {
       "base": [
+        "/art/imploding/targeted_attack_001.webp",
+        "/art/imploding/targeted_attack_002.webp",
+        "/art/imploding/targeted_attack_003.webp"
+      ],
+      "nsfw": [
         "/art/imploding/targeted_attack_001.webp",
         "/art/imploding/targeted_attack_002.webp",
         "/art/imploding/targeted_attack_003.webp"
@@ -151,30 +259,51 @@
         "/art/imploding/feral_cat_002.webp",
         "/art/imploding/feral_cat_003.webp",
         "/art/imploding/feral_cat_004.webp"
+      ],
+      "nsfw": [
+        "/art/imploding/feral_cat_001.webp",
+        "/art/imploding/feral_cat_002.webp",
+        "/art/imploding/feral_cat_003.webp",
+        "/art/imploding/feral_cat_004.webp"
       ]
     },
     "streaking_kitten": {
       "base": [
+        "/art/streaking/streaking_kitten_001.webp"
+      ],
+      "nsfw": [
         "/art/streaking/streaking_kitten_001.webp"
       ]
     },
     "exploding_kitten_extra": {
       "base": [
         "/art/streaking/exploding_kitten_extra_001.webp"
+      ],
+      "nsfw": [
+        "/art/streaking/exploding_kitten_extra_001.webp"
       ]
     },
     "super_skip": {
       "base": [
+        "/art/streaking/super_skip_001.webp"
+      ],
+      "nsfw": [
         "/art/streaking/super_skip_001.webp"
       ]
     },
     "see_future_5x": {
       "base": [
         "/art/streaking/see_future_5x_001.webp"
+      ],
+      "nsfw": [
+        "/art/streaking/see_future_5x_001.webp"
       ]
     },
     "alter_future_5x": {
       "base": [
+        "/art/streaking/alter_future_5x_001.webp"
+      ],
+      "nsfw": [
         "/art/streaking/alter_future_5x_001.webp"
       ]
     },
@@ -183,20 +312,36 @@
         "/art/streaking/swap_top_bottom_001.webp",
         "/art/streaking/swap_top_bottom_002.webp",
         "/art/streaking/swap_top_bottom_003.webp"
+      ],
+      "nsfw": [
+        "/art/streaking/swap_top_bottom_001.webp",
+        "/art/streaking/swap_top_bottom_002.webp",
+        "/art/streaking/swap_top_bottom_003.webp"
       ]
     },
     "garbage_collection": {
       "base": [
+        "/art/streaking/garbage_collection_001.webp"
+      ],
+      "nsfw": [
         "/art/streaking/garbage_collection_001.webp"
       ]
     },
     "catomic_bomb": {
       "base": [
         "/art/streaking/catomic_bomb_001.webp"
+      ],
+      "nsfw": [
+        "/art/streaking/catomic_bomb_001.webp"
       ]
     },
     "mark": {
       "base": [
+        "/art/streaking/mark_001.webp",
+        "/art/streaking/mark_002.webp",
+        "/art/streaking/mark_003.webp"
+      ],
+      "nsfw": [
         "/art/streaking/mark_001.webp",
         "/art/streaking/mark_002.webp",
         "/art/streaking/mark_003.webp"
@@ -206,10 +351,18 @@
       "base": [
         "/art/streaking/curse_cat_butt_001.webp",
         "/art/streaking/curse_cat_butt_002.webp"
+      ],
+      "nsfw": [
+        "/art/streaking/curse_cat_butt_001.webp",
+        "/art/streaking/curse_cat_butt_002.webp"
       ]
     },
     "barking_kitten": {
       "base": [
+        "/art/barking/barking_kitten_001.webp",
+        "/art/barking/barking_kitten_002.webp"
+      ],
+      "nsfw": [
         "/art/barking/barking_kitten_001.webp",
         "/art/barking/barking_kitten_002.webp"
       ]
@@ -217,10 +370,19 @@
     "tower_of_power": {
       "base": [
         "/art/barking/tower_of_power_001.webp"
+      ],
+      "nsfw": [
+        "/art/barking/tower_of_power_001.webp"
       ]
     },
     "personal_attack": {
       "base": [
+        "/art/barking/personal_attack_001.webp",
+        "/art/barking/personal_attack_002.webp",
+        "/art/barking/personal_attack_003.webp",
+        "/art/barking/personal_attack_004.webp"
+      ],
+      "nsfw": [
         "/art/barking/personal_attack_001.webp",
         "/art/barking/personal_attack_002.webp",
         "/art/barking/personal_attack_003.webp",
@@ -231,16 +393,28 @@
       "base": [
         "/art/barking/potluck_001.webp",
         "/art/barking/potluck_002.webp"
+      ],
+      "nsfw": [
+        "/art/barking/potluck_001.webp",
+        "/art/barking/potluck_002.webp"
       ]
     },
     "bury": {
       "base": [
         "/art/barking/bury_001.webp",
         "/art/barking/bury_002.webp"
+      ],
+      "nsfw": [
+        "/art/barking/bury_001.webp",
+        "/art/barking/bury_002.webp"
       ]
     },
     "share_future_3x": {
       "base": [
+        "/art/barking/share_future_3x_001.webp",
+        "/art/barking/share_future_3x_002.webp"
+      ],
+      "nsfw": [
         "/art/barking/share_future_3x_001.webp",
         "/art/barking/share_future_3x_002.webp"
       ]
@@ -251,10 +425,20 @@
         "/art/barking/ill_take_that_002.webp",
         "/art/barking/ill_take_that_003.webp",
         "/art/barking/ill_take_that_004.webp"
+      ],
+      "nsfw": [
+        "/art/barking/ill_take_that_001.webp",
+        "/art/barking/ill_take_that_002.webp",
+        "/art/barking/ill_take_that_003.webp",
+        "/art/barking/ill_take_that_004.webp"
       ]
     },
     "super_skip_barking": {
       "base": [
+        "/art/barking/super_skip_barking_001.webp",
+        "/art/barking/super_skip_barking_002.webp"
+      ],
+      "nsfw": [
         "/art/barking/super_skip_barking_001.webp",
         "/art/barking/super_skip_barking_002.webp"
       ]
@@ -262,10 +446,20 @@
     "alter_future_3x_barking": {
       "base": [
         "/art/barking/alter_future_3x_barking_001.webp"
+      ],
+      "nsfw": [
+        "/art/barking/alter_future_3x_barking_001.webp"
       ]
     },
     "zombie_kitten": {
       "base": [
+        "/art/zombie/zombie_kitten_001.webp",
+        "/art/zombie/zombie_kitten_002.webp",
+        "/art/zombie/zombie_kitten_003.webp",
+        "/art/zombie/zombie_kitten_004.webp",
+        "/art/zombie/zombie_kitten_005.webp"
+      ],
+      "nsfw": [
         "/art/zombie/zombie_kitten_001.webp",
         "/art/zombie/zombie_kitten_002.webp",
         "/art/zombie/zombie_kitten_003.webp",
@@ -279,16 +473,32 @@
         "/art/zombie/exploding_kitten_z_002.webp",
         "/art/zombie/exploding_kitten_z_003.webp",
         "/art/zombie/exploding_kitten_z_004.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/exploding_kitten_z_001.webp",
+        "/art/zombie/exploding_kitten_z_002.webp",
+        "/art/zombie/exploding_kitten_z_003.webp",
+        "/art/zombie/exploding_kitten_z_004.webp"
       ]
     },
     "defuse_z": {
       "base": [
         "/art/zombie/defuse_z_001.webp",
         "/art/zombie/defuse_z_002.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/defuse_z_001.webp",
+        "/art/zombie/defuse_z_002.webp"
       ]
     },
     "attack_z": {
       "base": [
+        "/art/zombie/attack_z_001.webp",
+        "/art/zombie/attack_z_002.webp",
+        "/art/zombie/attack_z_003.webp",
+        "/art/zombie/attack_z_004.webp"
+      ],
+      "nsfw": [
         "/art/zombie/attack_z_001.webp",
         "/art/zombie/attack_z_002.webp",
         "/art/zombie/attack_z_003.webp",
@@ -300,16 +510,31 @@
         "/art/zombie/skip_z_001.webp",
         "/art/zombie/skip_z_002.webp",
         "/art/zombie/skip_z_003.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/skip_z_001.webp",
+        "/art/zombie/skip_z_002.webp",
+        "/art/zombie/skip_z_003.webp"
       ]
     },
     "shuffle_z": {
       "base": [
         "/art/zombie/shuffle_z_001.webp",
         "/art/zombie/shuffle_z_002.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/shuffle_z_001.webp",
+        "/art/zombie/shuffle_z_002.webp"
       ]
     },
     "see_future_3x_z": {
       "base": [
+        "/art/zombie/see_future_3x_z_001.webp",
+        "/art/zombie/see_future_3x_z_002.webp",
+        "/art/zombie/see_future_3x_z_003.webp",
+        "/art/zombie/see_future_3x_z_004.webp"
+      ],
+      "nsfw": [
         "/art/zombie/see_future_3x_z_001.webp",
         "/art/zombie/see_future_3x_z_002.webp",
         "/art/zombie/see_future_3x_z_003.webp",
@@ -323,10 +548,21 @@
         "/art/zombie/nope_z_003.webp",
         "/art/zombie/nope_z_004.webp",
         "/art/zombie/nope_z_005.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/nope_z_001.webp",
+        "/art/zombie/nope_z_002.webp",
+        "/art/zombie/nope_z_003.webp",
+        "/art/zombie/nope_z_004.webp",
+        "/art/zombie/nope_z_005.webp"
       ]
     },
     "clairvoyance": {
       "base": [
+        "/art/zombie/clairvoyance_001.webp",
+        "/art/zombie/clairvoyance_002.webp"
+      ],
+      "nsfw": [
         "/art/zombie/clairvoyance_001.webp",
         "/art/zombie/clairvoyance_002.webp"
       ]
@@ -335,10 +571,20 @@
       "base": [
         "/art/zombie/clone_001.webp",
         "/art/zombie/clone_002.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/clone_001.webp",
+        "/art/zombie/clone_002.webp"
       ]
     },
     "dig_deeper": {
       "base": [
+        "/art/zombie/dig_deeper_001.webp",
+        "/art/zombie/dig_deeper_002.webp",
+        "/art/zombie/dig_deeper_003.webp",
+        "/art/zombie/dig_deeper_004.webp"
+      ],
+      "nsfw": [
         "/art/zombie/dig_deeper_001.webp",
         "/art/zombie/dig_deeper_002.webp",
         "/art/zombie/dig_deeper_003.webp",
@@ -351,10 +597,20 @@
         "/art/zombie/feed_the_dead_002.webp",
         "/art/zombie/feed_the_dead_003.webp",
         "/art/zombie/feed_the_dead_004.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/feed_the_dead_001.webp",
+        "/art/zombie/feed_the_dead_002.webp",
+        "/art/zombie/feed_the_dead_003.webp",
+        "/art/zombie/feed_the_dead_004.webp"
       ]
     },
     "grave_robber": {
       "base": [
+        "/art/zombie/grave_robber_001.webp",
+        "/art/zombie/grave_robber_002.webp"
+      ],
+      "nsfw": [
         "/art/zombie/grave_robber_001.webp",
         "/art/zombie/grave_robber_002.webp"
       ]
@@ -364,16 +620,29 @@
         "/art/zombie/attack_of_the_dead_001.webp",
         "/art/zombie/attack_of_the_dead_002.webp",
         "/art/zombie/attack_of_the_dead_003.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/attack_of_the_dead_001.webp",
+        "/art/zombie/attack_of_the_dead_002.webp",
+        "/art/zombie/attack_of_the_dead_003.webp"
       ]
     },
     "shuffle_now": {
       "base": [
         "/art/zombie/shuffle_now_001.webp",
         "/art/zombie/shuffle_now_002.webp"
+      ],
+      "nsfw": [
+        "/art/zombie/shuffle_now_001.webp",
+        "/art/zombie/shuffle_now_002.webp"
       ]
     },
     "favor_z": {
       "base": [
+        "/art/zombie/favor_z_001.webp",
+        "/art/zombie/favor_z_002.webp"
+      ],
+      "nsfw": [
         "/art/zombie/favor_z_001.webp",
         "/art/zombie/favor_z_002.webp"
       ]
