@@ -287,3 +287,170 @@ export function useLudoSounds() {
 6. `LudoGame.tsx`
 7. `GamePage.tsx` wiring
 8. Build, test, verify
+
+## Turn Lifecycle Flow Diagram
+
+```
+                    ┌──────────────────────────────────────────┐
+                    │          GAME START                       │
+                    │  currentPlayer = random                   │
+                    │  phase = waiting_for_roll                 │
+                    └────────────────┬─────────────────────────┘
+                                     │
+                                     ▼
+                    ┌──────────────────────────────────────────┐
+                    │      WAITING_FOR_ROLL                    │
+                    │  Roll button visible to current player   │
+                    │  All other players see "Waiting for..."  │
+                    └────────────────┬─────────────────────────┘
+                                     │ Player clicks Roll
+                                     ▼
+                    ┌──────────────────────────────────────────┐
+                    │          ROLL_DICE (API)                  │
+                    │  Server: Math.random() 1-6                │
+                    │  Server: diceValue = value                │
+                    │  Server: phase = rolling_dice             │
+                    │  Server: diceRolledBy = currentPlayer     │
+                    │  Server: currentPlayer UNCHANGED          │
+                    └────────────────┬─────────────────────────┘
+                                     │ Response returned to client
+                                     ▼
+               ┌─────────────────────┼─────────────────────────┐
+               │                     │                         │
+               ▼                     ▼                         ▼
+   ┌──────────────────────┐  ┌──────────────────┐  ┌──────────────────────┐
+   │  3D DICE ANIMATION   │  │  CONFIRM_DICE    │  │  STATE UPDATE        │
+   │  (fire & forget)     │  │  (API)           │  │  phase = rolling_dice│
+   │  DiceOverlay.roll()  │  │  Sent immediately│  │  dice value shown    │
+   │  Shows value @X      │  │  after ROLL_DICE │  │                      │
+   └──────────────────────┘  └────────┬─────────┘  └──────────────────────┘
+                                      │
+                                      ▼
+                     ┌──────────────────────────────────────────┐
+                     │       CONFIRM_DICE (Server)              │
+                     │  Check: getValidMoves(currentPlayer)     │
+                     └────────────────┬─────────────────────────┘
+                                      │
+                           ┌──────────┴──────────┐
+                           │                     │
+                    Has moves               No moves
+                           │                     │
+                           ▼                     ▼
+            ┌──────────────────────────┐  ┌──────────────────────────┐
+            │ phase = waiting_for_move │  │ No valid moves for this  │
+            │ validMoves[] populated   │  │ dice value or all home   │
+            │ Tokens glow on board     │  │                          │
+            └────────────────┬─────────┘  │ advanceTurn(state)      │
+                             │            │ phase = waiting_for_roll │
+                             │            │ next player's turn       │
+                             │            └──────────┬───────────────┘
+                             │                       │
+                             ▼                       ▼
+               ┌───────────────────────┐  ┌──────────────────────┐
+               │  WAITING_FOR_MOVE     │  │ WAITING_FOR_ROLL     │
+               │  Player clicks a      │  │ (next player)        │
+               │  glowing token        │  │ Roll button appears  │
+               └───────────┬───────────┘  └──────────────────────┘
+                           │
+                           ▼
+               ┌───────────────────────┐
+               │     MOVE_TOKEN (API)  │
+               │  Server validates     │
+               │  Executes movement    │
+               │  Handles capture      │
+               │  Handles block        │
+               │  Handles finish       │
+               └───────────┬───────────┘
+                           │
+                           ▼
+                  ┌────────────────┐
+                  │  Check:        │
+                  │  was dice = 6? │
+                  └───────┬────────┘
+                     ┌────┴────┐
+                     │         │
+                    Yes       No
+                     │         │
+                     ▼         ▼
+          ┌─────────────────┐  ┌──────────────────┐
+          │ Check:          │  │ advanceTurn()    │
+          │ consecutiveSixes│  │ phase =          │
+          │ >= 3?           │  │ waiting_for_roll │
+          └───────┬─────────┘  │ next player      │
+                  │            └──────┬───────────┘
+             ┌────┴────┐             │
+             │         │             │
+            Yes       No            │
+             │         │             │
+             ▼         ▼             │
+   ┌──────────────┐  ┌──────────────┐│
+   │ Penalty:     │  │ Bonus roll:  ││
+   │ advanceTurn()│  │ phase =      ││
+   │ dice cleared │  │ wait_for_roll││
+   │ next player  │  │ same player  ││
+   └──────┬───────┘  └──────┬───────┘│
+          │                 │        │
+          └─────────────────┴────────┘
+                              │
+                              ▼
+                    ┌──────────────────────┐
+                    │   WAITING_FOR_ROLL   │
+                    │  (loop to top)       │
+                    └──────────────────────┘
+```
+
+## Server-Side State Machine
+
+```
+Phase Constants:
+  'waiting_for_roll'   → Players can ROLL_DICE
+  'rolling_dice'       → Dice value generated, animation pending
+  'waiting_for_move'   → Player must move a token
+  'moving'             → Token movement in progress
+  'turn_end'           → Turn cleanup (internal)
+
+Valid Action Transitions:
+  WAITING_FOR_ROLL  --[ROLL_DICE]--> ROLLING_DICE
+  ROLLING_DICE      --[CONFIRM_DICE]--> WAITING_FOR_MOVE (has moves)
+  ROLLING_DICE      --[CONFIRM_DICE]--> WAITING_FOR_ROLL  (no moves → next player)
+  WAITING_FOR_MOVE  --[MOVE_TOKEN]--> WAITING_FOR_ROLL  (bonus if 6, else next player)
+  WAITING_FOR_MOVE  --[MOVE_TOKEN]--> WAITING_FOR_ROLL  (three 6s penalty → next player)
+```
+
+## API Response Shape
+
+Every successful action returns:
+```json
+{
+  "success": true,
+  "state": {
+    "players": [...],
+    "currentPlayer": 0,
+    "diceValue": 4,
+    "diceRolledBy": 0,
+    "phase": "waiting_for_move",
+    "consecutiveSixes": 0,
+    "winner": null,
+    "isMyTurn": true,
+    "validMoves": [0, 1, 2, 3]
+  },
+  "diceValue": 4,
+  "validMoves": [0, 1, 2, 3],
+  "events": [],
+  "currentPlayer": 0,
+  "phase": "waiting_for_move",
+  "isMyTurn": true
+}
+```
+
+## Client-Side Conditional Logic
+
+```
+needsRoll        = isMyTurn && phase === 'waiting_for_roll' && winner === null
+showDiceValue    = diceValue !== null && isMyTurn
+showMovePrompt   = diceValue !== null && isMyTurn && phase === 'waiting_for_move'
+showNo6Message   = diceValue !== 6 && allTokensHomeOrFinished
+showDismissHint  = diceValue !== null && isMyTurn && !needsRoll && phase !== 'waiting_for_move'
+canMoveToken     = isMyTurn && phase === 'waiting_for_move' && validMoves.includes(tokenIndex)
+waitingMessage   = !isMyTurn && winner === null
+```
