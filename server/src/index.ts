@@ -95,6 +95,11 @@ app.post('/api/lobby/state', (req, res) => {
 
 // ─── Game Routes ──────────────────────────────────────────
 gameRegistry.mountRouters(app);
+app.get('/api/session/:sessionId', (req, res) => {
+  const gameId = gameRegistry.getGameIdBySession(req.params.sessionId);
+  if (!gameId) return res.status(404).json({ error: 'Session not found' });
+  res.json({ sessionId: req.params.sessionId, gameId });
+});
 app.use('/api/chat', chatRouter);
 setWsServer(wsServer);
 

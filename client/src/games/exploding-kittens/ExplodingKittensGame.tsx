@@ -36,6 +36,7 @@ interface ClientGameState {
   lastStolenCard: { type: string; name: string; fromPlayerIndex: number; toPlayerIndex: number } | null;
   lastPlayedCard: { type: string; name: string; playerIndex: number } | null;
   lastDrawFromBottom?: boolean;
+  clairvoyanceAvailable: boolean;
 }
 
 interface EKGameProps {
@@ -51,7 +52,7 @@ const EMPTY_STATE: ClientGameState = {
   myHand: [], myStash: [], opponents: [], deckSize: 0, discardCount: 0,
   turn: { currentPlayerIndex: 0, direction: 1, phase: 'playing', attackCount: 0 },
   actionStack: [], nopeWindow: null,
-  settings: { playerCount: 2 }, winner: null, implodingKittenFaceUp: false, pendingCardView: null, lastStolenCard: null, lastPlayedCard: null,
+  settings: { playerCount: 2 }, winner: null, implodingKittenFaceUp: false, pendingCardView: null, lastStolenCard: null, lastPlayedCard: null, clairvoyanceAvailable: false,
 };
 
 export default function ExplodingKittensGame({
@@ -77,6 +78,7 @@ export default function ExplodingKittensGame({
   const [showExplosion, setShowExplosion] = useState(false);
   const [showAttackOverlay, setShowAttackOverlay] = useState(false);
   const [showNopeOverlay, setShowNopeOverlay] = useState(false);
+  const [showClairvoyancePopup, setShowClairvoyancePopup] = useState(false);
   const nopeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nopeStartRef = useRef<number>(0);
   const lastHandSize = useRef(0);
@@ -234,6 +236,22 @@ export default function ExplodingKittensGame({
       }
     }
   }, [gs.lastPlayedCard]);
+
+  // Clairvoyance popup when available
+  useEffect(() => {
+    if (gs.clairvoyanceAvailable && gs.myHand.some(c => c.type === 'clairvoyance')) {
+      setShowClairvoyancePopup(true);
+    } else {
+      setShowClairvoyancePopup(false);
+    }
+  }, [gs.clairvoyanceAvailable, gs.myHand]);
+
+  const handleUseClairvoyance = useCallback(async () => {
+    const cvCard = gs.myHand.find(c => c.type === 'clairvoyance');
+    if (!cvCard) return;
+    setShowClairvoyancePopup(false);
+    await sendAction('PLAY_CARD', { cardId: cvCard.id });
+  }, [gs.myHand, sendAction]);
 
   // Show See/Share/Alter the Future popup when server sends card view data
   useEffect(() => {
@@ -1185,6 +1203,51 @@ export default function ExplodingKittensGame({
               transform: 'rotate(-10deg)',
             }}>
               ⚔️ ATTACK!
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Clairvoyance popup */}
+      <AnimatePresence>
+        {showClairvoyancePopup && (
+          <motion.div
+            key="clairvoyance"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 950,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(0,0,0,0.6)',
+            }}
+          >
+            <div style={{
+              background: '#1a2a4a', borderRadius: 12, padding: 24, maxWidth: 300, width: '90%',
+              textAlign: 'center', border: '2px solid #4488ff',
+            }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>👁️</div>
+              <h3 style={{ color: '#4488ff', margin: '0 0 8px', fontSize: 16 }}>Clairvoyance</h3>
+              <p style={{ color: '#ccc', margin: '0 0 16px', fontSize: 12 }}>
+                A Defuse was just used. Use Clairvoyance to see the top 3 cards?
+              </p>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                <button onClick={handleUseClairvoyance}
+                  style={{
+                    padding: '8px 24px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                    background: '#4488ff', color: '#fff', fontSize: 13, fontWeight: 600,
+                  }}>
+                  👁️ See Top Cards
+                </button>
+                <button onClick={() => setShowClairvoyancePopup(false)}
+                  style={{
+                    padding: '8px 20px', borderRadius: 6, border: '1px solid #555', cursor: 'pointer',
+                    background: 'transparent', color: '#aaa', fontSize: 13,
+                  }}>
+                  Dismiss
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

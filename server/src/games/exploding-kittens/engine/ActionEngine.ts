@@ -69,6 +69,12 @@ export function advanceTurn(state: GameState): void {
   state.turn.currentPlayerIndex = next;
   state.turn.phase = 'playing';
   state.turn.attackCount = 0;
+  // Cursed player discards a random card at start of turn
+  if (state.players[next].cursed && state.players[next].hand.length > 0) {
+    const ri = Math.floor(Math.random() * state.players[next].hand.length);
+    const [discarded] = state.players[next].hand.splice(ri, 1);
+    state.discardPile.push(discarded);
+  }
 }
 
 export function resolveDrawCard(state: GameState, playerIndex: number, callbacks: any): GameResult {

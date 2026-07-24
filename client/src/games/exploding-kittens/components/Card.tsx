@@ -243,7 +243,7 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         <span style={{ fontSize: dims.iconSize, lineHeight: 1 }}>{icon}</span>
         <span style={{
           fontSize: dims.titleFs, fontWeight: 700, color: colors.text,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          wordBreak: 'break-word', lineHeight: 1.2,
         }}>
           {card.name}
         </span>
@@ -279,7 +279,7 @@ export function Card({ card, faceUp = true, selected, disabled, size = 'medium',
         }}>
           <span style={{
             fontSize: dims.subFs, color: colors.subtitle, lineHeight: 1.2,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            wordBreak: 'break-word',
           }}>
             {subtitle}
           </span>

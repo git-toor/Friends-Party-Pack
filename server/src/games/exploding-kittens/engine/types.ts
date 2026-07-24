@@ -19,7 +19,7 @@ export type EffectType =
   | 'STREAKING_KITTEN' | 'SUPER_SKIP' | 'SWAP_TOP_BOTTOM' | 'GARBAGE_COLLECTION'
   | 'CATOMIC_BOMB' | 'MARK' | 'CURSE_CAT_BUTT'
   | 'BARKING_KITTEN' | 'TOWER_OF_POWER' | 'POTLUCK' | 'BURY' | 'SHARE_FUTURE'
-  | 'ZOMBIE_KITTEN' | 'DIG_DEEPER' | 'FEED_THE_DEAD' | 'GRAVE_ROBBER' | 'ATTACK_OF_THE_DEAD'
+  | 'ZOMBIE_KITTEN' | 'CLAIRVOYANCE' | 'DIG_DEEPER' | 'FEED_THE_DEAD' | 'GRAVE_ROBBER' | 'ATTACK_OF_THE_DEAD'
   | 'CAT_COMBO' | 'CLONE';
 
 export interface EffectDefinition {
@@ -147,6 +147,7 @@ export interface GameState {
   lastStolenCard: { type: string; name: string; fromPlayerIndex: number; toPlayerIndex: number } | null;
   lastPlayedCard: { type: string; name: string; playerIndex: number } | null;
   lastDrawFromBottom?: boolean;
+  clairvoyanceAvailable: boolean;
 }
 
 export interface GameResult {

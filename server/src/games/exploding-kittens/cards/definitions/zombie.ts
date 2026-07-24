@@ -19,7 +19,7 @@ export const zombieCards: CardDefinition[] = [
     id: 'clairvoyance', name: 'Clairvoyance', expansion: 'zombie',
     copies: 2,
     playable: {},
-    effect: { type: 'SEE_FUTURE', amount: 3 },
+    effect: { type: 'CLAIRVOYANCE', amount: 3, nopeable: false },
     category: 'action',
   },
   {

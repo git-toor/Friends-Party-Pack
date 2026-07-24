@@ -46,6 +46,7 @@ export interface ClientGameState {
   lastStolenCard: { type: string; name: string; fromPlayerIndex: number; toPlayerIndex: number } | null;
   lastPlayedCard: { type: string; name: string; playerIndex: number } | null;
   lastDrawFromBottom?: boolean;
+  clairvoyanceAvailable: boolean;
 }
 
 export function serializeState(state: GameState, playerIndex: number): ClientGameState {
@@ -111,5 +112,6 @@ export function serializeState(state: GameState, playerIndex: number): ClientGam
     lastStolenCard: state.lastStolenCard,
     lastPlayedCard: state.lastPlayedCard,
     lastDrawFromBottom: state.lastDrawFromBottom,
+    clairvoyanceAvailable: state.clairvoyanceAvailable,
   };
 }

@@ -40,6 +40,10 @@ class GameRegistry {
   getRegisteredGames(): { id: string; server: GameServer }[] {
     return Array.from(this.servers.entries()).map(([id, server]) => ({ id, server }));
   }
+
+  getGameIdBySession(sessionId: string): string | undefined {
+    return this.sessionGames.get(sessionId);
+  }
 }
 
 export const gameRegistry = new GameRegistry();

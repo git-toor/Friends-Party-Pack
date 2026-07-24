@@ -17,6 +17,7 @@ export default function GamePage() {
   const state = location.state as any;
   const [ready, setReady] = useState(false);
   const [gameStatePush, setGameStatePush] = useState<any>(null);
+  const [resolvedGameId, setResolvedGameId] = useState<string | null>(null);
 
   const sessionId = state?.sessionId || sessionIdParam;
   const playerCount = state?.players?.length || 2;
@@ -25,15 +26,22 @@ export default function GamePage() {
   const myPlayer = players[playerIndex] || { name: 'You' };
   const playerName = myPlayer.name || state?.playerName || 'You';
   const playerId = state?.playerId || players[playerIndex]?.id || '';
-  const gameId: string = state?.gameId || state?.lobby?.gameId || 'yahtzee';
   const nsfw: boolean = state?.nsfw || state?.lobby?.settings?.nsfw || false;
 
+  const gameId = resolvedGameId || state?.gameId || state?.lobby?.gameId || 'yahtzee';
   const GameComponent = GAME_COMPONENTS[gameId] || YahtzeeGame;
 
   useEffect(() => {
     if (!sessionId) {
       setReady(true);
       return;
+    }
+    // Resolve gameId from server if not in navigation state
+    if (!state?.gameId && !state?.lobby?.gameId) {
+      fetch(`/api/session/${sessionId}`)
+        .then(r => r.json())
+        .then(data => { if (data.gameId) setResolvedGameId(data.gameId); })
+        .catch(() => {});
     }
     const ws = getWs();
     ws.connect();
@@ -51,7 +59,7 @@ export default function GamePage() {
 
     setReady(true);
     return () => { unsub(); unsubChat(); };
-  }, [sessionId, playerIndex]);
+  }, [sessionId, playerIndex, state?.gameId, state?.lobby?.gameId]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
 

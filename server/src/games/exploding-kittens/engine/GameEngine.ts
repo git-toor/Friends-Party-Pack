@@ -37,6 +37,7 @@ export function createGame(settings: GameSettings): GameState {
     pendingCardView: null,
     lastStolenCard: null,
     lastPlayedCard: null,
+    clairvoyanceAvailable: false,
   };
 
   state.deck = buildDeck(playerCount, settings.expansions);
@@ -90,6 +91,7 @@ export function handleAction(
 ): GameResult {
   // Clear transient display state
   state.pendingCardView = null;
+  state.clairvoyanceAvailable = false;
 
   const makeCallbacks = (): EffectCallbacks => ({
     pushAction: (action: GameAction) => {
@@ -134,6 +136,12 @@ export function handleAction(
       const cardIndex = player.hand.findIndex(c => c.id === cardId);
       if (cardIndex === -1) return { state, valid: false, error: 'Card not in hand' };
       const card = player.hand.splice(cardIndex, 1)[0];
+
+      // Clairvoyance can only be played when a Defuse was just used
+      if (card.type === 'clairvoyance' && !state.clairvoyanceAvailable) {
+        player.hand.push(card);
+        return { state, valid: false, error: 'Clairvoyance can only be used after a Defuse' };
+      }
 
       // Show played card immediately for all players
       state.lastPlayedCard = { type: card.type, name: card.definition.name, playerIndex };
@@ -240,6 +248,8 @@ export function handleAction(
         insertIndex: insertIdx,
         usingZombie,
       });
+      // Allow clairvoyance to be played after a defuse
+      state.clairvoyanceAvailable = true;
       advanceTurn(state);
       return { state, valid: true };
     }

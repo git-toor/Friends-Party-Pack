@@ -336,6 +336,15 @@ registerEffect('CLONE', (state, _effect, action, callbacks) => {
 // ─── NONE (placeholder for future expansion cards) ────
 registerEffect('NONE', () => ({ success: true }));
 
+// ─── CLAIRVOYANCE ──────────────────────────────────────
+registerEffect('CLAIRVOYANCE', (state, effect, action, callbacks) => {
+  const count = effect.amount ?? 3;
+  const topCards = state.deck.slice(0, count).map(c => ({ id: c.id, type: c.type }));
+  state.pendingCardView = { cards: topCards, forPlayerIndex: action.playerIndex, viewType: 'see' };
+  callbacks.broadcast('CLAIRVOYANCE_RESULT', { cards: topCards });
+  return { success: true, nopeable: false };
+});
+
 // ─── Helpers ──────────────────────────────────────────
 function nextPlayerIndex(state: GameState): number {
   let idx = state.turn.currentPlayerIndex + state.turn.direction;
