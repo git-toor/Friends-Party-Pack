@@ -20,9 +20,9 @@ const _P: [number, number][] = [
 
 export const PATH: [number, number][] = _P;
 
-// ─── Safe squares: each player has 2 (entry + 8 steps ahead) ───
-// Red: 0, 8 | Green: 39, 47 | Yellow: 26, 34 | Blue: 13, 21
-export const SAFE_ABS = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+// ─── Safe squares: shifted back 2 tiles from entry points ───
+// Red: 50, 6 | Green: 37, 45 | Yellow: 24, 32 | Blue: 11, 19
+export const SAFE_ABS = new Set([50, 6, 11, 19, 24, 32, 37, 45]);
 export function isSafeSquare(absPos: number): boolean { return SAFE_ABS.has(absPos); }
 
 // ─── Player offsets ────────────────────────────────────────────
@@ -39,9 +39,10 @@ export const HOME_STRETCH: Record<number, [number, number][]> = {
   3: [[13,7],[12,7],[11,7],[10,7],[9,7]],
 };
 
-// ─── Home base token positions (4 per player, 6×6 base) ─────
+// ─── Home base token positions — centered 2×2 grid in each 6×6 base ──
+// 6 cells wide, 2 cells margin each side → tokens at cells 2 and 3
 function homeTokens(col0: number, row0: number): [number, number][] {
-  return [[1.5,1.5],[4.5,1.5],[1.5,4.5],[4.5,4.5]].map(
+  return [[2,2],[3,2],[2,3],[3,3]].map(
     ([c, r]) => [col0 + c, row0 + r] as [number, number]
   );
 }
