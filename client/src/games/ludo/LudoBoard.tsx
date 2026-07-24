@@ -135,11 +135,17 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
         const borderColor = isSafe ? '#f1c40f' : 'rgba(255,255,255,0.08)';
         const borderW = isSafe ? 0.003 : 0.0015;
         return (
-          <rect key={`p-${i}`}
-            x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
-            width={ts} height={ts} rx={0.003}
-            fill={fill} stroke={borderColor} strokeWidth={borderW}
-          />
+          <g key={`p-${i}`}>
+            <rect
+              x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
+              width={ts} height={ts} rx={0.003}
+              fill={fill} stroke={borderColor} strokeWidth={borderW}
+            />
+            {/* Debug: tile index */}
+            <text x={cx(c)} y={cy(r)+G*0.12} textAnchor="middle" fontSize={G*0.3} fill="rgba(255,255,255,0.2)" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+              {i}
+            </text>
+          </g>
         );
       })}
 
@@ -177,6 +183,11 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick }: Lu
           textAnchor="middle" fontSize={starSize} fill="#f1c40f" opacity={0.9}
           style={{ userSelect: 'none' }}>★</text>
       ))}
+
+      {/* Debug: START label at tile 0 */}
+      <text x={cx(PATH[0][0])} y={cy(PATH[0][1]) + G*0.25} textAnchor="middle" fontSize={G*0.35} fill="#f1c40f" fontWeight="bold" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+        START-0
+      </text>
 
       {/* Z-3: Path/stretch tokens with stacking */}
       {Array.from(tokenGroups.entries()).map(([key, group]) => {

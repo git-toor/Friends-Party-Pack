@@ -5,10 +5,11 @@
 export type GridPos = [number, number];
 
 // ─── Main track (52 tiles, clockwise) ──────────────────────────
-// Original ordering. Absolute tile indices:
-//   Blue entry = tile 13, Red entry = tile 0
-//   Green entry = tile 39, Yellow entry = tile 26
-export const PATH: [number, number][] = [
+// Tile 0 = Blue's starting safe square (bottom-left)
+// Tile 13 = Red's starting safe square (top-left)
+// Tile 26 = Green's starting safe square (top-right)
+// Tile 39 = Yellow's starting safe square (bottom-right)
+const BASE_PATH: [number, number][] = [
   [6,0],[6,1],[6,2],[6,3],[6,4],[6,5],
   [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
   [0,7],[0,8],
@@ -21,6 +22,12 @@ export const PATH: [number, number][] = [
   [13,6],[12,6],[11,6],[10,6],[9,6],
   [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
   [7,0],
+];
+
+// Rotate: Blue entry (old[13] = (0,8)) → tile 0
+export const PATH: [number, number][] = [
+  ...BASE_PATH.slice(13),
+  ...BASE_PATH.slice(0, 13),
 ];
 
 // ─── Safe tiles (indices in the rotated PATH) ───────────────────
@@ -39,32 +46,32 @@ export const PLAYER_CONFIG: Record<number, {
 }> = {
   0: { // BLUE — Bottom Left
     name: 'Blue',
-    startTile: 13,
-    homeEntry: 11,
+    startTile: 0,
+    homeEntry: 50,
     homeStretch: [[7,13],[7,12],[7,11],[7,10],[7,9]],
     homeZoneCol: 0,
     homeZoneRow: 9,
   },
   1: { // RED — Top Left
     name: 'Red',
-    startTile: 0,
-    homeEntry: 50,
+    startTile: 13,
+    homeEntry: 11,
     homeStretch: [[1,7],[2,7],[3,7],[4,7],[5,7]],
     homeZoneCol: 0,
     homeZoneRow: 0,
   },
   2: { // GREEN — Top Right
     name: 'Green',
-    startTile: 39,
-    homeEntry: 37,
+    startTile: 26,
+    homeEntry: 24,
     homeStretch: [[7,1],[7,2],[7,3],[7,4],[7,5]],
     homeZoneCol: 9,
     homeZoneRow: 0,
   },
   3: { // YELLOW — Bottom Right
     name: 'Yellow',
-    startTile: 26,
-    homeEntry: 24,
+    startTile: 39,
+    homeEntry: 37,
     homeStretch: [[13,7],[12,7],[11,7],[10,7],[9,7]],
     homeZoneCol: 9,
     homeZoneRow: 9,
