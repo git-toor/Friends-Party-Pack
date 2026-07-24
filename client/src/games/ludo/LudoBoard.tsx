@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import {
   PATH, SAFE_ABS,
-  getBoardPosition, getHomeTokens, getHomeTokensByQuadrant,
+  getBoardPosition, getHomeTokensByQuadrant,
   getHomeStretchByQuadrant, playerQuadrant,
 } from './BoardLayout.js';
 import { PLAYER_COLORS } from './constants.js';
@@ -28,19 +28,17 @@ interface LudoBoardProps {
   diceValue: number | null;
   isMyTurn: boolean;
   onMoveToken: (tokenIndex: number) => void;
-  /** step animation to show for other players' moves */
   stepAnim?: { tokenIndex: number; from: number; to: number; playerIndex: number } | null;
   onStepAnimDone?: () => void;
 }
 
-// ─── helpers ──
 const cx = (col: number) => (col + 0.5) * G;
 const cy = (row: number) => (row + 0.5) * G;
 const ex = (col: number) => col * G;
 const ts = G * 0.88;
 const starSize = G * 0.5;
 const KNOCKOUT_DIST = G * 0.6;
-const SNAP_DIST = G * 0.3;
+const SNAP_DIST = G * 0.7;
 
 function tileCenter(tileIdx: number, playerIdx: number, total: number) {
   const pos = getBoardPosition(playerIdx, tileIdx, total);
@@ -75,7 +73,6 @@ function randomFlyTarget(base: { x: number; y: number }) {
   return { x: base.x + Math.cos(angle) * r, y: base.y + Math.sin(angle) * r };
 }
 
-// ─── Pawn SVG ──
 function Pawn({ cx, cy, color, isMovable, scale = 1 }: { cx: number; cy: number; color: string; isMovable?: boolean; scale?: number }) {
   const s = G * 0.35 * scale;
   return (
@@ -96,27 +93,34 @@ function Pawn({ cx, cy, color, isMovable, scale = 1 }: { cx: number; cy: number;
   );
 }
 
-// ─── BoardComponent ──
 export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceValue, isMyTurn, stepAnim, onStepAnimDone }: LudoBoardProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<{
     tokenIndex: number;
     playerIndex: number;
-    startX: number;
-    startY: number;
     currentX: number;
     currentY: number;
   } | null>(null);
 
-  // step animation state
+  const [ghosts, setGhosts] = useState<Map<string, { x: number; y: number }>>(new Map());
+
+  // step animation
   const [stepPos, setStepPos] = useState<{ x: number; y: number } | null>(null);
   const [stepTokenIdx, setStepTokenIdx] = useState<number | null>(null);
   const stepFrameRef = useRef(0);
 
-  // knocked-out ghost pieces
-  const [ghosts, setGhosts] = useState<Map<string, { x: number; y: number }>>(new Map());
+  // refs for stable drag handler access
+  const dragRef = useRef(drag);
+  dragRef.current = drag;
+  const tokensRef = useRef(tokens);
+  tokensRef.current = tokens;
+  const diceValueRef = useRef(diceValue);
+  diceValueRef.current = diceValue;
+  const onMoveRef = useRef(onMoveToken);
+  onMoveRef.current = onMoveToken;
+  const ghostsRef = useRef(ghosts);
+  ghostsRef.current = ghosts;
 
-  // ─── coordinate conversion ──
   const toVB = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -125,19 +129,17 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
     pt.y = clientY;
     const ctm = svg.getScreenCTM();
     if (!ctm) return { x: 0, y: 0 };
-    const svgPt = pt.matrixTransform(ctm.inverse());
-    return { x: svgPt.x, y: svgPt.y };
+    return pt.matrixTransform(ctm.inverse());
   }, []);
 
-  // ─── token position lookup ──
   const tokenPos = useCallback((tok: TokenData) => {
     if (tok.state === 'home') return homeCellCenter(tok, totalPlayers);
     if (tok.state === 'finished') return { x: cx(7.5), y: cy(7.5) };
-    const pos = getBoardPosition(tok.playerIndex, tok.progress, totalPlayers);
-    return { x: cx(pos.x), y: cy(pos.y) };
+    const p = getBoardPosition(tok.playerIndex, tok.progress, totalPlayers);
+    return { x: cx(p.x), y: cy(p.y) };
   }, [totalPlayers]);
 
-  // ─── step animation ──
+  // step animation
   useEffect(() => {
     if (!stepAnim || !onStepAnimDone) return;
     const steps: { x: number; y: number }[] = [];
@@ -163,7 +165,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
     return () => clearTimeout(stepFrameRef.current);
   }, [stepAnim, totalPlayers, onStepAnimDone]);
 
-  // ─── token grouping ──
+  // token grouping (exclude step-animating token)
   const tokenGroups = useMemo(() => {
     const groups = new Map<string, TokenData[]>();
     for (const tok of tokens) {
@@ -175,100 +177,52 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
       groups.get(key)!.push(tok);
     }
     return groups;
-  }, [tokens, stepTokenIdx, stepAnim]);
+  }, [tokens, stepTokenIdx, stepAnim, totalPlayers]);
 
-  // ─── drag handlers ──
-  const isDraggable = (tok: TokenData) => {
-    if (!isMyTurn || !diceValue) return false;
-    return validMoves.includes(tok.tokenIndex);
-  };
-
-  const handlePointerDown = useCallback((e: React.PointerEvent, tok: TokenData) => {
-    if (!isDraggable(tok)) return;
-    e.preventDefault();
-    (e.target as Element).setPointerCapture?.(e.pointerId);
-    const vb = toVB(e.clientX, e.clientY);
-    setDrag({
-      tokenIndex: tok.tokenIndex,
-      playerIndex: tok.playerIndex,
-      startX: vb.x,
-      startY: vb.y,
-      currentX: vb.x,
-      currentY: vb.y,
-    });
-  }, [isDraggable, toVB]);
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!drag) return;
-    const vb = toVB(e.clientX, e.clientY);
-    setDrag(d => d ? { ...d, currentX: vb.x, currentY: vb.y } : null);
-
-    // collision check with opponent pieces
-    const dragPos = { x: vb.x, y: vb.y };
-    for (const tok of tokens) {
-      if (tok.playerIndex === drag.playerIndex) continue;
-      if (tok.state !== 'path') continue;
-      const pos = tokenPos(tok);
-      if (!pos) continue;
-      const gKey = `g-${tok.playerIndex}-${tok.tokenIndex}`;
-      if (ghosts.has(gKey)) continue;
-      if (dist(dragPos, pos) < KNOCKOUT_DIST) {
-        const safe = SAFE_ABS.has(tok.progress);
-        if (!safe) {
-          const target = randomFlyTarget(pos);
-          setGhosts(prev => { const m = new Map(prev); m.set(gKey, target); return m; });
-        }
-      }
-    }
-  }, [drag, tokens, tokenPos, toVB, ghosts]);
-
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!drag) return;
-    const vb = toVB(e.clientX, e.clientY);
-
-    // find which token we're dragging
-    const tok = tokens.find(t => t.tokenIndex === drag.tokenIndex && t.playerIndex === drag.playerIndex);
-    if (!tok) { setDrag(null); return; }
-
-    // compute target progress
-    let targetProg: number;
-    if (tok.state === 'home') {
-      targetProg = 0;
-    } else {
-      targetProg = tok.progress + (diceValue ?? 0);
-    }
-
-    // get target tile center
+  // validate and commit drop
+  const commitDrop = useCallback((vb: { x: number; y: number }, d: { tokenIndex: number; playerIndex: number }) => {
+    const tok = tokensRef.current.find(t => t.tokenIndex === d.tokenIndex && t.playerIndex === d.playerIndex);
+    if (!tok) return false;
+    const dv = diceValueRef.current;
+    if (dv === null) return false;
+    const targetProg = tok.state === 'home' ? 0 : tok.progress + dv;
     const targetTile = tileCenter(targetProg, tok.playerIndex, totalPlayers);
-    const d = dist(vb, targetTile);
-
-    if (d < SNAP_DIST || d < G * 0.5) {
-      onMoveToken(drag.tokenIndex);
+    const dDist = dist(vb, targetTile);
+    if (dDist < SNAP_DIST) {
+      onMoveRef.current(d.tokenIndex);
+      return true;
     }
+    return false;
+  }, [totalPlayers]);
 
-    setDrag(null);
-  }, [drag, tokens, diceValue, onMoveToken, toVB, totalPlayers]);
-
-  // global pointer move/up during drag
+  // global drag listeners
   useEffect(() => {
     if (!drag) return;
-    const svg = svgRef.current;
-    if (!svg) return;
     const onMove = (e: PointerEvent) => {
-      const vb = toVB(e.clientX, e.clientY);
-      setDrag(d => d ? { ...d, currentX: vb.x, currentY: vb.y } : null);
+      const d = dragRef.current;
+      if (!d) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) return;
+      const vb = pt.matrixTransform(ctm.inverse());
+      setDrag(prev => prev ? { ...prev, currentX: vb.x, currentY: vb.y } : null);
+
       // collision check
-      const dragPos = { x: vb.x, y: vb.y };
-      for (const tok of tokens) {
-        if (tok.playerIndex === drag.playerIndex) continue;
+      const allToks = tokensRef.current;
+      const curGhosts = ghostsRef.current;
+      for (const tok of allToks) {
+        if (tok.playerIndex === d.playerIndex) continue;
         if (tok.state !== 'path') continue;
         const pos = tokenPos(tok);
         if (!pos) continue;
         const gKey = `g-${tok.playerIndex}-${tok.tokenIndex}`;
-        if (ghosts.has(gKey)) continue;
-        if (dist(dragPos, pos) < KNOCKOUT_DIST) {
-          const safe = SAFE_ABS.has(tok.progress);
-          if (!safe) {
+        if (curGhosts.has(gKey)) continue;
+        if (dist(vb, pos) < KNOCKOUT_DIST) {
+          if (!SAFE_ABS.has(tok.progress)) {
             const target = randomFlyTarget(pos);
             setGhosts(prev => { const m = new Map(prev); m.set(gKey, target); return m; });
           }
@@ -276,21 +230,17 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
       }
     };
     const onUp = (e: PointerEvent) => {
-      const vb = toVB(e.clientX, e.clientY);
-      const tok = tokens.find(t => t.tokenIndex === drag.tokenIndex && t.playerIndex === drag.playerIndex);
-      if (tok) {
-        let targetProg: number;
-        if (tok.state === 'home') {
-          targetProg = 0;
-        } else {
-          targetProg = tok.progress + (diceValue ?? 0);
-        }
-        const targetTile = tileCenter(targetProg, tok.playerIndex, totalPlayers);
-        const d = dist(vb, targetTile);
-        if (d < SNAP_DIST || d < G * 0.5) {
-          onMoveToken(drag.tokenIndex);
-        }
-      }
+      const d = dragRef.current;
+      if (!d) return;
+      const svg = svgRef.current;
+      if (!svg) { setDrag(null); return; }
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const ctm = svg.getScreenCTM();
+      if (!ctm) { setDrag(null); return; }
+      const vb = pt.matrixTransform(ctm.inverse());
+      commitDrop(vb, d);
       setDrag(null);
     };
     window.addEventListener('pointermove', onMove);
@@ -299,145 +249,123 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
     };
-  }, [drag, tokens, diceValue, onMoveToken, toVB, totalPlayers, ghosts]);
+  }, [drag, toVB, tokenPos, commitDrop]);
 
-  // dismiss ghost on click for owning player
+  // dismiss ghost
   const dismissGhost = useCallback((key: string) => {
     setGhosts(prev => { const m = new Map(prev); m.delete(key); return m; });
   }, []);
 
-  // ─── quadrant helper ──
+  const isDraggable = (tok: TokenData) => {
+    if (!isMyTurn || !diceValue) return false;
+    return validMoves.includes(tok.tokenIndex);
+  };
+
+  const handlePointerDown = useCallback((e: React.PointerEvent, tok: TokenData) => {
+    if (!isDraggable(tok)) return;
+    e.preventDefault();
+    const vb = toVB(e.clientX, e.clientY);
+    setDrag({
+      tokenIndex: tok.tokenIndex,
+      playerIndex: tok.playerIndex,
+      currentX: vb.x,
+      currentY: vb.y,
+    });
+  }, [isDraggable, toVB]);
+
   const pq = (pi: number) => playerQuadrant(pi, totalPlayers);
   const allQuadrants = [0, 1, 2, 3].map(q => ({
-    q,
-    isActive: Array.from({ length: totalPlayers }, (_, i) => pq(i)).includes(q),
+    q, isActive: Array.from({ length: totalPlayers }, (_, i) => pq(i)).includes(q),
   }));
 
-  // ─── dragged piece under cursor ──
   const draggedTokenData = drag ? tokens.find(t => t.tokenIndex === drag.tokenIndex && t.playerIndex === drag.playerIndex) : null;
 
   return (
     <svg ref={svgRef} viewBox="0 0 1 1" style={{ width: '100%', height: 'auto', display: 'block', touchAction: 'none' }}>
-      {/* Z-1: Background */}
       <rect x={0} y={0} width={1} height={1} fill="#1a1a2e" rx={0.02} />
-
-      {/* Z-2: Cross-shaped arm surfaces */}
       {[[6,0,3,6],[0,6,6,3],[9,6,6,3],[6,9,3,6]].map(([c,r,w,h], i) => (
         <rect key={`arm-${i}`} x={c*G} y={r*G} width={w*G} height={h*G} fill="#22224a" />
       ))}
-
-      {/* Z-2: Colored base zones */}
       {[[0,9,0],[0,0,1],[9,0,2],[9,9,3]].map(([c,r,q]) => {
-        const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
-        return (
-          <rect key={`base-${q}`} x={c*G} y={r*G} width={6*G} height={6*G} rx={0.015}
-            fill={isActive ? `${PLAYER_COLORS[q]}15` : `${PLAYER_COLORS[q]}06`}
-            stroke={isActive ? `${PLAYER_COLORS[q]}40` : `${PLAYER_COLORS[q]}15`}
-            strokeWidth={0.003} />
-        );
+        const a = allQuadrants.find(x => x.q === q)?.isActive ?? false;
+        return <rect key={`base-${q}`} x={c*G} y={r*G} width={6*G} height={6*G} rx={0.015}
+          fill={a ? `${PLAYER_COLORS[q]}15` : `${PLAYER_COLORS[q]}06`}
+          stroke={a ? `${PLAYER_COLORS[q]}40` : `${PLAYER_COLORS[q]}15`} strokeWidth={0.003} />;
       })}
-
-      {/* Z-2: Home stretch colored tiles */}
       {[0,1,2,3].map(q => {
-        const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
+        const a = allQuadrants.find(x => x.q === q)?.isActive ?? false;
         return (getHomeStretchByQuadrant(q) || []).map(([c,r], i) => (
           <rect key={`hs-${q}-${i}`} x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
             width={ts} height={ts} rx={0.004}
-            fill={PLAYER_COLORS[q]} opacity={isActive ? 0.55 : 0.12} />
+            fill={PLAYER_COLORS[q]} opacity={a ? 0.55 : 0.12} />
         ));
       })}
-
-      {/* Z-2: Outer path tiles */}
       {PATH.map(([c,r], i) => {
-        const isSafe = SAFE_ABS.has(i);
-        return (
-          <rect key={`p-${i}`} x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
-            width={ts} height={ts} rx={0.003}
-            fill={isSafe ? '#2a2a4a' : '#25244a'}
-            stroke={isSafe ? '#f1c40f' : 'rgba(255,255,255,0.08)'}
-            strokeWidth={isSafe ? 0.003 : 0.0015} />
-        );
+        const s = SAFE_ABS.has(i);
+        return <rect key={`p-${i}`} x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
+          width={ts} height={ts} rx={0.003}
+          fill={s ? '#2a2a4a' : '#25244a'}
+          stroke={s ? '#f1c40f' : 'rgba(255,255,255,0.08)'}
+          strokeWidth={s ? 0.003 : 0.0015} />;
       })}
-
-      {/* Center 3×3 finish zone */}
       <rect x={6*G} y={6*G} width={3*G} height={3*G}
         fill="#1a1a2e" stroke="rgba(255,255,255,0.06)" strokeWidth={0.002} />
-
-      {/* Center colored triangles */}
       {(() => {
-        const ctr = 7.5 * G;
-        const left = ex(6), right = ex(9), top = ex(6), bottom = ex(9);
+        const ctr = 7.5 * G, l = ex(6), r = ex(9), t = ex(6), b = ex(9);
         return (<>
-          <polygon points={`${ctr},${ctr} ${left},${top} ${left},${bottom}`} fill="rgba(231,76,60,0.2)" />
-          <polygon points={`${ctr},${ctr} ${left},${top} ${right},${top}`} fill="rgba(46,204,113,0.2)" />
-          <polygon points={`${ctr},${ctr} ${right},${top} ${right},${bottom}`} fill="rgba(241,196,15,0.2)" />
-          <polygon points={`${ctr},${ctr} ${left},${bottom} ${right},${bottom}`} fill="rgba(52,152,219,0.2)" />
+          <polygon points={`${ctr},${ctr} ${l},${t} ${l},${b}`} fill="rgba(231,76,60,0.2)" />
+          <polygon points={`${ctr},${ctr} ${l},${t} ${r},${t}`} fill="rgba(46,204,113,0.2)" />
+          <polygon points={`${ctr},${ctr} ${r},${t} ${r},${b}`} fill="rgba(241,196,15,0.2)" />
+          <polygon points={`${ctr},${ctr} ${l},${b} ${r},${b}`} fill="rgba(52,152,219,0.2)" />
           <circle cx={ctr} cy={ctr} r={0.015} fill="rgba(255,255,255,0.1)" />
         </>);
       })()}
-
-      {/* Home token starting circles */}
       {[0,1,2,3].map(q => {
-        const isActive = allQuadrants.find(a => a.q === q)?.isActive ?? false;
+        const a = allQuadrants.find(x => x.q === q)?.isActive ?? false;
         return (getHomeTokensByQuadrant(q) || []).map(([c,r], i) => (
           <circle key={`ht-${q}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
-            fill={isActive ? `${PLAYER_COLORS[q]}20` : `${PLAYER_COLORS[q]}10`}
-            stroke={isActive ? `${PLAYER_COLORS[q]}35` : `${PLAYER_COLORS[q]}15`}
-            strokeWidth={0.002} />
+            fill={a ? `${PLAYER_COLORS[q]}20` : `${PLAYER_COLORS[q]}10`}
+            stroke={a ? `${PLAYER_COLORS[q]}35` : `${PLAYER_COLORS[q]}15`} strokeWidth={0.002} />
         ));
       })}
-
-      {/* Safe zone stars */}
       {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c,r]) => (
         <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r)} dy="0.35em"
           textAnchor="middle" fontSize={starSize} fill="#f1c40f" opacity={0.9}
           style={{ userSelect: 'none' }}>★</text>
       ))}
-
-      {/* Z-3: Path/stretch tokens */}
       {Array.from(tokenGroups.entries()).map(([key, group]) => {
         const [x, y] = key.split(',').map(Number);
         const offsets = stackPos(group.length, x, y);
         return group.map((tok, i) => {
-          const isMovable = validMoves.includes(tok.tokenIndex);
-          // skip if this token is being stepped
-          if (stepTokenIdx === tok.tokenIndex && stepAnim?.playerIndex === tok.playerIndex && !stepPos) return null;
-          if (stepTokenIdx === tok.tokenIndex && stepAnim?.playerIndex === tok.playerIndex) return null;
           const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
           return (
             <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`}
               style={{ cursor: isDraggable(tok) ? 'grab' : 'default' }}
               onPointerDown={e => handlePointerDown(e, tok)}>
-              <Pawn cx={offsets[i].x} cy={offsets[i].y} color={PLAYER_COLORS[cIdx]} isMovable={isMovable} />
+              <Pawn cx={offsets[i].x} cy={offsets[i].y} color={PLAYER_COLORS[cIdx]}
+                isMovable={validMoves.includes(tok.tokenIndex)} />
             </g>
           );
         });
       })}
-
-      {/* Step animation token */}
       {stepPos && stepTokenIdx !== null && stepAnim && (
         <Pawn cx={stepPos.x} cy={stepPos.y}
           color={PLAYER_COLORS[playerColorIndex(stepAnim.playerIndex, totalPlayers)]} />
       )}
-
-      {/* Home tokens */}
       {tokens.filter(t => t.state === 'home').map(tok => {
-        const isMovable = validMoves.includes(tok.tokenIndex) && isMyTurn;
+        if (drag && drag.tokenIndex === tok.tokenIndex && drag.playerIndex === tok.playerIndex) return null;
         const cell = homeCellCenter(tok, totalPlayers);
         if (!cell) return null;
-        // skip while being dragged
-        if (drag && drag.tokenIndex === tok.tokenIndex && drag.playerIndex === tok.playerIndex) return null;
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
         return (
           <g key={`h-${tok.playerIndex}-${tok.tokenIndex}`}
             style={{ cursor: isDraggable(tok) ? 'grab' : 'default' }}
             onPointerDown={e => handlePointerDown(e, tok)}>
-            <Pawn cx={cell.x} cy={cell.y} color={PLAYER_COLORS[cIdx]} isMovable={isMovable} />
+            <Pawn cx={cell.x} cy={cell.y} color={PLAYER_COLORS[cIdx]}
+              isMovable={validMoves.includes(tok.tokenIndex)} />
           </g>
         );
       })}
-
-      {/* Dragged token (under cursor) */}
       {drag && draggedTokenData && (
         <g style={{ pointerEvents: 'none', opacity: 0.85 }}>
           <Pawn cx={drag.currentX} cy={drag.currentY}
@@ -445,24 +373,19 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
             scale={1.15} />
         </g>
       )}
-
-      {/* Ghost knocked-out pieces */}
       {Array.from(ghosts.entries()).map(([key, pos]) => {
         const [_, pIdx, tIdx] = key.split('-');
-        const tok = tokens.find(t => t.playerIndex === Number(pIdx) && t.tokenIndex === Number(tIdx));
-        if (!tok) return null;
-        const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
-        const isOwner = tok.playerIndex === totalPlayers - 1 || tok.playerIndex === 0; // simplified
         return (
-          <g key={`g-${key}`}
-            style={{ cursor: 'pointer', opacity: 0.6 }}
+          <g key={`g-${key}`} style={{ cursor: 'pointer', opacity: 0.6 }}
             onClick={() => dismissGhost(key)}>
-            <Pawn cx={pos.x} cy={pos.y} color={PLAYER_COLORS[cIdx]} />
+            <ellipse cx={pos.x} cy={pos.y + G*0.02} rx={G*0.12} ry={G*0.03} fill="rgba(0,0,0,0.15)" />
+            <rect x={pos.x - G*0.1} y={pos.y - G*0.05} width={G*0.2} height={G*0.08} rx={G*0.01}
+              fill={PLAYER_COLORS[Number(pIdx)]} opacity={0.5} />
+            <circle cx={pos.x} cy={pos.y - G*0.06} r={G*0.06}
+              fill={PLAYER_COLORS[Number(pIdx)]} opacity={0.5} />
           </g>
         );
       })}
-
-      {/* Finished tokens */}
       {tokens.filter(t => t.state === 'finished').map(tok => {
         const cIdx = playerColorIndex(tok.playerIndex, totalPlayers);
         return (
