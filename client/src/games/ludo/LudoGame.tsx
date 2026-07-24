@@ -119,8 +119,30 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
     return () => window.removeEventListener('chat-message', handler as EventListener);
   }, []);
 
+  const prevPlayersRef = useRef<{ tokens: TokenView[]; finishedCount: number }[] | null>(null);
+
+  // ─── Add this BEFORE the gameStatePush effect ──
+  useEffect(() => {
+    // update prevPlayersRef whenever gs changes (via sendAction)
+    if (gs.players.length > 0) prevPlayersRef.current = gs.players;
+  }, [gs]);
+
   useEffect(() => {
     if (gameStatePush) {
+      // detect token moves from broadcast (for other players)
+      const prev = prevPlayersRef.current;
+      const next = gameStatePush.players;
+      if (prev && next) {
+        for (let p = 0; p < prev.length && p < next.length; p++) {
+          for (let t = 0; t < 4; t++) {
+            const pt = prev[p]?.tokens[t];
+            const nt = next[p]?.tokens[t];
+            if (pt && nt && nt.state !== 'home' && (pt.progress !== nt.progress || pt.state !== nt.state)) {
+              setStepAnim({ tokenIndex: t, from: pt.progress >= 0 ? pt.progress : 0, to: nt.progress >= 0 ? nt.progress : 0, playerIndex: p });
+            }
+          }
+        }
+      }
       updateState(gameStatePush);
       if (gameStatePush.winner !== null) {
         setShowWinner(true);
@@ -151,7 +173,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               sounds.playCapture();
               setTimeout(() => setShowCapture(null), 600);
             }
-            if (ev.type === 'TOKEN_MOVED' && ev.playerIndex !== playerIndex) {
+            if (ev.type === 'TOKEN_MOVED') {
               setStepAnim({ tokenIndex: ev.tokenIndex, from: ev.from ?? 0, to: ev.to ?? 0, playerIndex: ev.playerIndex });
             }
           }
@@ -272,12 +294,8 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             <LudoBoard
               tokens={allTokens}
               validMoves={gs.validMoves}
-              currentPlayer={gs.currentPlayer}
-              playerIndex={playerIndex}
               totalPlayers={gs.players.length}
-              diceValue={gs.diceValue}
-              isMyTurn={isMyTurn}
-              onMoveToken={handleTokenClick}
+              onTokenClick={handleTokenClick}
               stepAnim={stepAnim}
               onStepAnimDone={() => setStepAnim(null)}
             />
