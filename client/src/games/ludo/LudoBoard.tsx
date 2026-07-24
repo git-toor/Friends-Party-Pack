@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import {
   PATH, SAFE_ABS,
   getBoardPosition, getHomeTokensByQuadrant,
-  getHomeStretchByQuadrant, playerQuadrant,
+  getHomeStretchByQuadrant, playerQuadrant, playerOffset,
 } from './BoardLayout.js';
 import { PLAYER_COLORS } from './constants.js';
 
@@ -73,6 +73,19 @@ function randomFlyTarget(base: { x: number; y: number }) {
   return { x: base.x + Math.cos(angle) * r, y: base.y + Math.sin(angle) * r };
 }
 
+// Returns the target grid cell [col, row] for a piece after moving diceValue steps
+function getTargetGrid(progress: number, playerIdx: number, total: number, diceVal: number): [number, number] | null {
+  const q = playerQuadrant(playerIdx, total);
+  const targetProg = progress === -1 ? 0 : progress + diceVal;
+  if (targetProg >= 52 && targetProg <= 56) {
+    const stretch = getHomeStretchByQuadrant(q);
+    return stretch?.[targetProg - 52] ?? null;
+  }
+  if (targetProg >= 57) return null;
+  const absIdx = (targetProg + playerOffset(q)) % 52;
+  return PATH[absIdx];
+}
+
 function Pawn({ cx, cy, color, isMovable, scale = 1 }: { cx: number; cy: number; color: string; isMovable?: boolean; scale?: number }) {
   const s = G * 0.35 * scale;
   return (
@@ -103,6 +116,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
   } | null>(null);
 
   const [ghosts, setGhosts] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const [targetCell, setTargetCell] = useState<[number, number] | null>(null);
 
   // step animation
   const [stepPos, setStepPos] = useState<{ x: number; y: number } | null>(null);
@@ -179,16 +193,24 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
     return groups;
   }, [tokens, stepTokenIdx, stepAnim, totalPlayers]);
 
-  // validate and commit drop
+  // validate and commit drop (grid-based)
   const commitDrop = useCallback((vb: { x: number; y: number }, d: { tokenIndex: number; playerIndex: number }) => {
     const tok = tokensRef.current.find(t => t.tokenIndex === d.tokenIndex && t.playerIndex === d.playerIndex);
     if (!tok) return false;
     const dv = diceValueRef.current;
     if (dv === null) return false;
-    const targetProg = tok.state === 'home' ? 0 : tok.progress + dv;
-    const targetTile = tileCenter(targetProg, tok.playerIndex, totalPlayers);
-    const dDist = dist(vb, targetTile);
-    if (dDist < SNAP_DIST) {
+    const target = getTargetGrid(tok.progress, tok.playerIndex, totalPlayers, dv);
+    if (!target) return false;
+    const dropCol = Math.floor(vb.x / G);
+    const dropRow = Math.floor(vb.y / G);
+    if (dropCol === target[0] && dropRow === target[1]) {
+      onMoveRef.current(d.tokenIndex);
+      return true;
+    }
+    // also accept if close to target tile center (for small tiles on edge)
+    const tcx = (target[0] + 0.5) * G;
+    const tcy = (target[1] + 0.5) * G;
+    if (Math.abs(vb.x - tcx) < G * 0.45 && Math.abs(vb.y - tcy) < G * 0.45) {
       onMoveRef.current(d.tokenIndex);
       return true;
     }
@@ -242,6 +264,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
       const vb = pt.matrixTransform(ctm.inverse());
       commitDrop(vb, d);
       setDrag(null);
+      setTargetCell(null);
     };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
@@ -271,7 +294,12 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
       currentX: vb.x,
       currentY: vb.y,
     });
-  }, [isDraggable, toVB]);
+    // highlight target tile
+    if (diceValue !== null) {
+      const target = getTargetGrid(tok.progress, tok.playerIndex, totalPlayers, diceValue);
+      setTargetCell(target);
+    }
+  }, [isDraggable, toVB, diceValue, totalPlayers]);
 
   const pq = (pi: number) => playerQuadrant(pi, totalPlayers);
   const allQuadrants = [0, 1, 2, 3].map(q => ({
@@ -333,6 +361,14 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onMoveToken, diceV
           textAnchor="middle" fontSize={starSize} fill="#f1c40f" opacity={0.9}
           style={{ userSelect: 'none' }}>★</text>
       ))}
+      {/* Target tile highlight during drag */}
+      {targetCell && drag && (
+        <rect x={targetCell[0]*G + (G - ts)/2} y={targetCell[1]*G + (G - ts)/2}
+          width={ts} height={ts} rx={0.004}
+          fill="rgba(255,255,255,0.2)" stroke="#fff" strokeWidth={0.004}>
+          <animate attributeName="opacity" values="0.3;0.7;0.3" dur="0.8s" repeatCount="indefinite" />
+        </rect>
+      )}
       {Array.from(tokenGroups.entries()).map(([key, group]) => {
         const [x, y] = key.split(',').map(Number);
         const offsets = stackPos(group.length, x, y);
