@@ -15,11 +15,12 @@ interface GameEvent {
   type: string;
   playerIndex: number;
   amount?: number; toPlayer?: number; propertyIndex?: number;
-  from?: number; to?: number;
+  from?: number; to?: number; path?: number[];
   cardType?: string; cardIndex?: number; cardText?: string;
 }
 
-interface PlayerState { money: number; position: number; inJail: boolean; jailTurns: number; jailFreeCards: number; bankrupt: boolean; monopolies: string[]; }
+interface PlayerStats { propertiesBought: number; housesBuilt: number; villasBuilt: number; rentPaid: number; rentReceived: number; timesPassedGo: number; timesWentToJail: number; totalMoneyEarned: number; totalMoneySpent: number; auctionsWon: number; tradesCompleted: number; }
+interface PlayerState { money: number; position: number; inJail: boolean; jailTurns: number; jailFreeCards: number; bankrupt: boolean; monopolies: string[]; stats: PlayerStats; }
 interface PropertyState { owner: number | null; houses: number; mortgaged: boolean; }
 
 interface MonopolyClientState {
@@ -199,18 +200,14 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
 
   useEffect(() => {
     if (!gameStatePush) return;
-    const prev = prevPlayersRef.current;
-    const next = gameStatePush.players;
-    if (prev && next) {
-      for (let p = 0; p < prev.length && p < next.length; p++) {
-        const pt = prev[p], nt = next[p];
-        if (pt && nt && pt.position !== nt.position && !pt.bankrupt) {
-          const movement = ((nt.position - pt.position) + 40) % 40;
-          if (movement > 0 && movement <= 20) setStepAnim({ playerIndex: p, from: pt.position, to: nt.position });
+    if (gameStatePush._events) {
+      for (const ev of gameStatePush._events as GameEvent[]) {
+        handleGameEvent(ev);
+        if (ev.type === 'PLAYER_MOVED' && ev.path && ev.path.length > 0) {
+          setStepAnim({ playerIndex: ev.playerIndex, from: ev.path[0], to: ev.path[ev.path.length - 1] });
         }
       }
     }
-    if (gameStatePush._events) for (const ev of gameStatePush._events as GameEvent[]) handleGameEvent(ev);
     updateState(gameStatePush);
   }, [gameStatePush, handleGameEvent, updateState]);
 
@@ -335,10 +332,18 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
 
   const allTokens = gs.players.filter(p => !p.bankrupt).map((p, i) => ({ playerIndex: i, position: p.position }));
   const hasPlayers = gs.players.length > 0;
+  const propertyCount = useMemo(() => {
+    const counts: Record<number, number> = {};
+    for (const id of Object.keys(gs.properties)) {
+      const o = gs.properties[id].owner;
+      if (o !== null) counts[o] = (counts[o] || 0) + 1;
+    }
+    return counts;
+  }, [gs.properties]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#1a1a2e', color: '#eee', position: 'relative', overflow: 'hidden' }}>
-      {hasPlayers && <OpponentBar players={gs.players} currentPlayer={gs.currentPlayer} playerNames={playerNames} />}
+      {hasPlayers && <OpponentBar players={gs.players} currentPlayer={gs.currentPlayer} playerNames={playerNames} propertyCount={propertyCount} />}
 
       <AnimatePresence>
         {eventMsg && (

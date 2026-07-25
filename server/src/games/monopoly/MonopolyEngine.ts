@@ -272,10 +272,35 @@ function findNearestUtility(state: GameState, playerIndex: number): PropertyId {
 
 // ─── Player & Property State ─────────────────────────
 
+export interface PlayerStats {
+  propertiesBought: number;
+  housesBuilt: number;
+  villasBuilt: number;
+  rentPaid: number;
+  rentReceived: number;
+  timesPassedGo: number;
+  timesWentToJail: number;
+  totalMoneyEarned: number;
+  totalMoneySpent: number;
+  auctionsWon: number;
+  tradesCompleted: number;
+}
+
+export function createEmptyStats(): PlayerStats {
+  return {
+    propertiesBought: 0, housesBuilt: 0, villasBuilt: 0,
+    rentPaid: 0, rentReceived: 0,
+    timesPassedGo: 0, timesWentToJail: 0,
+    totalMoneyEarned: 0, totalMoneySpent: 0,
+    auctionsWon: 0, tradesCompleted: 0,
+  };
+}
+
 export interface PlayerState {
   money: number; position: number; inJail: boolean;
   jailTurns: number; jailFreeCards: number; bankrupt: boolean;
   monopolies: GroupId[];
+  stats: PlayerStats;
 }
 
 export interface PropertyState {
@@ -346,7 +371,7 @@ export interface GameEvent {
     | 'BUNGALOW_SOLD' | 'VILLA_SOLD' | 'GHOOS_PAID' | 'SIFARISH_USED';
   playerIndex: number;
   amount?: number; toPlayer?: number; propertyIndex?: number;
-  from?: number; to?: number;
+  from?: number; to?: number; path?: number[];
   cardType?: 'kismat' | 'jugaad'; cardIndex?: number; cardText?: string;
 }
 
@@ -459,6 +484,10 @@ function payRent(state: GameState, playerIndex: number, propId: PropertyId): { a
   const amount = computeRentAmount(state, propId, diceTotal);
   state.players[playerIndex].money -= amount;
   state.players[owner].money += amount;
+  state.players[playerIndex].stats.rentPaid += amount;
+  state.players[owner].stats.rentReceived += amount;
+  state.players[playerIndex].stats.totalMoneySpent += amount;
+  state.players[owner].stats.totalMoneyEarned += amount;
   return {
     amount,
     events: [{ type: 'PAID_RENT', playerIndex, amount, toPlayer: owner, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId) }],
@@ -473,11 +502,14 @@ function executeCard(state: GameState, playerIndex: number, card: Card): GameEve
 
   switch (card.type) {
     case 'money': {
-      player.money += (card.amount || 0);
-      if (card.amount! < 0) {
-        events.push({ type: 'PAID_TAX', playerIndex, amount: -card.amount! });
+      const amt = card.amount || 0;
+      player.money += amt;
+      if (amt >= 0) player.stats.totalMoneyEarned += amt;
+      else player.stats.totalMoneySpent += -amt;
+      if (amt < 0) {
+        events.push({ type: 'PAID_TAX', playerIndex, amount: -amt });
       }
-      events.push({ type: 'CARD_EFFECT', playerIndex, amount: card.amount, cardText: card.text });
+      events.push({ type: 'CARD_EFFECT', playerIndex, amount: amt, cardText: card.text });
       break;
     }
     case 'move': {
@@ -487,6 +519,8 @@ function executeCard(state: GameState, playerIndex: number, card: Card): GameEve
       const oldPos = player.position;
       if (targetPos <= oldPos) {
         player.money += GAME_RULES.passGoSalary;
+        player.stats.timesPassedGo++;
+        player.stats.totalMoneyEarned += GAME_RULES.passGoSalary;
         events.push({ type: 'PASSED_GO', playerIndex, amount: GAME_RULES.passGoSalary });
       }
       player.position = targetPos;
@@ -522,10 +556,12 @@ function executeCard(state: GameState, playerIndex: number, card: Card): GameEve
         if (i !== playerIndex && !state.players[i].bankrupt) {
           const c = Math.min(perPlayer, state.players[i].money);
           state.players[i].money -= c;
+          state.players[i].stats.totalMoneySpent += c;
           collected += c;
         }
       }
       player.money += collected;
+      player.stats.totalMoneyEarned += collected;
       events.push({ type: 'CARD_EFFECT', playerIndex, amount: collected, cardText: card.text });
       break;
     }
@@ -551,6 +587,7 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
     players: Array.from({ length: playerCount }, () => ({
       money: GAME_RULES.startMoney, position: 0, inJail: false,
       jailTurns: 0, jailFreeCards: 0, bankrupt: false, monopolies: [],
+      stats: createEmptyStats(),
     })),
     properties: props as Record<PropertyId, PropertyState>,
     currentPlayer: startingPlayer ?? Math.floor(Math.random() * playerCount),
@@ -593,6 +630,7 @@ function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
     state.players[playerIndex].position = GAME_RULES.jailPosition;
     state.players[playerIndex].inJail = true;
     state.players[playerIndex].jailTurns = 0;
+    state.players[playerIndex].stats.timesWentToJail++;
     state.phase = 'turn_end';
     state.lastAction = 'went_to_jail';
     events.push({ type: 'WENT_TO_JAIL', playerIndex, to: GAME_RULES.jailPosition });
@@ -619,6 +657,7 @@ function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
   if (space.type === 'tax') {
     const amount = space.taxAmount!;
     state.players[playerIndex].money -= amount;
+    state.players[playerIndex].stats.totalMoneySpent += amount;
     state.phase = 'turn_end';
     state.lastAction = 'paid_tax';
     events.push({ type: 'PAID_TAX', playerIndex, amount });
@@ -696,6 +735,7 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
       if (player.jailTurns >= 3) {
         const payAmount = Math.min(GAME_RULES.jailFine, player.money);
         player.money -= payAmount;
+        player.stats.totalMoneySpent += payAmount;
         player.inJail = false;
         player.jailTurns = 0;
         events.push({ type: 'PAID_TAX', playerIndex, amount: payAmount });
@@ -715,6 +755,7 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
       player.position = GAME_RULES.jailPosition;
       player.inJail = true;
       player.jailTurns = 0;
+      player.stats.timesWentToJail++;
       state.phase = 'turn_end';
       state.lastAction = 'three_doubles_jail';
       events.push({ type: 'WENT_TO_JAIL', playerIndex, to: GAME_RULES.jailPosition });
@@ -730,10 +771,14 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     () => {
       const oldPos = player.position;
       const newPos = (oldPos + total) % 40;
+      const path: number[] = [];
+      for (let step = 1; step <= total; step++) path.push((oldPos + step) % 40);
       player.position = newPos;
-      const evts: GameEvent[] = [{ type: 'PLAYER_MOVED', playerIndex, from: oldPos, to: newPos }];
+      const evts: GameEvent[] = [{ type: 'PLAYER_MOVED', playerIndex, from: oldPos, to: newPos, path }];
       if ((oldPos + total) >= 40 && oldPos !== 0) {
         player.money += GAME_RULES.passGoSalary;
+        player.stats.timesPassedGo++;
+        player.stats.totalMoneyEarned += GAME_RULES.passGoSalary;
         evts.push({ type: 'PASSED_GO', playerIndex, amount: GAME_RULES.passGoSalary });
       }
       return evts;
@@ -773,6 +818,8 @@ export function buyProperty(state: GameState, playerIndex: number): GameResult {
   const player = state.players[playerIndex];
   if (player.money < space.price) return { state, valid: false, error: 'Not enough money' };
   player.money -= space.price;
+  player.stats.propertiesBought++;
+  player.stats.totalMoneySpent += space.price;
   state.properties[propId].owner = playerIndex;
   refreshMonopolies(state, playerIndex);
   const events: GameEvent[] = [{ type: 'BOUGHT_PROPERTY', playerIndex, propertyIndex: state.landedIndex, amount: space.price }];
@@ -835,6 +882,7 @@ export function mortgageProperty(state: GameState, playerIndex: number, payload?
   if (prop.houses > 0) return { state, valid: false, error: 'Must sell all buildings first' };
   const value = space.mortgageValue;
   state.players[playerIndex].money += value;
+  state.players[playerIndex].stats.totalMoneyEarned += value;
   prop.mortgaged = true;
   const events: GameEvent[] = [{ type: 'PAID_TAX' as any, playerIndex, amount: value }];
   events[0].type = 'PROPERTY_MORTGAGED' as GameEvent['type'];
@@ -858,6 +906,7 @@ export function unmortgageProperty(state: GameState, playerIndex: number, payloa
   const cost = Math.ceil(space.mortgageValue * (1 + GAME_RULES.mortgageInterestRate));
   if (state.players[playerIndex].money < cost) return { state, valid: false, error: 'Not enough money' };
   state.players[playerIndex].money -= cost;
+  state.players[playerIndex].stats.totalMoneySpent += cost;
   prop.mortgaged = false;
   const events: GameEvent[] = [{ type: 'PAID_TAX' as any, playerIndex, amount: cost }];
   events[0].type = 'PROPERTY_UNMORTGAGED' as GameEvent['type'];
@@ -913,6 +962,8 @@ export function pass(state: GameState, playerIndex: number): GameResult {
   if (activePlayers <= 0 || ix.currentBidder === null) {
     if (ix.currentBidder !== null) {
       state.players[ix.currentBidder].money -= ix.currentBid;
+      state.players[ix.currentBidder].stats.totalMoneySpent += ix.currentBid;
+      state.players[ix.currentBidder].stats.auctionsWon++;
       state.properties[ix.propertyId].owner = ix.currentBidder;
       refreshMonopolies(state, ix.currentBidder);
     }
@@ -1017,6 +1068,8 @@ export function acceptTrade(state: GameState, playerIndex: number): GameResult {
   state.players[to].jailFreeCards += ix.give.jailCards;
   state.players[to].jailFreeCards -= ix.ask.jailCards;
   state.players[from].jailFreeCards += ix.ask.jailCards;
+  state.players[from].stats.tradesCompleted++;
+  state.players[to].stats.tradesCompleted++;
   state.interaction = null;
   const events: GameEvent[] = [{ type: 'CARD_EFFECT' as GameEvent['type'], playerIndex: from }];
   events[0].type = 'TRADE_ACCEPTED' as GameEvent['type'];
@@ -1045,6 +1098,7 @@ export function payGhoos(state: GameState, playerIndex: number): GameResult {
   if (!player.inJail) return { state, valid: false, error: 'Not in jail' };
   if (player.money < GAME_RULES.jailFine) return { state, valid: false, error: 'Not enough money' };
   player.money -= GAME_RULES.jailFine;
+  player.stats.totalMoneySpent += GAME_RULES.jailFine;
   player.inJail = false;
   player.jailTurns = 0;
   const events: GameEvent[] = [{ type: 'GHOOS_PAID', playerIndex, amount: GAME_RULES.jailFine }];
@@ -1101,6 +1155,8 @@ export function buildBungalow(state: GameState, playerIndex: number, payload?: {
   if (state.players[playerIndex].money < cost) return { state, valid: false, error: 'Not enough money' };
 
   state.players[playerIndex].money -= cost;
+  state.players[playerIndex].stats.housesBuilt++;
+  state.players[playerIndex].stats.totalMoneySpent += cost;
   prop.houses++;
   state.housesRemaining--;
   const events: GameEvent[] = [{ type: 'BUNGALOW_BUILT', playerIndex, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId), amount: cost }];
@@ -1158,6 +1214,8 @@ export function buildVilla(state: GameState, playerIndex: number, payload?: { pr
   if (state.players[playerIndex].money < cost) return { state, valid: false, error: 'Not enough money' };
 
   state.players[playerIndex].money -= cost;
+  state.players[playerIndex].stats.villasBuilt++;
+  state.players[playerIndex].stats.totalMoneySpent += cost;
   prop.houses = 5;
   state.hotelsRemaining--;
   state.housesRemaining += 4;
@@ -1274,7 +1332,7 @@ export function handleAction(state: GameState, playerIndex: number, action: Game
 export function sanitizeState(state: GameState, playerIndex: number) {
   const isMyTurn = playerIndex === state.currentPlayer;
   return {
-    players: state.players,
+    players: state.players.map(p => ({ ...p, stats: p.stats })),
     properties: state.properties,
     currentPlayer: state.currentPlayer,
     phase: state.phase,

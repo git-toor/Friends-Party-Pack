@@ -1,12 +1,14 @@
 import { PLAYER_COLORS, PLAYER_NAMES } from './constants.js';
 
+interface PlayerStats { propertiesBought: number; housesBuilt: number; villasBuilt: number; rentPaid: number; rentReceived: number; timesPassedGo: number; [key: string]: any; }
 interface OpponentBarProps {
-  players: { money: number; position: number; inJail: boolean; bankrupt: boolean }[];
+  players: { money: number; position: number; inJail: boolean; bankrupt: boolean; stats?: PlayerStats }[];
   currentPlayer: number;
   playerNames: Record<number, string>;
+  propertyCount?: Record<number, number>;
 }
 
-export function OpponentBar({ players, currentPlayer, playerNames }: OpponentBarProps) {
+export function OpponentBar({ players, currentPlayer, playerNames, propertyCount }: OpponentBarProps) {
   return (
     <div style={{
       display: 'flex', gap: 4, padding: '4px 8px', overflowX: 'auto',
@@ -17,6 +19,7 @@ export function OpponentBar({ players, currentPlayer, playerNames }: OpponentBar
         if (p.bankrupt) return null;
         const isActive = i === currentPlayer;
         const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+        const propCount = propertyCount?.[i] ?? 0;
         return (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: 4,
@@ -38,6 +41,7 @@ export function OpponentBar({ players, currentPlayer, playerNames }: OpponentBar
               {playerNames[i] || `${PLAYER_NAMES[i % PLAYER_NAMES.length]}`}
             </span>
             <span style={{ color: '#4ecca3', fontSize: 10 }}>₹{p.money}</span>
+            <span style={{ color: '#888', fontSize: 9 }}>{propCount}🏠</span>
           </div>
         );
       })}
