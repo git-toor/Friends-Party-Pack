@@ -5,6 +5,7 @@ const GAMES = [
   { id: 'yahtzee', name: 'Yahtzee', icon: '🎯', description: 'Classic 5-dice score game. Roll, keep, and score your way to victory!' },
   { id: 'exploding-kittens', name: 'Exploding Kittens', icon: '💣', description: 'Russian roulette with kittens. Draw, defuse, and avoid exploding!' },
   { id: 'ludo', name: 'Ludo', icon: '🎲', description: 'Classic board race game. Roll, move, capture, and get all tokens home!' },
+  { id: 'monopoly', name: 'Desi Monopoly', icon: '🏠', description: 'Indian-themed real estate. Buy properties, collect rent, build bungalows!' },
 ];
 
 const pageStyle: React.CSSProperties = {

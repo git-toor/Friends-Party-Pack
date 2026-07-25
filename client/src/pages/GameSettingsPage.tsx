@@ -14,6 +14,7 @@ const GAME_INFO: Record<string, { name: string; icon: string; minPlayers: number
     ],
   },
   ludo: { name: 'Ludo', icon: '🎲', minPlayers: 2, maxPlayers: 4 },
+  monopoly: { name: 'Desi Monopoly', icon: '🏠', minPlayers: 2, maxPlayers: 8 },
 };
 
 const EXPANSIONS = ['imploding', 'streaking', 'barking', 'zombie'];
