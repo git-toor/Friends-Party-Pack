@@ -225,7 +225,7 @@ If money < 0 after any transaction → bankrupt. All properties → unowned. If 
 - On turn in jail: [Pay Ghoos ₹50] [Use Sifarish Card] [Roll]
   - Roll doubles → free, move normally
   - No doubles → jailTurns++. If >= 3 → auto-pay ₹50, free, move normally
-- While in jail: cannot buy properties, cannot collect rent (but others still pay you)
+- While in jail: cannot buy properties, but CAN collect rent from others landing on your properties. CAN trade, mortgage, build (standard Monopoly).
 
 ### Bungalows & Villas
 - Must own all properties in a color group
@@ -248,32 +248,115 @@ DRAW_CARD, PAY_GHOOS, USE_SIFARISH_CARD, BUILD_BUNGALOW, SELL_BUNGALOW, BUILD_VI
 
 ---
 
-## Phase 3: The Bazaar — Trading & Mortgages
+## Architecture Evolution (Phase 3 Refactor)
 
-**Goal:** Player-to-player trading, property mortgages, auctions.
+Before adding Phase 3 features, the engine is refactored to support typed property IDs,
+an interaction-based state machine, and an event-driven client architecture. No gameplay
+changes in the first two refactor commits.
+
+### Commit 1: Board Model Refactor
+
+**Changes:**
+- `type PropertyId = 'chandni_chowk' | 'hazratganj' | ...` — typed IDs for all properties
+- `type SpaceId = PropertyId | 'go' | 'jail' | 'free_parking' | ...` — typed IDs for all spaces
+- `type GroupId = 'brown' | 'light_blue' | 'pink' | ...` — named color groups
+- `BOARD: Record<SpaceId, SpaceConfig>` — immutable, fully typed, compile-time safety
+- `BOARD_TILES: { position, space: SpaceId, corner?, rotation? }[]` — position → ID mapping
+- `properties: Record<PropertyId, PropertyState>` — mutable property state keyed by ID
+- `PlayerState.monopolies: GroupId[]` — cached monopoly ownership (updated on ownership change)
+- `refreshMonopolies()` — recalculates all monopolies for a player
+- `GAME_RULES` object — all constants centralized (GO salary, jail fine, house/hotel counts, etc.)
+- All internal lookups convert from position to ID
+
+### Commit 2: Engine Architecture Refactor
+
+**Changes:**
+- `interaction: Interaction | null` replaces flat phase-only branching for temporary flows
+  (auctions, trades, bankruptcy). Only one interaction at a time — no stack needed.
+- Internal command queue processed synchronously inside `handleAction` — not persisted to state.
+  Makes turn resolution linear and debuggable without half-finished queues in saved games.
+- `eventLog: GameEvent[]` capped at 300 entries — replaces unbounded event history.
+  For replay support, save replays separately from live game state.
+- `Interaction = TradeInteraction | AuctionInteraction | BankruptcyInteraction`
+- `getValidActions` checks interaction first, falls through to turnPhase
+- `sanitizeState` includes interaction, eventLog
+
+---
+
+## Phase 3: The Bazaar — Mortgages, Auctions & Trading
+
+**Goal:** Full Monopoly-style mortgages, player auctions, and Steam-like trading (Bazaar).
+
+All features built on the refactored interaction model.
 
 ### Engine Additions
 
+#### Mortgages
 | Function | Description |
 |----------|-------------|
-| proposeTrade(state, from, to, offer) | Create pending trade |
-| acceptTrade(state, pi) | Execute: swap properties + money + jail cards |
-| rejectTrade(state) | Clear pending |
-| startAuction(state, prop, declinedBy) | Init auction, phase→auction |
-| bidAuction(state, pi, amount) | Record bid, next bidder |
-| passAuction(state, pi) | Drop out, check done |
-| mortgageProperty(state, pi, prop) | Receive half price |
-| unmortgageProperty(state, pi, prop) | Pay back + 10% |
+| mortgageProperty(state, pi, propId) | Receive mortgageValue (half price). No buildings, not already mortgaged. |
+| unmortgageProperty(state, pi, propId) | Pay mortgageValue × 1.1 (rounded up). Must be mortgaged. |
+| **Available any time** your turn, no interaction active (except rolling/game over). |
+
+#### Auctions (triggered on DECLINE_PROPERTY)
+| Function | Description |
+|----------|-------------|
+| startAuction(state, propId, declinedBy) | Push AuctionInteraction, set current/active players |
+| bid(state, pi, amount) | Higher than current bid, bidder.money ≥ amount |
+| pass(state, pi) | Add to passedPlayers. If 1 left → winner pays, property transfers |
+
+**Auction interaction:**
+```ts
+{ type: 'auction', propertyId, declinedBy, currentBid, currentBidder,
+  activePlayer, passedPlayers: number[] }
+```
+- Rotates through non-bankrupt, non-passed players
+- 30-second timeout managed server-side (engine tracks `auctionStartedAtTurn`, server checks at action time)
+- Last bidder wins, pays immediately. All pass → property stays unowned.
+- Events: AUCTION_STARTED → AUCTION_BID / AUCTION_PASS → AUCTION_WON
+
+#### Trading (Bazaar)
+| Function | Description |
+|----------|-------------|
+| proposeTrade(state, pi, to, give, ask) | Create TradeInteraction in 'editing' phase |
+| updateTrade(state, pi, give, ask) | Modify offer before sending |
+| sendTrade(state, pi) | Lock offer, change phase to 'proposed', notify recipient |
+| acceptTrade(state, pi) | Execute swap. Validate both sides still have assets. |
+| rejectTrade(state, pi) | Clear interaction, return to turn |
+
+**Trade interaction:**
+```ts
+{ type: 'trade', fromPlayer, toPlayer,
+  give: { money, properties: PropertyId[], jailCards },
+  ask: { money, properties: PropertyId[], jailCards },
+  phase: 'editing' | 'proposed' }
+```
+- Available any time it's your turn, no other interaction active
+- Properties with buildings cannot be traded (must sell buildings first)
+- **Mortgaged properties CAN be traded** — receiver pays 10% interest immediately
+- Editing: sender can modify before sending. Once sent → locked.
+- Events: TRADE_PROPOSED → TRADE_ACCEPTED / TRADE_REJECTED → PROPERTY_TRANSFERRED
+
+#### Bankruptcy Rewrite
+```ts
+{ type: 'bankruptcy', playerIndex, creditor: number | null, amountOwed, phase }
+```
+- When player can't pay: `phase: 'mortgage_opportunity'` — player can mortgage/sell to raise cash
+- If still can't pay: `phase: 'forced_bankruptcy'`
+  - Creditor is a player → all properties + jail cards → creditor
+  - Creditor is bank (tax, repairs) → properties → unowned, houses → bank
+- Events: BANKRUPTCY_ENTERED → BANKRUPT (with transfer details)
 
 ### New Actions
-PROPOSE_TRADE, ACCEPT_TRADE, REJECT_TRADE, BID, PASS, MORTGAGE, UNMORTGAGE
+MORTGAGE, UNMORTGAGE, BID, PASS,
+PROPOSE_TRADE, UPDATE_TRADE, SEND_TRADE, ACCEPT_TRADE, REJECT_TRADE
 
 ### Client Additions
-- Bazaar view (board → trade UI)
-- Auction modal (bid/pass per player)
-- Mortgage gesture (double-tap/swipe-down on fan card)
-- Grayscale "Mortgaged" card state in fan
-- Property card popup with mortgage/unmortgage button
+- Unified property popup: Build | Mortgage | Trade | History | Info (one place, mobile-friendly)
+- Auction modal: bid buttons (+10/+25/+50/+100/Custom), Pass, 30s countdown
+- Bazaar modal: Steam-style side-by-side with miniature property card thumbnails
+- Event-driven animations/sounds (client derives UI events from semantic game events)
+- Player movement path animation (engine emits full path array)
 
 ---
 

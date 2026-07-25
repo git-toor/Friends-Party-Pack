@@ -19,17 +19,18 @@ interface GameEvent {
   cardType?: 'kismat' | 'jugaad'; cardIndex?: number; cardText?: string;
 }
 
-interface PlayerState { money: number; position: number; inJail: boolean; jailTurns: number; jailFreeCards: number; bankrupt: boolean; }
+interface PlayerState { money: number; position: number; inJail: boolean; jailTurns: number; jailFreeCards: number; bankrupt: boolean; monopolies: string[]; }
 interface PropertyState { owner: number | null; houses: number; mortgaged: boolean; }
 
 interface MonopolyClientState {
-  players: PlayerState[]; properties: PropertyState[];
+  players: PlayerState[]; properties: Record<string, PropertyState>;
   currentPlayer: number; phase: string;
   dice: [number, number] | null; diceTotal: number | null;
   doublesCount: number; rolledBy: number | null;
   lastAction: string | null; landedIndex: number | null;
   winner: number | null; validActions: string[];
   housesRemaining: number; hotelsRemaining: number;
+  eventLog: any[];
 }
 
 interface MonopolyGameProps {
@@ -40,33 +41,53 @@ interface MonopolyGameProps {
 }
 
 const EMPTY_STATE: MonopolyClientState = {
-  players: [], properties: [], currentPlayer: 0, phase: 'waiting_for_roll',
+  players: [], properties: {}, currentPlayer: 0, phase: 'waiting_for_roll',
   dice: null, diceTotal: null, doublesCount: 0, rolledBy: null,
   lastAction: null, landedIndex: null, winner: null,
-  validActions: [], housesRemaining: 32, hotelsRemaining: 12,
+  validActions: [], housesRemaining: 32, hotelsRemaining: 12, eventLog: [],
 };
 
-const SPACE_DATA: { index: number; name: string; group?: number; price?: number }[] = [
-  { index: 0, name: 'GO' }, { index: 1, name: 'Chandni Chowk', group: 0, price: 60 },
-  { index: 2, name: 'Jugaad' }, { index: 3, name: 'Hazratganj', group: 0, price: 60 },
-  { index: 4, name: 'Income Tax' }, { index: 5, name: 'Vande Bharat Exp', price: 200 },
-  { index: 6, name: 'Ghat Road', group: 1, price: 100 }, { index: 7, name: 'Kismat' },
-  { index: 8, name: 'MI Road', group: 1, price: 100 }, { index: 9, name: 'Law Garden', group: 1, price: 120 },
-  { index: 10, name: 'Jail' }, { index: 11, name: 'Mall Road', group: 2, price: 140 },
-  { index: 12, name: 'Water Supply', price: 150 }, { index: 13, name: 'Bapu Bazaar', group: 2, price: 140 },
-  { index: 14, name: 'Lake Pichola', group: 2, price: 160 }, { index: 15, name: 'Rajdhani Exp', price: 200 },
-  { index: 16, name: 'Calangute Bch', group: 3, price: 180 }, { index: 17, name: 'Jugaad' },
-  { index: 18, name: 'White Town', group: 3, price: 180 }, { index: 19, name: 'Rock Beach', group: 3, price: 200 },
-  { index: 20, name: 'Free Parking' }, { index: 21, name: 'MG Road', group: 4, price: 220 },
-  { index: 22, name: 'Kismat' }, { index: 23, name: 'Marina Beach', group: 4, price: 220 },
-  { index: 24, name: 'Banjara Hills', group: 4, price: 240 }, { index: 25, name: 'Shatabdi Exp', price: 200 },
-  { index: 26, name: 'Park Street', group: 5, price: 260 }, { index: 27, name: 'FC Road', group: 5, price: 260 },
-  { index: 28, name: 'Electricity Bd', price: 150 }, { index: 29, name: 'SG Highway', group: 5, price: 280 },
-  { index: 30, name: 'Go To Jail' }, { index: 31, name: 'Bandra West', group: 6, price: 300 },
-  { index: 32, name: 'Connaught Pl', group: 6, price: 300 }, { index: 33, name: 'Jugaad' },
-  { index: 34, name: 'Cyber Hub', group: 6, price: 320 }, { index: 35, name: 'Tejas Exp', price: 200 },
-  { index: 36, name: 'Kismat' }, { index: 37, name: 'Marine Drive', group: 7, price: 350 },
-  { index: 38, name: 'Luxury Tax' }, { index: 39, name: 'Altamount Rd', group: 7, price: 400 },
+const SPACE_DATA: { index: number; name: string; spaceId: string; group?: number; price?: number }[] = [
+  { index: 0, name: 'GO', spaceId: 'go' },
+  { index: 1, name: 'Chandni Chowk', spaceId: 'chandni_chowk', group: 0, price: 60 },
+  { index: 2, name: 'Jugaad', spaceId: 'jugaad_1' },
+  { index: 3, name: 'Hazratganj', spaceId: 'hazratganj', group: 0, price: 60 },
+  { index: 4, name: 'Income Tax', spaceId: 'income_tax' },
+  { index: 5, name: 'Vande Bharat Exp', spaceId: 'vande_bharat', price: 200 },
+  { index: 6, name: 'Ghat Road', spaceId: 'ghat_road', group: 1, price: 100 },
+  { index: 7, name: 'Kismat', spaceId: 'kismat_1' },
+  { index: 8, name: 'MI Road', spaceId: 'mi_road', group: 1, price: 100 },
+  { index: 9, name: 'Law Garden', spaceId: 'law_garden', group: 1, price: 120 },
+  { index: 10, name: 'Jail', spaceId: 'jail' },
+  { index: 11, name: 'Mall Road', spaceId: 'mall_road', group: 2, price: 140 },
+  { index: 12, name: 'Water Supply', spaceId: 'water_supply', price: 150 },
+  { index: 13, name: 'Bapu Bazaar', spaceId: 'bapu_bazaar', group: 2, price: 140 },
+  { index: 14, name: 'Lake Pichola', spaceId: 'lake_pichola', group: 2, price: 160 },
+  { index: 15, name: 'Rajdhani Exp', spaceId: 'rajdhani', price: 200 },
+  { index: 16, name: 'Calangute Bch', spaceId: 'calangute', group: 3, price: 180 },
+  { index: 17, name: 'Jugaad', spaceId: 'jugaad_2' },
+  { index: 18, name: 'White Town', spaceId: 'white_town', group: 3, price: 180 },
+  { index: 19, name: 'Rock Beach', spaceId: 'rock_beach', group: 3, price: 200 },
+  { index: 20, name: 'Free Parking', spaceId: 'free_parking' },
+  { index: 21, name: 'MG Road', spaceId: 'mg_road', group: 4, price: 220 },
+  { index: 22, name: 'Kismat', spaceId: 'kismat_2' },
+  { index: 23, name: 'Marina Beach', spaceId: 'marina_beach', group: 4, price: 220 },
+  { index: 24, name: 'Banjara Hills', spaceId: 'banjara_hills', group: 4, price: 240 },
+  { index: 25, name: 'Shatabdi Exp', spaceId: 'shatabdi', price: 200 },
+  { index: 26, name: 'Park Street', spaceId: 'park_street', group: 5, price: 260 },
+  { index: 27, name: 'FC Road', spaceId: 'fc_road', group: 5, price: 260 },
+  { index: 28, name: 'Electricity Bd', spaceId: 'electricity_board', price: 150 },
+  { index: 29, name: 'SG Highway', spaceId: 'sg_highway', group: 5, price: 280 },
+  { index: 30, name: 'Go To Jail', spaceId: 'go_to_jail' },
+  { index: 31, name: 'Bandra West', spaceId: 'bandra_west', group: 6, price: 300 },
+  { index: 32, name: 'Connaught Pl', spaceId: 'connaught_place', group: 6, price: 300 },
+  { index: 33, name: 'Jugaad', spaceId: 'jugaad_3' },
+  { index: 34, name: 'Cyber Hub', spaceId: 'cyber_hub', group: 6, price: 320 },
+  { index: 35, name: 'Tejas Exp', spaceId: 'tejas', price: 200 },
+  { index: 36, name: 'Kismat', spaceId: 'kismat_3' },
+  { index: 37, name: 'Marine Drive', spaceId: 'marine_drive', group: 7, price: 350 },
+  { index: 38, name: 'Luxury Tax', spaceId: 'luxury_tax' },
+  { index: 39, name: 'Altamount Rd', spaceId: 'altamount_road', group: 7, price: 400 },
 ];
 
 function getSpaceInfo(index: number) { return SPACE_DATA.find(s => s.index === index); }
@@ -96,12 +117,11 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   const canUseSifarish = isMyTurn && gs.validActions.includes('USE_SIFARISH_CARD');
 
   // ─── Property cards for fan ──
-  const myPropertyCards = useMemo(() => gs.properties
-    .map((p, i) => ({ ...p, index: i }))
-    .filter(p => p.owner === playerIndex && gs.players[playerIndex] && !gs.players[playerIndex].bankrupt)
-    .map(p => {
-      const space = getSpaceInfo(p.index) || { name: `Space ${p.index}` };
-      return { index: p.index, name: space.name, group: (space as any).group, price: (space as any).price || 0, houses: p.houses, mortgaged: p.mortgaged };
+  const myPropertyCards = useMemo(() => Object.entries(gs.properties)
+    .filter(([_, p]) => p.owner === playerIndex && gs.players[playerIndex] && !gs.players[playerIndex].bankrupt)
+    .map(([spaceId, p]) => {
+      const space = SPACE_DATA.find(s => s.spaceId === spaceId);
+      return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, group: (space as any)?.group, price: space?.price ?? 0, houses: p.houses, mortgaged: p.mortgaged };
     }), [gs.properties, playerIndex, gs.players]);
 
   const selectedProp = buildingMenu !== null ? myPropertyCards[buildingMenu] : null;
@@ -111,13 +131,14 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     if (newState._sv !== undefined) svRef.current = newState._sv;
     if (newState.players) prevPlayersRef.current = newState.players;
     setGs({
-      players: newState.players || [], properties: newState.properties || [],
+      players: newState.players || [], properties: newState.properties || {},
       currentPlayer: newState.currentPlayer ?? 0, phase: newState.phase || 'waiting_for_roll',
       dice: newState.dice ?? null, diceTotal: newState.diceTotal ?? null,
       doublesCount: newState.doublesCount ?? 0, rolledBy: newState.rolledBy ?? null,
       lastAction: newState.lastAction ?? null, landedIndex: newState.landedIndex ?? null,
       winner: newState.winner ?? null, validActions: newState.validActions || [],
       housesRemaining: newState.housesRemaining ?? 32, hotelsRemaining: newState.hotelsRemaining ?? 12,
+      eventLog: newState.eventLog || [],
     });
   }, []);
 
@@ -230,19 +251,19 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
 
   const handleBuildBungalow = useCallback(async () => {
     if (buildingMenu === null || !myPropertyCards[buildingMenu]) return;
-    await sendAction('BUILD_BUNGALOW', { propertyIndex: myPropertyCards[buildingMenu].index });
+    await sendAction('BUILD_BUNGALOW', { propertyId: myPropertyCards[buildingMenu].spaceId });
     setBuildingMenu(null);
   }, [buildingMenu, myPropertyCards, sendAction]);
 
   const handleBuildVilla = useCallback(async () => {
     if (buildingMenu === null || !myPropertyCards[buildingMenu]) return;
-    await sendAction('BUILD_VILLA', { propertyIndex: myPropertyCards[buildingMenu].index });
+    await sendAction('BUILD_VILLA', { propertyId: myPropertyCards[buildingMenu].spaceId });
     setBuildingMenu(null);
   }, [buildingMenu, myPropertyCards, sendAction]);
 
   const handleSellBungalow = useCallback(async () => {
     if (buildingMenu === null || !myPropertyCards[buildingMenu]) return;
-    await sendAction('SELL_BUNGALOW', { propertyIndex: myPropertyCards[buildingMenu].index });
+    await sendAction('SELL_BUNGALOW', { propertyId: myPropertyCards[buildingMenu].spaceId });
     setBuildingMenu(null);
   }, [buildingMenu, myPropertyCards, sendAction]);
 

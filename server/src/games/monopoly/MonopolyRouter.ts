@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createGame, handleAction, getValidActions, type GameState, type GameAction } from './MonopolyEngine.js';
+import { createGame, handleAction, sanitizeState as engineSanitize, type GameState, type GameAction } from './MonopolyEngine.js';
 
 const sessions = new Map<string, GameState>();
 const wsBroadcasts = new Map<string, (payload: any) => void>();
@@ -13,7 +13,7 @@ export function createMonopolySession(sessionId: string, playerCount: number): v
 export function getMonopolyState(sessionId: string, playerIndex: number) {
   const state = sessions.get(sessionId);
   if (!state) return null;
-  return sanitizeState(state, playerIndex);
+  return engineSanitize(state, playerIndex);
 }
 
 export function setWsBroadcast(sessionId: string, fn: (payload: any) => void): void {
@@ -29,7 +29,7 @@ monopolyRouter.post('/create', (req, res) => {
   const state = sessions.get(sessionId)!;
   res.json({
     success: true,
-    state: sanitizeState(state, -1),
+    state: engineSanitize(state, -1),
     currentPlayer: state.currentPlayer,
     phase: state.phase,
   });
@@ -40,12 +40,9 @@ monopolyRouter.post('/action', (req, res) => {
   const state = sessions.get(sessionId);
   if (!state) return res.status(404).json({ error: 'Session not found' });
 
-  console.log(`[Monopoly] Action: ${action.type} P${playerIndex} (curP=${state.currentPlayer} phase=${state.phase})`);
-
   const result = handleAction(state, playerIndex, action);
   if (!result.valid) {
-    console.log(`[Monopoly] REJECTED: ${result.error}`);
-    return res.status(400).json({ error: result.error, state: sanitizeState(state, playerIndex) });
+    return res.status(400).json({ error: result.error, state: engineSanitize(state, playerIndex) });
   }
 
   sessions.set(sessionId, result.state);
@@ -54,7 +51,7 @@ monopolyRouter.post('/action', (req, res) => {
   if (broadcast) {
     for (let i = 0; i < result.state.players.length; i++) {
       if (i === playerIndex) continue;
-      broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i, _events: result.events } });
+      broadcast({ type: 'GAME_STATE', payload: { ...engineSanitize(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i, _events: result.events } });
     }
     if (action.type === 'ROLL_DICE' || action.type === 'CONFIRM_DICE') {
       broadcast({ type: 'DICE_EVENT', payload: { action: action.type, playerIndex, diceValue: result.diceValue, diceTotal: result.diceTotal } });
@@ -63,7 +60,7 @@ monopolyRouter.post('/action', (req, res) => {
 
   const resp = {
     success: true,
-    state: sanitizeState(result.state, playerIndex),
+    state: engineSanitize(result.state, playerIndex),
     diceValue: result.diceValue,
     diceTotal: result.diceTotal,
     validActions: result.validActions ?? [],
@@ -88,11 +85,11 @@ monopolyRouter.post('/rematch', (req, res) => {
   const broadcast = wsBroadcasts.get(sessionId);
   if (broadcast) {
     for (let i = 0; i < newState.players.length; i++) {
-      broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(newState, i), _actionPlayer: -1, forPlayerIndex: i } });
+      broadcast({ type: 'GAME_STATE', payload: { ...engineSanitize(newState, i), _actionPlayer: -1, forPlayerIndex: i } });
     }
   }
 
-  res.json({ success: true, state: sanitizeState(newState, -1) });
+  res.json({ success: true, state: engineSanitize(newState, -1) });
 });
 
 monopolyRouter.get('/state/:sessionId', (req, res) => {
@@ -100,26 +97,5 @@ monopolyRouter.get('/state/:sessionId', (req, res) => {
   if (!state) return res.status(404).json({ error: 'Session not found' });
 
   const playerIndex = parseInt(req.query.playerIndex as string) || 0;
-  res.json(sanitizeState(state, playerIndex));
+  res.json(engineSanitize(state, playerIndex));
 });
-
-function sanitizeState(state: GameState, playerIndex: number) {
-  const isMyTurn = playerIndex === state.currentPlayer;
-  return {
-    players: state.players,
-    properties: state.properties,
-    currentPlayer: state.currentPlayer,
-    phase: state.phase,
-    dice: state.dice,
-    diceTotal: state.diceTotal,
-    doublesCount: state.doublesCount,
-    rolledBy: state.rolledBy,
-    rollId: state.rollId,
-    lastAction: state.lastAction,
-    landedIndex: state.landedIndex,
-    winner: state.winner,
-    isMyTurn,
-    validActions: isMyTurn ? getValidActions(state, playerIndex) : [],
-    _sv: state._sv,
-  };
-}

@@ -1,113 +1,165 @@
 export type SpaceType = 'property' | 'railroad' | 'utility' | 'tax' | 'chance' | 'cc' | 'go' | 'jail' | 'free_parking' | 'go_to_jail';
 export type TurnPhase = 'waiting_for_roll' | 'rolling_dice' | 'waiting_for_action' | 'turn_end';
 
+export type PropertyId = 'chandni_chowk' | 'hazratganj' | 'ghat_road' | 'mi_road' | 'law_garden'
+  | 'mall_road' | 'bapu_bazaar' | 'lake_pichola' | 'calangute' | 'white_town' | 'rock_beach'
+  | 'mg_road' | 'marina_beach' | 'banjara_hills' | 'park_street' | 'fc_road' | 'sg_highway'
+  | 'bandra_west' | 'connaught_place' | 'cyber_hub' | 'marine_drive' | 'altamount_road'
+  | 'vande_bharat' | 'rajdhani' | 'shatabdi' | 'tejas'
+  | 'water_supply' | 'electricity_board';
+
+export type GroupId = 'brown' | 'light_blue' | 'pink' | 'orange' | 'red' | 'yellow' | 'green' | 'dark_blue';
+
+export type SpaceId = PropertyId | 'go' | 'jugaad_1' | 'jugaad_2' | 'jugaad_3'
+  | 'kismat_1' | 'kismat_2' | 'kismat_3' | 'income_tax' | 'luxury_tax'
+  | 'jail' | 'free_parking' | 'go_to_jail';
+
 export interface SpaceConfig {
-  index: number; name: string; type: SpaceType;
-  group?: number; price?: number; rent?: number[];
+  id: SpaceId;
+  name: string; type: SpaceType;
+  group?: GroupId; price?: number; rent?: number[];
   houseCost?: number; mortgageValue?: number; taxAmount?: number;
 }
 
-export const BOARD: SpaceConfig[] = [
-  { index: 0, name: 'GO', type: 'go' },
-  { index: 1, name: 'Chandni Chowk', type: 'property', group: 0, price: 60, rent: [2, 10, 30, 90, 160, 250], houseCost: 50, mortgageValue: 30 },
-  { index: 2, name: 'Jugaad', type: 'cc' },
-  { index: 3, name: 'Hazratganj', type: 'property', group: 0, price: 60, rent: [4, 20, 60, 180, 320, 450], houseCost: 50, mortgageValue: 30 },
-  { index: 4, name: 'Income Tax', type: 'tax', taxAmount: 200 },
-  { index: 5, name: 'Vande Bharat Exp', type: 'railroad', price: 200, mortgageValue: 100 },
-  { index: 6, name: 'Ghat Road', type: 'property', group: 1, price: 100, rent: [6, 30, 90, 270, 400, 550], houseCost: 50, mortgageValue: 50 },
-  { index: 7, name: 'Kismat', type: 'chance' },
-  { index: 8, name: 'MI Road', type: 'property', group: 1, price: 100, rent: [6, 30, 90, 270, 400, 550], houseCost: 50, mortgageValue: 50 },
-  { index: 9, name: 'Law Garden', type: 'property', group: 1, price: 120, rent: [8, 40, 100, 300, 450, 600], houseCost: 50, mortgageValue: 60 },
-  { index: 10, name: 'Jail', type: 'jail' },
-  { index: 11, name: 'Mall Road', type: 'property', group: 2, price: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, mortgageValue: 70 },
-  { index: 12, name: 'Water Supply', type: 'utility', price: 150, mortgageValue: 75 },
-  { index: 13, name: 'Bapu Bazaar', type: 'property', group: 2, price: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, mortgageValue: 70 },
-  { index: 14, name: 'Lake Pichola', type: 'property', group: 2, price: 160, rent: [12, 60, 180, 500, 700, 900], houseCost: 100, mortgageValue: 80 },
-  { index: 15, name: 'Rajdhani Exp', type: 'railroad', price: 200, mortgageValue: 100 },
-  { index: 16, name: 'Calangute Bch', type: 'property', group: 3, price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
-  { index: 17, name: 'Jugaad', type: 'cc' },
-  { index: 18, name: 'White Town', type: 'property', group: 3, price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
-  { index: 19, name: 'Rock Beach', type: 'property', group: 3, price: 200, rent: [16, 80, 220, 600, 800, 1000], houseCost: 100, mortgageValue: 100 },
-  { index: 20, name: 'Free Parking', type: 'free_parking' },
-  { index: 21, name: 'MG Road', type: 'property', group: 4, price: 220, rent: [18, 90, 250, 700, 875, 1050], houseCost: 150, mortgageValue: 110 },
-  { index: 22, name: 'Kismat', type: 'chance' },
-  { index: 23, name: 'Marina Beach', type: 'property', group: 4, price: 220, rent: [18, 90, 250, 700, 875, 1050], houseCost: 150, mortgageValue: 110 },
-  { index: 24, name: 'Banjara Hills', type: 'property', group: 4, price: 240, rent: [20, 100, 300, 750, 925, 1100], houseCost: 150, mortgageValue: 120 },
-  { index: 25, name: 'Shatabdi Exp', type: 'railroad', price: 200, mortgageValue: 100 },
-  { index: 26, name: 'Park Street', type: 'property', group: 5, price: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, mortgageValue: 130 },
-  { index: 27, name: 'FC Road', type: 'property', group: 5, price: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, mortgageValue: 130 },
-  { index: 28, name: 'Electricity Bd', type: 'utility', price: 150, mortgageValue: 75 },
-  { index: 29, name: 'SG Highway', type: 'property', group: 5, price: 280, rent: [24, 120, 360, 850, 1025, 1200], houseCost: 150, mortgageValue: 140 },
-  { index: 30, name: 'Go To Jail', type: 'go_to_jail' },
-  { index: 31, name: 'Bandra West', type: 'property', group: 6, price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
-  { index: 32, name: 'Connaught Pl', type: 'property', group: 6, price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
-  { index: 33, name: 'Jugaad', type: 'cc' },
-  { index: 34, name: 'Cyber Hub', type: 'property', group: 6, price: 320, rent: [28, 150, 450, 1000, 1200, 1400], houseCost: 200, mortgageValue: 160 },
-  { index: 35, name: 'Tejas Exp', type: 'railroad', price: 200, mortgageValue: 100 },
-  { index: 36, name: 'Kismat', type: 'chance' },
-  { index: 37, name: 'Marine Drive', type: 'property', group: 7, price: 350, rent: [35, 175, 500, 1100, 1300, 1500], houseCost: 200, mortgageValue: 175 },
-  { index: 38, name: 'Luxury Tax', type: 'tax', taxAmount: 100 },
-  { index: 39, name: 'Altamount Rd', type: 'property', group: 7, price: 400, rent: [50, 200, 600, 1400, 1700, 2000], houseCost: 200, mortgageValue: 200 },
-];
+// ─── GAME_RULES ────────────────────────────────────
 
-export const RAILROAD_INDICES = [5, 15, 25, 35];
-export const UTILITY_INDICES = [12, 28];
-const JAIL_POSITION = 10;
-const GO_SALARY = 200;
-const STARTING_MONEY = 1500;
-const TOTAL_HOUSES = 32;
-const TOTAL_HOTELS = 12;
+export const GAME_RULES = {
+  passGoSalary: 200,
+  startMoney: 1500,
+  jailFine: 50,
+  jailPosition: 10,
+  maxHouses: 32,
+  maxHotels: 12,
+  maxBungalowPerProperty: 4,
+  incomeTax: 200,
+  luxuryTax: 100,
+  mortgageInterestRate: 0.10,
+  auctionMinBid: 1,
+  maxEventLog: 300,
+} as const;
 
-export const GROUP_COLORS: Record<number, string> = {
-  0: '#8B4513', 1: '#87CEEB', 2: '#FF69B4', 3: '#FF8C00',
-  4: '#FF0000', 5: '#FFD700', 6: '#006400', 7: '#00008B',
+// ─── Board Data ────────────────────────────────────
+
+export const BOARD: Record<SpaceId, SpaceConfig> = {
+  go: { id: 'go', name: 'GO', type: 'go' },
+  chandni_chowk: { id: 'chandni_chowk', name: 'Chandni Chowk', type: 'property', group: 'brown', price: 60, rent: [2, 10, 30, 90, 160, 250], houseCost: 50, mortgageValue: 30 },
+  jugaad_1: { id: 'jugaad_1', name: 'Jugaad', type: 'cc' },
+  hazratganj: { id: 'hazratganj', name: 'Hazratganj', type: 'property', group: 'brown', price: 60, rent: [4, 20, 60, 180, 320, 450], houseCost: 50, mortgageValue: 30 },
+  income_tax: { id: 'income_tax', name: 'Income Tax', type: 'tax', taxAmount: 200 },
+  vande_bharat: { id: 'vande_bharat', name: 'Vande Bharat Exp', type: 'railroad', price: 200, mortgageValue: 100 },
+  ghat_road: { id: 'ghat_road', name: 'Ghat Road', type: 'property', group: 'light_blue', price: 100, rent: [6, 30, 90, 270, 400, 550], houseCost: 50, mortgageValue: 50 },
+  kismat_1: { id: 'kismat_1', name: 'Kismat', type: 'chance' },
+  mi_road: { id: 'mi_road', name: 'MI Road', type: 'property', group: 'light_blue', price: 100, rent: [6, 30, 90, 270, 400, 550], houseCost: 50, mortgageValue: 50 },
+  law_garden: { id: 'law_garden', name: 'Law Garden', type: 'property', group: 'light_blue', price: 120, rent: [8, 40, 100, 300, 450, 600], houseCost: 50, mortgageValue: 60 },
+  jail: { id: 'jail', name: 'Jail', type: 'jail' },
+  mall_road: { id: 'mall_road', name: 'Mall Road', type: 'property', group: 'pink', price: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, mortgageValue: 70 },
+  water_supply: { id: 'water_supply', name: 'Water Supply', type: 'utility', price: 150, mortgageValue: 75 },
+  bapu_bazaar: { id: 'bapu_bazaar', name: 'Bapu Bazaar', type: 'property', group: 'pink', price: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, mortgageValue: 70 },
+  lake_pichola: { id: 'lake_pichola', name: 'Lake Pichola', type: 'property', group: 'pink', price: 160, rent: [12, 60, 180, 500, 700, 900], houseCost: 100, mortgageValue: 80 },
+  rajdhani: { id: 'rajdhani', name: 'Rajdhani Exp', type: 'railroad', price: 200, mortgageValue: 100 },
+  calangute: { id: 'calangute', name: 'Calangute Bch', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
+  jugaad_2: { id: 'jugaad_2', name: 'Jugaad', type: 'cc' },
+  white_town: { id: 'white_town', name: 'White Town', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
+  rock_beach: { id: 'rock_beach', name: 'Rock Beach', type: 'property', group: 'orange', price: 200, rent: [16, 80, 220, 600, 800, 1000], houseCost: 100, mortgageValue: 100 },
+  free_parking: { id: 'free_parking', name: 'Free Parking', type: 'free_parking' },
+  mg_road: { id: 'mg_road', name: 'MG Road', type: 'property', group: 'red', price: 220, rent: [18, 90, 250, 700, 875, 1050], houseCost: 150, mortgageValue: 110 },
+  kismat_2: { id: 'kismat_2', name: 'Kismat', type: 'chance' },
+  marina_beach: { id: 'marina_beach', name: 'Marina Beach', type: 'property', group: 'red', price: 220, rent: [18, 90, 250, 700, 875, 1050], houseCost: 150, mortgageValue: 110 },
+  banjara_hills: { id: 'banjara_hills', name: 'Banjara Hills', type: 'property', group: 'red', price: 240, rent: [20, 100, 300, 750, 925, 1100], houseCost: 150, mortgageValue: 120 },
+  shatabdi: { id: 'shatabdi', name: 'Shatabdi Exp', type: 'railroad', price: 200, mortgageValue: 100 },
+  park_street: { id: 'park_street', name: 'Park Street', type: 'property', group: 'yellow', price: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, mortgageValue: 130 },
+  fc_road: { id: 'fc_road', name: 'FC Road', type: 'property', group: 'yellow', price: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, mortgageValue: 130 },
+  electricity_board: { id: 'electricity_board', name: 'Electricity Bd', type: 'utility', price: 150, mortgageValue: 75 },
+  sg_highway: { id: 'sg_highway', name: 'SG Highway', type: 'property', group: 'yellow', price: 280, rent: [24, 120, 360, 850, 1025, 1200], houseCost: 150, mortgageValue: 140 },
+  go_to_jail: { id: 'go_to_jail', name: 'Go To Jail', type: 'go_to_jail' },
+  bandra_west: { id: 'bandra_west', name: 'Bandra West', type: 'property', group: 'green', price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
+  connaught_place: { id: 'connaught_place', name: 'Connaught Pl', type: 'property', group: 'green', price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
+  jugaad_3: { id: 'jugaad_3', name: 'Jugaad', type: 'cc' },
+  cyber_hub: { id: 'cyber_hub', name: 'Cyber Hub', type: 'property', group: 'green', price: 320, rent: [28, 150, 450, 1000, 1200, 1400], houseCost: 200, mortgageValue: 160 },
+  tejas: { id: 'tejas', name: 'Tejas Exp', type: 'railroad', price: 200, mortgageValue: 100 },
+  kismat_3: { id: 'kismat_3', name: 'Kismat', type: 'chance' },
+  marine_drive: { id: 'marine_drive', name: 'Marine Drive', type: 'property', group: 'dark_blue', price: 350, rent: [35, 175, 500, 1100, 1300, 1500], houseCost: 200, mortgageValue: 175 },
+  luxury_tax: { id: 'luxury_tax', name: 'Luxury Tax', type: 'tax', taxAmount: 100 },
+  altamount_road: { id: 'altamount_road', name: 'Altamount Rd', type: 'property', group: 'dark_blue', price: 400, rent: [50, 200, 600, 1400, 1700, 2000], houseCost: 200, mortgageValue: 200 },
 };
 
-export interface PlayerState {
-  money: number; position: number; inJail: boolean;
-  jailTurns: number; jailFreeCards: number; bankrupt: boolean;
+export const TILE_LAYOUT: { position: number; space: SpaceId; corner?: 'tl' | 'tr' | 'br' | 'bl' }[] = [
+  { position: 0, space: 'go', corner: 'tl' },
+  { position: 1, space: 'chandni_chowk' },
+  { position: 2, space: 'jugaad_1' },
+  { position: 3, space: 'hazratganj' },
+  { position: 4, space: 'income_tax' },
+  { position: 5, space: 'vande_bharat' },
+  { position: 6, space: 'ghat_road' },
+  { position: 7, space: 'kismat_1' },
+  { position: 8, space: 'mi_road' },
+  { position: 9, space: 'law_garden' },
+  { position: 10, space: 'jail', corner: 'tr' },
+  { position: 11, space: 'mall_road' },
+  { position: 12, space: 'water_supply' },
+  { position: 13, space: 'bapu_bazaar' },
+  { position: 14, space: 'lake_pichola' },
+  { position: 15, space: 'rajdhani' },
+  { position: 16, space: 'calangute' },
+  { position: 17, space: 'jugaad_2' },
+  { position: 18, space: 'white_town' },
+  { position: 19, space: 'rock_beach' },
+  { position: 20, space: 'free_parking', corner: 'br' },
+  { position: 21, space: 'mg_road' },
+  { position: 22, space: 'kismat_2' },
+  { position: 23, space: 'marina_beach' },
+  { position: 24, space: 'banjara_hills' },
+  { position: 25, space: 'shatabdi' },
+  { position: 26, space: 'park_street' },
+  { position: 27, space: 'fc_road' },
+  { position: 28, space: 'electricity_board' },
+  { position: 29, space: 'sg_highway' },
+  { position: 30, space: 'go_to_jail' },
+  { position: 31, space: 'bandra_west' },
+  { position: 32, space: 'connaught_place' },
+  { position: 33, space: 'jugaad_3' },
+  { position: 34, space: 'cyber_hub' },
+  { position: 35, space: 'tejas' },
+  { position: 36, space: 'kismat_3' },
+  { position: 37, space: 'marine_drive' },
+  { position: 38, space: 'luxury_tax' },
+  { position: 39, space: 'altamount_road', corner: 'bl' },
+];
+
+export const RAILROAD_IDS: PropertyId[] = ['vande_bharat', 'rajdhani', 'shatabdi', 'tejas'];
+export const UTILITY_IDS: PropertyId[] = ['water_supply', 'electricity_board'];
+
+export const GROUP_PROPERTIES: Record<GroupId, PropertyId[]> = {
+  brown: ['chandni_chowk', 'hazratganj'],
+  light_blue: ['ghat_road', 'mi_road', 'law_garden'],
+  pink: ['mall_road', 'bapu_bazaar', 'lake_pichola'],
+  orange: ['calangute', 'white_town', 'rock_beach'],
+  red: ['mg_road', 'marina_beach', 'banjara_hills'],
+  yellow: ['park_street', 'fc_road', 'sg_highway'],
+  green: ['bandra_west', 'connaught_place', 'cyber_hub'],
+  dark_blue: ['marine_drive', 'altamount_road'],
+};
+
+export const GROUP_COLORS: Record<GroupId, string> = {
+  brown: '#8B4513', light_blue: '#87CEEB', pink: '#FF69B4', orange: '#FF8C00',
+  red: '#FF0000', yellow: '#FFD700', green: '#006400', dark_blue: '#00008B',
+};
+
+export function tileToSpaceId(pos: number): SpaceId {
+  return TILE_LAYOUT[pos]?.space ?? 'go';
 }
 
-export interface PropertyState {
-  owner: number | null; houses: number; mortgaged: boolean;
+export function tileToPropertyId(pos: number): PropertyId | null {
+  const id = TILE_LAYOUT[pos]?.space;
+  if (!id) return null;
+  if (id in BOARD && (BOARD[id].type === 'property' || BOARD[id].type === 'railroad' || BOARD[id].type === 'utility')) {
+    return id as PropertyId;
+  }
+  return null;
 }
 
-export interface GameState {
-  players: PlayerState[]; properties: PropertyState[];
-  currentPlayer: number; phase: TurnPhase;
-  dice: [number, number] | null; diceTotal: number | null;
-  doublesCount: number; rolledBy: number | null; rollId: string | null;
-  lastAction: string | null; landedIndex: number | null;
-  winner: number | null;
-  housesRemaining: number; hotelsRemaining: number;
-  _sv: number;
-}
-
-export type GameActionType = 'ROLL_DICE' | 'CONFIRM_DICE' | 'BUY_PROPERTY' | 'DECLINE_PROPERTY' | 'END_TURN'
-  | 'PAY_GHOOS' | 'USE_SIFARISH_CARD'
-  | 'BUILD_BUNGALOW' | 'SELL_BUNGALOW' | 'BUILD_VILLA' | 'SELL_VILLA';
-
-export interface GameAction {
-  type: GameActionType;
-  payload?: { rollId?: string; values?: [number, number]; propertyIndex?: number };
-}
-
-export interface GameEvent {
-  type: 'PLAYER_MOVED' | 'PASSED_GO' | 'BOUGHT_PROPERTY' | 'PAID_RENT' | 'PAID_TAX'
-    | 'WENT_TO_JAIL' | 'BANKRUPT' | 'PLAYER_WON' | 'ROLLED_DOUBLES' | 'THREE_DOUBLES'
-    | 'TURN_ENDED' | 'DREW_CARD' | 'CARD_EFFECT' | 'BUNGALOW_BUILT' | 'VILLA_BUILT'
-    | 'BUNGALOW_SOLD' | 'VILLA_SOLD' | 'GHOOS_PAID' | 'SIFARISH_USED';
-  playerIndex: number;
-  amount?: number; toPlayer?: number; propertyIndex?: number;
-  from?: number; to?: number;
-  cardType?: 'kismat' | 'jugaad'; cardIndex?: number; cardText?: string;
-}
-
-export interface GameResult {
-  state: GameState; valid: boolean; error?: string;
-  events?: GameEvent[]; diceValue?: [number, number]; diceTotal?: number;
-  rollId?: string; validActions?: GameActionType[];
-  drewCard?: { type: 'kismat' | 'jugaad'; text: string };
+export function spaceIsPurchasable(space: SpaceConfig): boolean {
+  return space.type === 'property' || space.type === 'railroad' || space.type === 'utility';
 }
 
 // ─── Card Decks ────────────────────────────────────────
@@ -124,8 +176,8 @@ const KISMAT_DECK: Card[] = [
   { id: 1, text: 'Advance to MG Road, Bengaluru', type: 'move', targetPosition: 21 },
   { id: 2, text: 'Advance to Mall Road, Shimla', type: 'move', targetPosition: 11 },
   { id: 3, text: 'Advance to Vande Bharat Express', type: 'move', targetPosition: 5 },
-  { id: 4, text: 'Advance to nearest Utility', type: 'move' }, // nearest utility
-  { id: 5, text: 'Advance to nearest Express Train', type: 'move' }, // nearest RR
+  { id: 4, text: 'Advance to nearest Utility', type: 'move' },
+  { id: 5, text: 'Advance to nearest Express Train', type: 'move' },
   { id: 6, text: 'Bank pays you dividend of ₹50', type: 'money', amount: 50 },
   { id: 7, text: 'GO TO JAIL', type: 'jail' },
   { id: 8, text: 'Make general repairs on all your property. ₹25 per Bungalow, ₹100 per Villa', type: 'repairs', perHouse: 25, perHotel: 100 },
@@ -194,27 +246,191 @@ function drawJugaad(): Card {
   return jugaadDrawOrder[jugaadIndex++];
 }
 
-function findNearestRailroad(state: GameState, playerIndex: number): number {
+function findNearestRailroad(state: GameState, playerIndex: number): PropertyId {
   const pos = state.players[playerIndex].position;
-  let nearest = RAILROAD_INDICES[0];
+  let nearest = RAILROAD_IDS[0];
   let minDist = 40;
-  for (const rr of RAILROAD_INDICES) {
-    const dist = (rr - pos + 40) % 40;
-    if (dist > 0 && dist < minDist) { minDist = dist; nearest = rr; }
+  const rrPositions = [5, 15, 25, 35];
+  for (let i = 0; i < RAILROAD_IDS.length; i++) {
+    const dist = (rrPositions[i] - pos + 40) % 40;
+    if (dist > 0 && dist < minDist) { minDist = dist; nearest = RAILROAD_IDS[i]; }
   }
   return nearest;
 }
 
-function findNearestUtility(state: GameState, playerIndex: number): number {
+function findNearestUtility(state: GameState, playerIndex: number): PropertyId {
   const pos = state.players[playerIndex].position;
-  let nearest = UTILITY_INDICES[0];
+  let nearest = UTILITY_IDS[0];
   let minDist = 40;
-  for (const u of UTILITY_INDICES) {
-    const dist = (u - pos + 40) % 40;
-    if (dist > 0 && dist < minDist) { minDist = dist; nearest = u; }
+  const uPositions = [12, 28];
+  for (let i = 0; i < UTILITY_IDS.length; i++) {
+    const dist = (uPositions[i] - pos + 40) % 40;
+    if (dist > 0 && dist < minDist) { minDist = dist; nearest = UTILITY_IDS[i]; }
   }
   return nearest;
 }
+
+// ─── Player & Property State ─────────────────────────
+
+export interface PlayerState {
+  money: number; position: number; inJail: boolean;
+  jailTurns: number; jailFreeCards: number; bankrupt: boolean;
+  monopolies: GroupId[];
+}
+
+export interface PropertyState {
+  owner: number | null; houses: number; mortgaged: boolean;
+}
+
+export interface GameState {
+  players: PlayerState[];
+  properties: Record<PropertyId, PropertyState>;
+  currentPlayer: number; phase: TurnPhase;
+  dice: [number, number] | null; diceTotal: number | null;
+  doublesCount: number; rolledBy: number | null; rollId: string | null;
+  lastAction: string | null; landedIndex: number | null;
+  winner: number | null;
+  housesRemaining: number; hotelsRemaining: number;
+  eventLog: GameEvent[];
+  _sv: number;
+}
+
+export type GameActionType = 'ROLL_DICE' | 'CONFIRM_DICE' | 'BUY_PROPERTY' | 'DECLINE_PROPERTY' | 'END_TURN'
+  | 'PAY_GHOOS' | 'USE_SIFARISH_CARD'
+  | 'BUILD_BUNGALOW' | 'SELL_BUNGALOW' | 'BUILD_VILLA' | 'SELL_VILLA';
+
+export interface GameAction {
+  type: GameActionType;
+  payload?: { rollId?: string; values?: [number, number]; propertyIndex?: number; propertyId?: PropertyId };
+}
+
+export interface GameEvent {
+  type: 'PLAYER_MOVED' | 'PASSED_GO' | 'BOUGHT_PROPERTY' | 'PAID_RENT' | 'PAID_TAX'
+    | 'WENT_TO_JAIL' | 'BANKRUPT' | 'PLAYER_WON' | 'ROLLED_DOUBLES' | 'THREE_DOUBLES'
+    | 'TURN_ENDED' | 'DREW_CARD' | 'CARD_EFFECT' | 'BUNGALOW_BUILT' | 'VILLA_BUILT'
+    | 'BUNGALOW_SOLD' | 'VILLA_SOLD' | 'GHOOS_PAID' | 'SIFARISH_USED';
+  playerIndex: number;
+  amount?: number; toPlayer?: number; propertyIndex?: number;
+  from?: number; to?: number;
+  cardType?: 'kismat' | 'jugaad'; cardIndex?: number; cardText?: string;
+}
+
+export interface GameResult {
+  state: GameState; valid: boolean; error?: string;
+  events?: GameEvent[]; diceValue?: [number, number]; diceTotal?: number;
+  rollId?: string; validActions?: GameActionType[];
+}
+
+// ─── Helpers ───────────────────────────────────────────
+
+function getGroupPropertyIds(group: GroupId): PropertyId[] {
+  return GROUP_PROPERTIES[group] ?? [];
+}
+
+function refreshMonopolies(state: GameState, playerIndex: number): void {
+  const player = state.players[playerIndex];
+  player.monopolies = (Object.keys(GROUP_PROPERTIES) as GroupId[]).filter(g =>
+    GROUP_PROPERTIES[g].every(id => state.properties[id]?.owner === playerIndex)
+  );
+}
+
+function bump(state: GameState): void { state._sv++; }
+
+function pushEvent(state: GameState, event: GameEvent): void {
+  state.eventLog.push(event);
+  if (state.eventLog.length > GAME_RULES.maxEventLog) state.eventLog.shift();
+}
+
+function advanceTurn(state: GameState): void {
+  const total = state.players.length;
+  let next = (state.currentPlayer + 1) % total;
+  let attempts = 0;
+  while (state.players[next]?.bankrupt && attempts < total) {
+    next = (next + 1) % total;
+    attempts++;
+  }
+  state.currentPlayer = next;
+  state.phase = 'waiting_for_roll';
+  state.dice = null; state.diceTotal = null; state.doublesCount = 0;
+  state.rolledBy = null; state.rollId = null; state.lastAction = null; state.landedIndex = null;
+}
+
+function checkWinCondition(state: GameState): number | null {
+  const activePlayers = state.players.filter(p => !p.bankrupt);
+  if (activePlayers.length <= 1 && state.players.length > 1) {
+    const winner = activePlayers[0];
+    if (winner) return state.players.indexOf(winner);
+  }
+  return null;
+}
+
+function handleBankruptcy(state: GameState, playerIndex: number): GameEvent[] {
+  const player = state.players[playerIndex];
+  if (player.bankrupt) return [];
+  if (player.money >= 0) return [];
+  player.bankrupt = true;
+  const events: GameEvent[] = [{ type: 'BANKRUPT', playerIndex }];
+  for (const id of Object.keys(state.properties) as PropertyId[]) {
+    const prop = state.properties[id];
+    if (prop.owner === playerIndex) {
+      prop.owner = null;
+      if (prop.houses === 5) state.hotelsRemaining++;
+      else state.housesRemaining += prop.houses;
+      prop.houses = 0;
+      prop.mortgaged = false;
+    }
+  }
+  const winner = checkWinCondition(state);
+  if (winner !== null) {
+    state.winner = winner;
+    events.push({ type: 'PLAYER_WON', playerIndex: winner });
+  }
+  return events;
+}
+
+function countOwnerRailroads(state: GameState, ownerIndex: number): number {
+  return RAILROAD_IDS.filter(id => state.properties[id]?.owner === ownerIndex).length;
+}
+
+function countOwnerUtilities(state: GameState, ownerIndex: number): number {
+  return UTILITY_IDS.filter(id => state.properties[id]?.owner === ownerIndex).length;
+}
+
+function computeRentAmount(state: GameState, propId: PropertyId, diceTotal: number): number {
+  const prop = state.properties[propId];
+  const space = BOARD[propId];
+  const owner = prop.owner;
+  if (owner === null || owner === undefined) return 0;
+  if (prop.mortgaged) return 0;
+  if (space.type === 'railroad') return 25 * Math.pow(2, countOwnerRailroads(state, owner) - 1);
+  if (space.type === 'utility') {
+    const count = countOwnerUtilities(state, owner);
+    return count === 1 ? 4 * diceTotal : 10 * diceTotal;
+  }
+  if (space.type === 'property') {
+    if (prop.houses === 5) return space.rent![5];
+    if (prop.houses > 0) return space.rent![prop.houses];
+    const groupProps = GROUP_PROPERTIES[space.group!];
+    const monopoly = groupProps.every(id => state.properties[id]?.owner === owner);
+    return monopoly ? space.rent![0] * 2 : space.rent![0];
+  }
+  return 0;
+}
+
+function payRent(state: GameState, playerIndex: number, propId: PropertyId): { amount: number; events: GameEvent[] } {
+  const prop = state.properties[propId];
+  const owner = prop.owner!;
+  const diceTotal = state.diceTotal ?? 0;
+  const amount = computeRentAmount(state, propId, diceTotal);
+  state.players[playerIndex].money -= amount;
+  state.players[owner].money += amount;
+  return {
+    amount,
+    events: [{ type: 'PAID_RENT', playerIndex, amount, toPlayer: owner, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId) }],
+  };
+}
+
+// ─── Card execution ─────────────────────────────────────
 
 function executeCard(state: GameState, playerIndex: number, card: Card): GameEvent[] {
   const events: GameEvent[] = [];
@@ -231,12 +447,12 @@ function executeCard(state: GameState, playerIndex: number, card: Card): GameEve
     }
     case 'move': {
       let targetPos = card.targetPosition!;
-      if (card.id === 4) targetPos = findNearestUtility(state, playerIndex); // Kismat #4
-      if (card.id === 5) targetPos = findNearestRailroad(state, playerIndex); // Kismat #5
+      if (card.id === 4) { const u = findNearestUtility(state, playerIndex); targetPos = TILE_LAYOUT.findIndex(t => t.space === u); }
+      if (card.id === 5) { const rr = findNearestRailroad(state, playerIndex); targetPos = TILE_LAYOUT.findIndex(t => t.space === rr); }
       const oldPos = player.position;
       if (targetPos <= oldPos) {
-        player.money += GO_SALARY;
-        events.push({ type: 'PASSED_GO', playerIndex, amount: GO_SALARY });
+        player.money += GAME_RULES.passGoSalary;
+        events.push({ type: 'PASSED_GO', playerIndex, amount: GAME_RULES.passGoSalary });
       }
       player.position = targetPos;
       events.push({ type: 'PLAYER_MOVED', playerIndex, from: oldPos, to: targetPos });
@@ -244,19 +460,19 @@ function executeCard(state: GameState, playerIndex: number, card: Card): GameEve
       break;
     }
     case 'jail': {
-      player.position = JAIL_POSITION;
+      player.position = GAME_RULES.jailPosition;
       player.inJail = true;
       player.jailTurns = 0;
-      events.push({ type: 'WENT_TO_JAIL', playerIndex, to: JAIL_POSITION });
+      events.push({ type: 'WENT_TO_JAIL', playerIndex, to: GAME_RULES.jailPosition });
       events.push({ type: 'CARD_EFFECT', playerIndex, cardText: card.text });
       break;
     }
     case 'repairs': {
       let cost = 0;
-      for (let i = 0; i < state.properties.length; i++) {
-        if (state.properties[i].owner === playerIndex) {
-          if (state.properties[i].houses === 5) cost += (card.perHotel || 0);
-          else if (state.properties[i].houses > 0) cost += (card.perHouse || 0) * state.properties[i].houses;
+      for (const id of Object.keys(state.properties) as PropertyId[]) {
+        if (state.properties[id].owner === playerIndex) {
+          if (state.properties[id].houses === 5) cost += (card.perHotel || 0);
+          else if (state.properties[id].houses > 0) cost += (card.perHouse || 0) * state.properties[id].houses;
         }
       }
       player.money -= cost;
@@ -291,132 +507,51 @@ function executeCard(state: GameState, playerIndex: number, card: Card): GameEve
 
 export function createGame(playerCount: number, startingPlayer?: number): GameState {
   resetCardDecks();
+  const allPropIds = [...GROUP_PROPERTIES.brown, ...GROUP_PROPERTIES.light_blue, ...GROUP_PROPERTIES.pink,
+    ...GROUP_PROPERTIES.orange, ...GROUP_PROPERTIES.red, ...GROUP_PROPERTIES.yellow,
+    ...GROUP_PROPERTIES.green, ...GROUP_PROPERTIES.dark_blue, ...RAILROAD_IDS, ...UTILITY_IDS];
+  const props: Record<string, PropertyState> = {};
+  for (const id of allPropIds) props[id] = { owner: null, houses: 0, mortgaged: false };
   return {
     players: Array.from({ length: playerCount }, () => ({
-      money: STARTING_MONEY, position: 0, inJail: false,
-      jailTurns: 0, jailFreeCards: 0, bankrupt: false,
+      money: GAME_RULES.startMoney, position: 0, inJail: false,
+      jailTurns: 0, jailFreeCards: 0, bankrupt: false, monopolies: [],
     })),
-    properties: BOARD.map(() => ({ owner: null, houses: 0, mortgaged: false })),
+    properties: props as Record<PropertyId, PropertyState>,
     currentPlayer: startingPlayer ?? Math.floor(Math.random() * playerCount),
     phase: 'waiting_for_roll',
     dice: null, diceTotal: null, doublesCount: 0,
     rolledBy: null, rollId: null, lastAction: null, landedIndex: null,
     winner: null,
-    housesRemaining: TOTAL_HOUSES,
-    hotelsRemaining: TOTAL_HOTELS,
+    housesRemaining: GAME_RULES.maxHouses,
+    hotelsRemaining: GAME_RULES.maxHotels,
+    eventLog: [],
     _sv: 0,
   };
 }
 
-function bump(state: GameState): void { state._sv++; }
-
-function advanceTurn(state: GameState): void {
-  const total = state.players.length;
-  let next = (state.currentPlayer + 1) % total;
-  let attempts = 0;
-  while (state.players[next]?.bankrupt && attempts < total) {
-    next = (next + 1) % total;
-    attempts++;
-  }
-  state.currentPlayer = next;
-  state.phase = 'waiting_for_roll';
-  state.dice = null; state.diceTotal = null; state.doublesCount = 0;
-  state.rolledBy = null; state.rollId = null; state.lastAction = null; state.landedIndex = null;
-}
-
-function checkWinCondition(state: GameState): number | null {
-  const activePlayers = state.players.filter(p => !p.bankrupt);
-  if (activePlayers.length <= 1 && state.players.length > 1) {
-    const winner = activePlayers[0];
-    if (winner) return state.players.indexOf(winner);
-  }
-  return null;
-}
-
-function handleBankruptcy(state: GameState, playerIndex: number): GameEvent[] {
-  const player = state.players[playerIndex];
-  if (player.bankrupt) return [];
-  if (player.money >= 0) return [];
-  player.bankrupt = true;
-  const events: GameEvent[] = [{ type: 'BANKRUPT', playerIndex }];
-  for (let i = 0; i < state.properties.length; i++) {
-    if (state.properties[i].owner === playerIndex) {
-      state.properties[i].owner = null;
-      if (state.properties[i].houses === 5) state.hotelsRemaining++;
-      else state.housesRemaining += state.properties[i].houses;
-      state.properties[i].houses = 0;
-      state.properties[i].mortgaged = false;
-    }
-  }
-  const winner = checkWinCondition(state);
-  if (winner !== null) {
-    state.winner = winner;
-    events.push({ type: 'PLAYER_WON', playerIndex: winner });
-  }
-  return events;
-}
-
-function countOwnerRailroads(state: GameState, ownerIndex: number): number {
-  return RAILROAD_INDICES.filter(i => state.properties[i].owner === ownerIndex).length;
-}
-
-function countOwnerUtilities(state: GameState, ownerIndex: number): number {
-  return UTILITY_INDICES.filter(i => state.properties[i].owner === ownerIndex).length;
-}
-
-function computeRentAmount(state: GameState, propIndex: number, diceTotal: number): number {
-  const prop = state.properties[propIndex];
-  const space = BOARD[propIndex];
-  const owner = prop.owner!;
-  if (prop.mortgaged) return 0;
-  if (space.type === 'railroad') return 25 * Math.pow(2, countOwnerRailroads(state, owner) - 1);
-  if (space.type === 'utility') {
-    const count = countOwnerUtilities(state, owner);
-    return count === 1 ? 4 * diceTotal : 10 * diceTotal;
-  }
-  if (space.type === 'property') {
-    if (prop.houses === 5) return space.rent![5]; // villa
-    if (prop.houses > 0) return space.rent![prop.houses];
-    const groupProps = BOARD.filter(s => s.group === space.group && s.type === 'property');
-    const monopoly = groupProps.every(s => state.properties[s.index].owner === owner);
-    return monopoly ? space.rent![0] * 2 : space.rent![0];
-  }
-  return 0;
-}
-
-function payRent(state: GameState, playerIndex: number, propIndex: number): { amount: number; events: GameEvent[] } {
-  const prop = state.properties[propIndex];
-  const owner = prop.owner!;
-  const diceTotal = state.diceTotal ?? 0;
-  const amount = computeRentAmount(state, propIndex, diceTotal);
-  state.players[playerIndex].money -= amount;
-  state.players[owner].money += amount;
-  return {
-    amount,
-    events: [{ type: 'PAID_RENT', playerIndex, amount, toPlayer: owner, propertyIndex: propIndex }],
-  };
-}
-
-// ─── resolveLanding (Phase 2: draws cards) ────────────
+// ─── resolveLanding ─────────────────────────────────────
 
 function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
   const pos = state.players[playerIndex].position;
-  const space = BOARD[pos];
-  const prop = state.properties[pos];
+  const spaceId = tileToSpaceId(pos);
+  const space = BOARD[spaceId];
+  const propId = tileToPropertyId(pos);
   const events: GameEvent[] = [];
   state.landedIndex = pos;
 
   if (space.type === 'go_to_jail') {
-    state.players[playerIndex].position = JAIL_POSITION;
+    state.players[playerIndex].position = GAME_RULES.jailPosition;
     state.players[playerIndex].inJail = true;
     state.players[playerIndex].jailTurns = 0;
     state.phase = 'turn_end';
     state.lastAction = 'went_to_jail';
-    events.push({ type: 'WENT_TO_JAIL', playerIndex, to: JAIL_POSITION });
+    events.push({ type: 'WENT_TO_JAIL', playerIndex, to: GAME_RULES.jailPosition });
     return events;
   }
 
-  if (space.type === 'property' || space.type === 'railroad' || space.type === 'utility') {
+  if (propId && (space.type === 'property' || space.type === 'railroad' || space.type === 'utility')) {
+    const prop = state.properties[propId];
     if (prop.owner === null) {
       state.phase = 'waiting_for_action';
       state.lastAction = 'can_buy';
@@ -424,7 +559,7 @@ function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
       state.phase = 'turn_end';
       state.lastAction = 'own_property';
     } else {
-      const rentResult = payRent(state, playerIndex, pos);
+      const rentResult = payRent(state, playerIndex, propId);
       events.push(...rentResult.events);
       state.phase = 'turn_end';
       state.lastAction = 'paid_rent';
@@ -502,17 +637,15 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
   const events: GameEvent[] = [];
   let escapedJailByDoubles = false;
 
-  // ── Jail handling (Phase 2: full mechanics) ──
   if (player.inJail) {
     if (isDoubles) {
       player.inJail = false;
       player.jailTurns = 0;
       escapedJailByDoubles = true;
-      // Move with the dice total (no re-roll for this double)
     } else {
       player.jailTurns++;
       if (player.jailTurns >= 3) {
-        const payAmount = Math.min(50, player.money);
+        const payAmount = Math.min(GAME_RULES.jailFine, player.money);
         player.money -= payAmount;
         player.inJail = false;
         player.jailTurns = 0;
@@ -526,17 +659,16 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     }
   }
 
-  // ── Doubles tracking ──
   if (isDoubles && !escapedJailByDoubles) {
     state.doublesCount++;
     if (state.doublesCount >= 3) {
       events.push({ type: 'THREE_DOUBLES', playerIndex });
-      player.position = JAIL_POSITION;
+      player.position = GAME_RULES.jailPosition;
       player.inJail = true;
       player.jailTurns = 0;
       state.phase = 'turn_end';
       state.lastAction = 'three_doubles_jail';
-      events.push({ type: 'WENT_TO_JAIL', playerIndex, to: JAIL_POSITION });
+      events.push({ type: 'WENT_TO_JAIL', playerIndex, to: GAME_RULES.jailPosition });
       bump(state);
       return { state, valid: true, diceValue: values, diceTotal: total, events, validActions: ['END_TURN'] };
     }
@@ -545,23 +677,19 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     state.doublesCount = 0;
   }
 
-  // ── Move player ──
   const oldPos = player.position;
   const newPos = (oldPos + total) % 40;
   player.position = newPos;
   events.push({ type: 'PLAYER_MOVED', playerIndex, from: oldPos, to: newPos });
 
-  // ── Check passing GO ──
   if ((oldPos + total) >= 40 && oldPos !== 0) {
-    player.money += GO_SALARY;
-    events.push({ type: 'PASSED_GO', playerIndex, amount: GO_SALARY });
+    player.money += GAME_RULES.passGoSalary;
+    events.push({ type: 'PASSED_GO', playerIndex, amount: GAME_RULES.passGoSalary });
   }
 
-  // ── Resolve landing ──
   const landingEvents = resolveLanding(state, playerIndex);
   events.push(...landingEvents);
 
-  // ── Check bankruptcy ──
   const bankruptcyEvents = handleBankruptcy(state, playerIndex);
   events.push(...bankruptcyEvents);
 
@@ -570,7 +698,6 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     return { state, valid: true, diceValue: values, diceTotal: total, events, validActions: [] };
   }
 
-  // ── Re-roll on doubles (unless escaped jail via doubles, waiting to buy, or ended up in jail from landing) ──
   if (isDoubles && !escapedJailByDoubles && state.doublesCount < 3
     && !player.inJail && state.lastAction !== 'can_buy') {
     state.phase = 'waiting_for_roll';
@@ -588,15 +715,17 @@ export function buyProperty(state: GameState, playerIndex: number): GameResult {
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   if (state.phase !== 'waiting_for_action' || state.lastAction !== 'can_buy') return { state, valid: false, error: 'Cannot buy now' };
   if (state.landedIndex === null) return { state, valid: false, error: 'No property to buy' };
-  const propIndex = state.landedIndex;
-  const space = BOARD[propIndex];
+  const propId = tileToPropertyId(state.landedIndex);
+  if (!propId) return { state, valid: false, error: 'Not a purchasable space' };
+  const space = BOARD[propId];
   if (!space.price) return { state, valid: false, error: 'Not a purchasable space' };
-  if (state.properties[propIndex].owner !== null) return { state, valid: false, error: 'Already owned' };
+  if (state.properties[propId].owner !== null) return { state, valid: false, error: 'Already owned' };
   const player = state.players[playerIndex];
   if (player.money < space.price) return { state, valid: false, error: 'Not enough money' };
   player.money -= space.price;
-  state.properties[propIndex].owner = playerIndex;
-  const events: GameEvent[] = [{ type: 'BOUGHT_PROPERTY', playerIndex, propertyIndex: propIndex, amount: space.price }];
+  state.properties[propId].owner = playerIndex;
+  refreshMonopolies(state, playerIndex);
+  const events: GameEvent[] = [{ type: 'BOUGHT_PROPERTY', playerIndex, propertyIndex: state.landedIndex, amount: space.price }];
   const bankruptcyEvents = handleBankruptcy(state, playerIndex);
   events.push(...bankruptcyEvents);
   if (state.winner !== null) { bump(state); return { state, valid: true, events, validActions: [] }; }
@@ -638,11 +767,11 @@ export function payGhoos(state: GameState, playerIndex: number): GameResult {
   if (state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Cannot pay ghoos now' };
   const player = state.players[playerIndex];
   if (!player.inJail) return { state, valid: false, error: 'Not in jail' };
-  if (player.money < 50) return { state, valid: false, error: 'Not enough money' };
-  player.money -= 50;
+  if (player.money < GAME_RULES.jailFine) return { state, valid: false, error: 'Not enough money' };
+  player.money -= GAME_RULES.jailFine;
   player.inJail = false;
   player.jailTurns = 0;
-  const events: GameEvent[] = [{ type: 'GHOOS_PAID', playerIndex, amount: 50 }];
+  const events: GameEvent[] = [{ type: 'GHOOS_PAID', playerIndex, amount: GAME_RULES.jailFine }];
   bump(state);
   return { state, valid: true, events, validActions: ['ROLL_DICE'] };
 }
@@ -664,113 +793,111 @@ export function useSifarishCard(state: GameState, playerIndex: number): GameResu
 
 // ─── Building Actions (Phase 2) ────────────────────────
 
-function getGroupProperties(group: number): number[] {
-  return BOARD.filter(s => s.group === group && s.type === 'property').map(s => s.index);
-}
-
-export function buildBungalow(state: GameState, playerIndex: number, payload?: { propertyIndex?: number }): GameResult {
+export function buildBungalow(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.phase !== 'turn_end' && state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Cannot build now' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  const propIndex = payload?.propertyIndex;
-  if (propIndex === undefined) return { state, valid: false, error: 'No property specified' };
-  const prop = state.properties[propIndex];
-  const space = BOARD[propIndex];
-  if (space.type !== 'property') return { state, valid: false, error: 'Not a property' };
+  const propId = payload?.propertyId;
+  if (!propId) return { state, valid: false, error: 'No property specified' };
+  const prop = state.properties[propId];
+  const space = BOARD[propId];
+  if (!prop || space.type !== 'property') return { state, valid: false, error: 'Not a property' };
   if (prop.owner !== playerIndex) return { state, valid: false, error: 'Not your property' };
   if (prop.mortgaged) return { state, valid: false, error: 'Property is mortgaged' };
   if (state.housesRemaining <= 0) return { state, valid: false, error: 'No bungalows remaining' };
-  if (prop.houses >= 4) return { state, valid: false, error: 'Max 4 bungalows (build villa instead)' };
-  if (space.group === undefined) return { state, valid: false, error: 'No color group' };
+  if (prop.houses >= GAME_RULES.maxBungalowPerProperty) return { state, valid: false, error: 'Max 4 bungalows (build villa instead)' };
+  if (!space.group) return { state, valid: false, error: 'No color group' };
 
-  // Check monopoly
-  const groupProps = getGroupProperties(space.group);
-  if (!groupProps.every(i => state.properties[i].owner === playerIndex)) {
-    return { state, valid: false, error: 'Must own entire color group' };
+  if (!state.players[playerIndex].monopolies.includes(space.group)) {
+    const groupProps = getGroupPropertyIds(space.group);
+    if (!groupProps.every(id => state.properties[id]?.owner === playerIndex)) {
+      return { state, valid: false, error: 'Must own entire color group' };
+    }
+    refreshMonopolies(state, playerIndex);
   }
 
-  // Check even-building rule: all properties in group must have |houses[a] - houses[b]| <= 1
-  // and the build target must be <= the min + 1
-  const groupHouseCounts = groupProps.map(i => state.properties[i].houses);
+  const groupProps = getGroupPropertyIds(space.group);
+  const groupHouseCounts = groupProps.map(id => state.properties[id].houses);
   const min = Math.min(...groupHouseCounts);
-  const targetCount = prop.houses;
+  if (prop.houses > min) return { state, valid: false, error: 'Must build evenly across group' };
 
-  // Can only build if target house count <= min (or min+1 if you still have min-level)
-  // Actually: you can only build on a property if it has no more houses than any other in the group
-  if (targetCount > min) return { state, valid: false, error: 'Must build evenly across group' };
-
-  // Check money
   const cost = space.houseCost!;
   if (state.players[playerIndex].money < cost) return { state, valid: false, error: 'Not enough money' };
 
   state.players[playerIndex].money -= cost;
   prop.houses++;
   state.housesRemaining--;
-  const events: GameEvent[] = [{ type: 'BUNGALOW_BUILT', playerIndex, propertyIndex: propIndex, amount: cost }];
+  const events: GameEvent[] = [{ type: 'BUNGALOW_BUILT', playerIndex, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId), amount: cost }];
   bump(state);
   return { state, valid: true, events, validActions: getValidActions(state, playerIndex) };
 }
 
-export function sellBungalow(state: GameState, playerIndex: number, payload?: { propertyIndex?: number }): GameResult {
+export function sellBungalow(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  const propIndex = payload?.propertyIndex;
-  if (propIndex === undefined) return { state, valid: false, error: 'No property specified' };
-  const prop = state.properties[propIndex];
-  const space = BOARD[propIndex];
-  if (space.type !== 'property') return { state, valid: false, error: 'Not a property' };
+  const propId = payload?.propertyId;
+  if (!propId) return { state, valid: false, error: 'No property specified' };
+  const prop = state.properties[propId];
+  const space = BOARD[propId];
+  if (!prop || space.type !== 'property') return { state, valid: false, error: 'Not a property' };
   if (prop.owner !== playerIndex) return { state, valid: false, error: 'Not your property' };
   if (prop.houses <= 0 || prop.houses >= 5) return { state, valid: false, error: 'No bungalows to sell' };
   const refund = Math.floor(space.houseCost! / 2);
   state.players[playerIndex].money += refund;
   prop.houses--;
   state.housesRemaining++;
-  const events: GameEvent[] = [{ type: 'BUNGALOW_SOLD', playerIndex, propertyIndex: propIndex, amount: refund }];
+  const events: GameEvent[] = [{ type: 'BUNGALOW_SOLD', playerIndex, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId), amount: refund }];
   bump(state);
   return { state, valid: true, events, validActions: getValidActions(state, playerIndex) };
 }
 
-export function buildVilla(state: GameState, playerIndex: number, payload?: { propertyIndex?: number }): GameResult {
+export function buildVilla(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  const propIndex = payload?.propertyIndex;
-  if (propIndex === undefined) return { state, valid: false, error: 'No property specified' };
-  const prop = state.properties[propIndex];
-  const space = BOARD[propIndex];
-  if (space.type !== 'property') return { state, valid: false, error: 'Not a property' };
+  const propId = payload?.propertyId;
+  if (!propId) return { state, valid: false, error: 'No property specified' };
+  const prop = state.properties[propId];
+  const space = BOARD[propId];
+  if (!prop || space.type !== 'property') return { state, valid: false, error: 'Not a property' };
   if (prop.owner !== playerIndex) return { state, valid: false, error: 'Not your property' };
   if (prop.mortgaged) return { state, valid: false, error: 'Property is mortgaged' };
   if (state.hotelsRemaining <= 0) return { state, valid: false, error: 'No villas remaining' };
   if (prop.houses !== 4) return { state, valid: false, error: 'Need 4 bungalows first' };
-  if (space.group === undefined) return { state, valid: false, error: 'No color group' };
+  if (!space.group) return { state, valid: false, error: 'No color group' };
 
-  // Check all group properties have 4 bungalows
-  const groupProps = getGroupProperties(space.group);
-  if (!groupProps.every(i => state.properties[i].owner === playerIndex && state.properties[i].houses === 4)) {
+  if (!state.players[playerIndex].monopolies.includes(space.group)) {
+    const groupProps = getGroupPropertyIds(space.group);
+    if (!groupProps.every(id => state.properties[id]?.owner === playerIndex)) {
+      return { state, valid: false, error: 'Must own entire color group' };
+    }
+    refreshMonopolies(state, playerIndex);
+  }
+
+  const groupProps = getGroupPropertyIds(space.group);
+  if (!groupProps.every(id => state.properties[id]?.owner === playerIndex && state.properties[id]?.houses === 4)) {
     return { state, valid: false, error: 'All group properties must have 4 bungalows' };
   }
 
-  // Cost = house cost (same as 1 bungalow)
   const cost = space.houseCost!;
   if (state.players[playerIndex].money < cost) return { state, valid: false, error: 'Not enough money' };
 
   state.players[playerIndex].money -= cost;
-  prop.houses = 5; // 5 = villa
+  prop.houses = 5;
   state.hotelsRemaining--;
-  state.housesRemaining += 4; // return 4 bungalows to bank
-  const events: GameEvent[] = [{ type: 'VILLA_BUILT', playerIndex, propertyIndex: propIndex, amount: cost }];
+  state.housesRemaining += 4;
+  const events: GameEvent[] = [{ type: 'VILLA_BUILT', playerIndex, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId), amount: cost }];
   bump(state);
   return { state, valid: true, events, validActions: getValidActions(state, playerIndex) };
 }
 
-export function sellVilla(state: GameState, playerIndex: number, payload?: { propertyIndex?: number }): GameResult {
+export function sellVilla(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
   if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  const propIndex = payload?.propertyIndex;
-  if (propIndex === undefined) return { state, valid: false, error: 'No property specified' };
-  const prop = state.properties[propIndex];
-  const space = BOARD[propIndex];
-  if (space.type !== 'property') return { state, valid: false, error: 'Not a property' };
+  const propId = payload?.propertyId;
+  if (!propId) return { state, valid: false, error: 'No property specified' };
+  const prop = state.properties[propId];
+  const space = BOARD[propId];
+  if (!prop || space.type !== 'property') return { state, valid: false, error: 'Not a property' };
   if (prop.owner !== playerIndex) return { state, valid: false, error: 'Not your property' };
   if (prop.houses !== 5) return { state, valid: false, error: 'Not a villa' };
   const refund = Math.floor(space.houseCost! / 2);
@@ -778,7 +905,7 @@ export function sellVilla(state: GameState, playerIndex: number, payload?: { pro
   prop.houses = 4;
   state.hotelsRemaining++;
   state.housesRemaining -= 4;
-  const events: GameEvent[] = [{ type: 'VILLA_SOLD', playerIndex, propertyIndex: propIndex, amount: refund }];
+  const events: GameEvent[] = [{ type: 'VILLA_SOLD', playerIndex, propertyIndex: TILE_LAYOUT.findIndex(t => t.space === propId), amount: refund }];
   bump(state);
   return { state, valid: true, events, validActions: getValidActions(state, playerIndex) };
 }
@@ -809,20 +936,28 @@ export function getValidActions(state: GameState, playerIndex: number): GameActi
 // ─── handleAction ─────────────────────────────────────
 
 export function handleAction(state: GameState, playerIndex: number, action: GameAction): GameResult {
-  switch (action.type) {
-    case 'ROLL_DICE': return rollDice(state, playerIndex);
-    case 'CONFIRM_DICE': return confirmDice(state, playerIndex, action.payload);
-    case 'BUY_PROPERTY': return buyProperty(state, playerIndex);
-    case 'DECLINE_PROPERTY': return declineProperty(state, playerIndex);
-    case 'END_TURN': return endTurn(state, playerIndex);
-    case 'PAY_GHOOS': return payGhoos(state, playerIndex);
-    case 'USE_SIFARISH_CARD': return useSifarishCard(state, playerIndex);
-    case 'BUILD_BUNGALOW': return buildBungalow(state, playerIndex, action.payload);
-    case 'SELL_BUNGALOW': return sellBungalow(state, playerIndex, action.payload);
-    case 'BUILD_VILLA': return buildVilla(state, playerIndex, action.payload);
-    case 'SELL_VILLA': return sellVilla(state, playerIndex, action.payload);
-    default: return { state, valid: false, error: `Unknown action: ${(action as any).type}` };
+  const result = (() => {
+    switch (action.type) {
+      case 'ROLL_DICE': return rollDice(state, playerIndex);
+      case 'CONFIRM_DICE': return confirmDice(state, playerIndex, action.payload);
+      case 'BUY_PROPERTY': return buyProperty(state, playerIndex);
+      case 'DECLINE_PROPERTY': return declineProperty(state, playerIndex);
+      case 'END_TURN': return endTurn(state, playerIndex);
+      case 'PAY_GHOOS': return payGhoos(state, playerIndex);
+      case 'USE_SIFARISH_CARD': return useSifarishCard(state, playerIndex);
+      case 'BUILD_BUNGALOW': return buildBungalow(state, playerIndex, action.payload);
+      case 'SELL_BUNGALOW': return sellBungalow(state, playerIndex, action.payload);
+      case 'BUILD_VILLA': return buildVilla(state, playerIndex, action.payload);
+      case 'SELL_VILLA': return sellVilla(state, playerIndex, action.payload);
+      default: return { state, valid: false, error: `Unknown action: ${(action as any).type}` };
+    }
+  })();
+
+  if (result.valid && result.events) {
+    for (const ev of result.events) pushEvent(state, ev);
   }
+
+  return result;
 }
 
 // ─── sanitizeState ────────────────────────────────────
@@ -841,6 +976,7 @@ export function sanitizeState(state: GameState, playerIndex: number) {
     winner: state.winner,
     housesRemaining: state.housesRemaining,
     hotelsRemaining: state.hotelsRemaining,
+    eventLog: state.eventLog,
     isMyTurn,
     validActions: isMyTurn ? getValidActions(state, playerIndex) : [],
     _sv: state._sv,
