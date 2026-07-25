@@ -57,7 +57,7 @@ const SPACE_DATA: { index: number; name: string; spaceId: string; group?: number
   { index: 1, name: 'Chandni Chowk', spaceId: 'chandni_chowk', group: 0, price: 60, houseCost: 50, mortgageValue: 30, groupName: 'brown', rent: [2, 10, 30, 90, 160, 250] },
   { index: 2, name: 'Jugaad', spaceId: 'jugaad_1' },
   { index: 3, name: 'Hazratganj', spaceId: 'hazratganj', group: 0, price: 60, houseCost: 50, mortgageValue: 30, groupName: 'brown', rent: [4, 20, 60, 180, 320, 450] },
-  { index: 4, name: 'Income Tax', spaceId: 'income_tax' },
+  { index: 4, name: 'Lagaan', spaceId: 'income_tax' },
   { index: 5, name: 'Vande Bharat', spaceId: 'vande_bharat', price: 200, mortgageValue: 100 },
   { index: 6, name: 'Ghat Road', spaceId: 'ghat_road', group: 1, price: 100, houseCost: 50, mortgageValue: 50, groupName: 'light_blue', rent: [6, 30, 90, 270, 400, 550] },
   { index: 7, name: 'Kismat', spaceId: 'kismat_1' },
@@ -146,6 +146,7 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   useEffect(() => {
     if (gs.players.length > 0) {
       setShowPlayerPanel(gs.currentPlayer);
+      setRentPopup(null);
     }
   }, [gs.currentPlayer, gs.players.length]);
 
@@ -160,14 +161,21 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   const canUseSifarish = isMyTurn && gs.validActions.includes('USE_SIFARISH_CARD');
   const canBazaar = isMyTurn && !isAuctionActive && !isTradeActive && gs.winner === null;
 
-  const myPropertyCards = useMemo(() => Object.entries(gs.properties)
-    .filter(([_, p]) => p.owner === playerIndex && gs.players[playerIndex] && !gs.players[playerIndex].bankrupt)
-    .map(([spaceId, p]) => {
-      const space = SPACE_DATA.find(s => s.spaceId === spaceId);
-      const groupName = space?.groupName ?? '';
-      const monopoly = gs.players[playerIndex]?.monopolies.includes(groupName) ?? false;
-      return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, group: space?.group, price: space?.price ?? 0, houseCost: space?.houseCost ?? 0, mortgageValue: space?.mortgageValue ?? 0, houses: p.houses, mortgaged: p.mortgaged, monopoly, rent: space?.rent ?? [] };
-    }), [gs.properties, playerIndex, gs.players]);
+  const myPropertyCards = useMemo(() => {
+    const cards = Object.entries(gs.properties)
+      .filter(([_, p]) => p.owner === playerIndex && gs.players[playerIndex] && !gs.players[playerIndex].bankrupt)
+      .map(([spaceId, p]) => {
+        const space = SPACE_DATA.find(s => s.spaceId === spaceId);
+        const groupName = space?.groupName ?? '';
+        const monopoly = gs.players[playerIndex]?.monopolies.includes(groupName) ?? false;
+        return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, group: space?.group, price: space?.price ?? 0, houseCost: space?.houseCost ?? 0, mortgageValue: space?.mortgageValue ?? 0, houses: p.houses, mortgaged: p.mortgaged, monopoly, rent: space?.rent ?? [], sifarish: false };
+      });
+    const sifarishCount = gs.players[playerIndex]?.jailFreeCards ?? 0;
+    for (let i = 0; i < sifarishCount; i++) {
+      cards.push({ index: -100 - i, spaceId: 'sifarish_' + i, name: 'Sifarish Card', price: 0, houses: 0, mortgaged: false, monopoly: false, sifarish: true, group: undefined, houseCost: 0, mortgageValue: 0, rent: [] });
+    }
+    return cards;
+  }, [gs.properties, playerIndex, gs.players]);
 
   const selectedPropInfo = selectedPropForPopup ? myPropertyCards.find(c => c.spaceId === selectedPropForPopup) ?? null : null;
 
@@ -197,7 +205,9 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     if (ev.type === 'PASSED_GO') { setEventMsg(`💰 ${name} passed GO +₹${ev.amount}`); setTimeout(() => setEventMsg(null), 2000); }
     if (ev.type === 'PAID_RENT') {
       const propSpace = SPACE_DATA.find(s => s.index === ev.propertyIndex);
-      setRentPopup({ amount: ev.amount ?? 0, toPlayer: ev.toPlayer ?? ev.playerIndex, propertyName: propSpace?.name ?? 'Property' });
+      if (ev.playerIndex === playerIndex) {
+        setRentPopup({ amount: ev.amount ?? 0, toPlayer: ev.toPlayer ?? ev.playerIndex, propertyName: propSpace?.name ?? 'Property' });
+      }
       sounds.playRent();
     }
     if (ev.type === 'BOUGHT_PROPERTY') sounds.playBuy();
@@ -321,8 +331,13 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   // ─── Fan card interaction ──
   const handleFanCardTap = useCallback((cardIndex: number) => {
     setSelectedFanCard(prev => prev === cardIndex ? null : cardIndex);
-    if (isMyTurn && myPropertyCards[cardIndex]) {
-      setSelectedPropForPopup(prev => prev === myPropertyCards[cardIndex].spaceId ? null : myPropertyCards[cardIndex].spaceId);
+    const card = myPropertyCards[cardIndex];
+    if (!card || card.sifarish) {
+      setSelectedPropForPopup(null);
+      return;
+    }
+    if (isMyTurn) {
+      setSelectedPropForPopup(prev => prev === card.spaceId ? null : card.spaceId);
     }
   }, [isMyTurn, myPropertyCards]);
 
@@ -606,7 +621,13 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
                   <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: showCard.type === 'kismat' ? '#FF8C00' : '#4CAF50', textTransform: 'uppercase', letterSpacing: 1 }}>
                     {showCard.type === 'kismat' ? '✨ Kismat' : '💡 Jugaad'}
                   </div>
-                  <div style={{ fontSize: 14, color: '#fff', lineHeight: 1.4, fontWeight: 600 }}>{showCard.text}</div>
+                  {((showCard.type === 'kismat' && showCard.cardIndex === 15) || (showCard.type === 'jugaad' && showCard.cardIndex === 4)) ? (
+                    <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.4, fontWeight: 600 }}>
+                      🤝 Sifarish Card added to your inventory
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 14, color: '#fff', lineHeight: 1.4, fontWeight: 600 }}>{showCard.text}</div>
+                  )}
                 </div>
                 <button onClick={() => setShowCard(null)}
                   style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#fff', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -6,13 +6,13 @@ import { getTokenDef } from '../../components/TokenList.js';
 const S = 1.5;
 
 const TILE_SPACE_IDS: string[] = [
-  'go', 'chandni_chowk', 'jugaad_1', 'hazratganj', 'income_tax', 'vande_bharat',
-  'ghat_road', 'kismat_1', 'mi_road', 'law_garden', 'jail', 'mall_road',
+  'chalo_tile', 'chandni_chowk', 'jugaad_tile', 'hazratganj', 'lagaan_tile', 'vande_bharat',
+  'ghat_road', 'kismat_tile', 'mi_road', 'law_garden', 'jail_tile', 'mall_road',
   'jal_vibhaag', 'bapu_bazaar', 'lake_pichola', 'rajdhani', 'baga_beach',
-  'jugaad_2', 'white_town', 'rock_beach', 'free_parking', 'mg_road', 'kismat_2',
+  'jugaad_tile_2', 'white_town', 'rock_beach', 'free_parking_tile', 'mg_road', 'kismat_tile_2',
   'marina_beach', 'banjara_hills', 'shatabdi', 'park_street', 'fc_road',
-  'bijli_vibhag', 'sg_highway', 'go_to_jail', 'bandra_west', 'jor_bagh',
-  'jugaad_3', 'cyber_hub', 'duronto_exp', 'kismat_3', 'marine_drive', 'ghoos',
+  'bijli_vibhag', 'sg_highway', 'chalo_jail_tile', 'bandra_west', 'jor_bagh',
+  'jugaad_tile_3', 'cyber_hub', 'duronto_exp', 'kismat_tile_3', 'marine_drive', 'ghoos',
   'altamount_road',
 ];
 
@@ -104,7 +104,7 @@ const BOARD_DATA: { index: number; name: string; shortName: string; colorKey: st
   { index: 1, name: 'Chandni Chowk', shortName: 'Chandni Chowk', colorKey: 'property_brown' },
   { index: 2, name: 'Jugaad', shortName: 'Jugaad', colorKey: 'cc' },
   { index: 3, name: 'Hazratganj', shortName: 'Hazratganj', colorKey: 'property_brown' },
-  { index: 4, name: 'Income Tax', shortName: 'Income Tax', colorKey: 'tax' },
+  { index: 4, name: 'Lagaan', shortName: 'Lagaan', colorKey: 'tax' },
   { index: 5, name: 'Vande Bharat', shortName: 'Vande Bharat', colorKey: 'railroad' },
   { index: 6, name: 'Ghat Road', shortName: 'Ghat Road', colorKey: 'property_lightblue' },
   { index: 7, name: 'Kismat', shortName: 'Kismat', colorKey: 'chance' },
@@ -358,14 +358,6 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
       }}>
         <svg viewBox={`0 0 ${11 * S} ${11 * S}`} style={{ width: 'min(95vw, 90vh)', height: 'min(95vw, 90vh)' }}>
           <defs>
-            <linearGradient id="kismatGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#1a1a3e" />
-              <stop offset="100%" stopColor="#2a2a5e" />
-            </linearGradient>
-            <linearGradient id="jugaadGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#1a2a1e" />
-              <stop offset="100%" stopColor="#2a3a2e" />
-            </linearGradient>
             <pattern id="boardBg" patternUnits="userSpaceOnUse" width={S} height={S}>
               <rect width={S} height={S} fill="#1a1a2e" />
               <circle cx={0.5 * S} cy={0.5 * S} r={0.02 * S} fill="#2a2a4e" />
@@ -376,23 +368,22 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
           {/* Tiles */}
           {tiles.map(t => {
             const isProperty = BOARD_DATA[t.index].colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax'].includes(BOARD_DATA[t.index].colorKey);
-            const PAD = 0.15 * S; // padding around image
-            const IS = S - 2 * PAD; // image size
+            const isCardTile = BOARD_DATA[t.index].colorKey === 'go' || BOARD_DATA[t.index].colorKey === 'chance' || BOARD_DATA[t.index].colorKey === 'cc' || BOARD_DATA[t.index].colorKey === 'tax' || BOARD_DATA[t.index].colorKey === 'jail' || BOARD_DATA[t.index].colorKey === 'free_parking' || BOARD_DATA[t.index].colorKey === 'go_to_jail';
+            const PAD = 0.15 * S;
+            const IS = S - 2 * PAD;
             return (
             <g key={t.index}>
-              {/* Base fill: property color */}
-              <rect x={t.x} y={t.y} width={S} height={S} fill={isProperty ? t.color : t.color} stroke="#111" strokeWidth={0.015 * S} rx={0} />
+              {/* Base fill */}
+              <rect x={t.x} y={t.y} width={S} height={S} fill={t.color} stroke="#111" strokeWidth={0.015 * S} rx={0} />
               {/* Property tile: image centered, name|price at bottom */}
               {isProperty && (
                 <>
-                  {/* Art image centered in tile */}
                   <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
                     x={t.x + PAD} y={t.y + PAD}
                     width={IS} height={IS}
                     preserveAspectRatio="xMidYMid slice"
                     style={{ pointerEvents: 'none' }}
                     onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
-                  {/* Name | Price at bottom of tile (below image) */}
                   <text x={t.x + PAD} y={t.y + S - 0.05 * S} textAnchor="start" fill={t.textColor} fontSize={0.07 * S} fontWeight={600}>
                     {t.shortName}
                   </text>
@@ -401,30 +392,16 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
                   </text>
                 </>
               )}
+              {/* Kismat/Jugaad tile: full coverage art */}
+              {isCardTile && (
+                <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
+                  x={t.x} y={t.y} width={S} height={S}
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{ pointerEvents: 'none' }}
+                  onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
+              )}
               {/* Corner labels */}
-              {(t.index === 0) && (
-                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.2 * S} fontWeight={700}>CHALO</text>
-              )}
-              {(t.index === 10) && (
-                <><rect x={t.x + 0.2 * S} y={t.y + 0.1 * S} width={0.6 * S} height={0.6 * S} fill="none" stroke="#999" strokeWidth={0.03 * S} rx={0.05 * S} />
-                <rect x={t.x + 0.25 * S} y={t.y + 0.1 * S} width={0.5 * S} height={0.6 * S} fill="none" stroke="#777" strokeWidth={0.02 * S} rx={0.03 * S} />
-                <rect x={t.x + 0.2 * S} y={t.y + 0.1 * S} width={0.6 * S} height={0.6 * S} fill="none" stroke="#888" strokeWidth={0.015 * S} />
-                <line x1={t.x + 0.28 * S} y1={t.y + 0.1 * S} x2={t.x + 0.28 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
-                <line x1={t.x + 0.36 * S} y1={t.y + 0.1 * S} x2={t.x + 0.36 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
-                <line x1={t.x + 0.44 * S} y1={t.y + 0.1 * S} x2={t.x + 0.44 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
-                <line x1={t.x + 0.52 * S} y1={t.y + 0.1 * S} x2={t.x + 0.52 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
-                <line x1={t.x + 0.6 * S} y1={t.y + 0.1 * S} x2={t.x + 0.6 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
-                <text x={t.x + S / 2} y={t.y + 0.45 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>JAIL</text>
-                <text x={t.x + S / 2} y={t.y + 0.82 * S} textAnchor="middle" fill="#aaa" fontSize={0.07 * S}>Just Visiting</text></>
-              )}
-              {(t.index === 20) && (
-                <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#eee" fontSize={0.13 * S} fontWeight={600}>FREE</text>
-                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#eee" fontSize={0.13 * S} fontWeight={600}>PARKING</text></>
-              )}
-              {(t.index === 30) && (
-                <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>CHALO</text>
-                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>JAIL</text></>
-              )}
+              {/* Corner labels hidden — art tiles have their own text */}
               {/* Buildings on tile — at the top (above image) */}
               {isProperty && propertyBuildings[t.index] > 0 && (
                 <g transform={`translate(${t.x + S / 2 - propertyBuildings[t.index] * 0.06 * S}, ${t.y + 0.06 * S})`}>
@@ -448,22 +425,24 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
           {/* Center area with card decks */}
           <rect x={S} y={S} width={9 * S} height={9 * S} fill="#16213e" rx={0.15 * S} />
 
-          {/* Kismat deck (reduced size) */}
+          {/* Kismat deck */}
           <g transform={`translate(${2.2 * S}, ${3.5 * S})`}>
-            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
-            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="url(#kismatGrad)" stroke="#333366" strokeWidth={0.02 * S} />
-            <text x={0.5 * S} y={0.7 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.35 * S} fontWeight={800}>★</text>
+            <image href="/art/monopoly/kismat_back_001.webp"
+              x={0} y={0} width={S} height={1.4 * S}
+              preserveAspectRatio="xMidYMid slice"
+              style={{ pointerEvents: 'none' }} />
             <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
             <text x={0.825 * S} y={0.175 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{kismatRemaining}</text>
           </g>
           <text x={2.7 * S} y={5.3 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.14 * S} fontWeight={700}>KISMAT</text>
           <text x={2.7 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Chance)</text>
 
-          {/* Jugaad deck (reduced size) */}
+          {/* Jugaad deck */}
           <g transform={`translate(${7.8 * S}, ${3.5 * S})`}>
-            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
-            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="url(#jugaadGrad)" stroke="#336633" strokeWidth={0.02 * S} />
-            <text x={0.5 * S} y={0.7 * S} textAnchor="middle" fill="#4CAF50" fontSize={0.35 * S} fontWeight={800}>✦</text>
+            <image href="/art/monopoly/jugaad_back_001.webp"
+              x={0} y={0} width={S} height={1.4 * S}
+              preserveAspectRatio="xMidYMid slice"
+              style={{ pointerEvents: 'none' }} />
             <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
             <text x={0.825 * S} y={0.175 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{jugaadRemaining}</text>
           </g>

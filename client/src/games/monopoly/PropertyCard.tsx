@@ -2,8 +2,8 @@ import { GROUP_COLORS } from './constants.js';
 
 interface PropertyCardData {
   index: number;
-  name: string;
   spaceId?: string;
+  name: string;
   group?: number;
   price: number;
   houses: number;
@@ -11,6 +11,7 @@ interface PropertyCardData {
   monopoly?: boolean;
   houseCost?: number;
   rent?: number[];
+  sifarish?: boolean;
 }
 
 interface PropertyCardProps {
@@ -28,6 +29,26 @@ export function PropertyCard({ card, selected, disabled, size = 'medium' }: Prop
   const h = CARD_H[size];
   const color = card.group !== undefined ? (GROUP_COLORS[card.group] || '#888') : '#888';
   const isMortgaged = card.mortgaged;
+  const isSifarish = card.sifarish === true;
+
+  if (isSifarish) {
+    return (
+      <div style={{
+        width: w, height: h, borderRadius: 8, overflow: 'hidden',
+        border: selected ? `2px solid #e94560` : `1px solid #6A1B9A`,
+        boxShadow: selected ? '0 0 12px rgba(233,69,96,0.5)' : '0 2px 6px rgba(0,0,0,0.3)',
+        display: 'flex', flexDirection: 'column', cursor: disabled ? 'default' : 'pointer',
+        transition: 'all 0.2s ease', flexShrink: 0, position: 'relative',
+      }}>
+        <img src="/art/monopoly/kismat_sifarish_001.webp" alt="Sifarish"
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={e => {
+            const el = e.target as HTMLImageElement;
+            el.style.display = 'none';
+          }} />
+      </div>
+    );
+  }
 
   const hasMonopoly = card.monopoly === true;
 

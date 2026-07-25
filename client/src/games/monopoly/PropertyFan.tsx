@@ -107,6 +107,17 @@ export function PropertyFan({ cards, selectedCardIndex, onSelectCard, disabled }
                 disabled={disabled}
                 size="medium"
               />
+              {/* Sifarish tooltip — appears above the card when selected */}
+              {isSelected && card.sifarish && (
+                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                  style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, zIndex: 200, pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+                  <div style={{ background: '#7B1FA2', borderRadius: 8, padding: '6px 14px', textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>🤝 Sifarish</div>
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 1 }}>Get out of jail free card</div>
+                  </div>
+                  <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #7B1FA2', margin: '0 auto' }} />
+                </motion.div>
+              )}
             </motion.div>
           );
         })}
