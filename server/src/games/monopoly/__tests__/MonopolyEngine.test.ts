@@ -627,15 +627,16 @@ describe('MonopolyEngine', () => {
       expect(result.events?.some(e => e.type === 'BANKRUPT')).toBe(true);
     });
 
-    it('bankrupt properties revert to unowned', () => {
+    it('bankrupt properties transfer to creditor', () => {
       game.properties[P.hazratganj].owner = 0;
       game.properties[P.chandni_chowk].owner = 0;
       game.players[0].money = 1;
       game.properties[P.vande_bharat].owner = 1;
       rollWithFixedValues(game, 0, 2, 3);
       expect(game.players[0].bankrupt).toBe(true);
-      expect(game.properties[P.hazratganj].owner).toBeNull();
-      expect(game.properties[P.chandni_chowk].owner).toBeNull();
+      // Properties go to the creditor (owner of Vande Bharat - P1), not the bank
+      expect(game.properties[P.hazratganj].owner).toBe(1);
+      expect(game.properties[P.chandni_chowk].owner).toBe(1);
     });
 
     it('winner declared when only 1 player remains', () => {

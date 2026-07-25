@@ -424,20 +424,36 @@ function checkWinCondition(state: GameState): number | null {
   return null;
 }
 
-function handleBankruptcy(state: GameState, playerIndex: number): GameEvent[] {
+function handleBankruptcy(state: GameState, playerIndex: number, creditor?: number | null): GameEvent[] {
   const player = state.players[playerIndex];
   if (player.bankrupt) return [];
   if (player.money >= 0) return [];
   player.bankrupt = true;
-  const events: GameEvent[] = [{ type: 'BANKRUPT', playerIndex }];
-  for (const id of Object.keys(state.properties) as PropertyId[]) {
-    const prop = state.properties[id];
-    if (prop.owner === playerIndex) {
-      prop.owner = null;
-      if (prop.houses === 5) state.hotelsRemaining++;
-      else state.housesRemaining += prop.houses;
-      prop.houses = 0;
-      prop.mortgaged = false;
+  const events: GameEvent[] = [{ type: 'BANKRUPT', playerIndex, toPlayer: creditor ?? undefined }];
+  if (creditor !== null && creditor !== undefined && creditor !== playerIndex && !state.players[creditor]?.bankrupt) {
+    for (const id of Object.keys(state.properties) as PropertyId[]) {
+      const prop = state.properties[id];
+      if (prop.owner === playerIndex) {
+        prop.owner = creditor;
+        if (prop.mortgaged) {
+          const interest = Math.ceil((BOARD[id].mortgageValue ?? 0) * GAME_RULES.mortgageInterestRate);
+          state.players[creditor].money -= interest;
+        }
+      }
+    }
+    state.players[creditor].jailFreeCards += player.jailFreeCards;
+    player.jailFreeCards = 0;
+    refreshMonopolies(state, creditor);
+  } else {
+    for (const id of Object.keys(state.properties) as PropertyId[]) {
+      const prop = state.properties[id];
+      if (prop.owner === playerIndex) {
+        prop.owner = null;
+        if (prop.houses === 5) state.hotelsRemaining++;
+        else state.housesRemaining += prop.houses;
+        prop.houses = 0;
+        prop.mortgaged = false;
+      }
     }
   }
   const winner = checkWinCondition(state);
@@ -648,6 +664,8 @@ function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
     } else {
       const rentResult = payRent(state, playerIndex, propId);
       events.push(...rentResult.events);
+      const bankruptcyEvents = handleBankruptcy(state, playerIndex, prop.owner);
+      events.push(...bankruptcyEvents);
       state.phase = 'turn_end';
       state.lastAction = 'paid_rent';
     }
@@ -658,6 +676,8 @@ function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
     const amount = space.taxAmount!;
     state.players[playerIndex].money -= amount;
     state.players[playerIndex].stats.totalMoneySpent += amount;
+    const bankruptcyEvents = handleBankruptcy(state, playerIndex, null);
+    events.push(...bankruptcyEvents);
     state.phase = 'turn_end';
     state.lastAction = 'paid_tax';
     events.push({ type: 'PAID_TAX', playerIndex, amount });
@@ -784,7 +804,6 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
       return evts;
     },
     () => resolveLanding(state, playerIndex),
-    () => handleBankruptcy(state, playerIndex),
   ]);
   events.push(...queueEvents);
 
@@ -823,7 +842,7 @@ export function buyProperty(state: GameState, playerIndex: number): GameResult {
   state.properties[propId].owner = playerIndex;
   refreshMonopolies(state, playerIndex);
   const events: GameEvent[] = [{ type: 'BOUGHT_PROPERTY', playerIndex, propertyIndex: state.landedIndex, amount: space.price }];
-  const bankruptcyEvents = handleBankruptcy(state, playerIndex);
+  const bankruptcyEvents = handleBankruptcy(state, playerIndex, null);
   events.push(...bankruptcyEvents);
   if (state.winner !== null) { bump(state); return { state, valid: true, events, validActions: [] }; }
   state.lastAction = 'bought_property';
@@ -977,11 +996,17 @@ export function pass(state: GameState, playerIndex: number): GameResult {
     bump(state);
     return { state, valid: true, events, validActions: getValidActions(state, playerIndex) };
   }
-  const nextPlayer = ((playerIndex + 1) % total);
-  while (nextPlayer !== ix.activePlayer && (ix.passedPlayers.includes(nextPlayer) || nextPlayer === ix.declinedBy)) {
-    ix.activePlayer = (ix.activePlayer + 1) % total;
+  // Find next eligible player: skip passed players and the declinedBy
+  let next = (playerIndex + 1) % total;
+  let safety = 0;
+  while (
+    (ix.passedPlayers.includes(next) || next === ix.declinedBy || state.players[next]?.bankrupt) &&
+    safety < total
+  ) {
+    next = (next + 1) % total;
+    safety++;
   }
-  ix.activePlayer = nextPlayer;
+  ix.activePlayer = next;
   const events: GameEvent[] = [{ type: 'CARD_EFFECT' as GameEvent['type'], playerIndex }];
   events[0].type = 'AUCTION_PASS' as GameEvent['type'];
   bump(state);
@@ -1044,6 +1069,8 @@ export function acceptTrade(state: GameState, playerIndex: number): GameResult {
   if (ix.toPlayer !== playerIndex || ix.phase !== 'proposed') return { state, valid: false, error: 'Cannot accept trade' };
   const from = ix.fromPlayer;
   const to = ix.toPlayer;
+  if (state.players[from]?.bankrupt) return { state, valid: false, error: 'Giver is bankrupt' };
+  if (state.players[to]?.bankrupt) return { state, valid: false, error: 'Receiver is bankrupt' };
   if (!ix.give.properties.every(id => state.properties[id]?.owner === from)) return { state, valid: false, error: 'Giver no longer owns promised properties' };
   if (!ix.ask.properties.every(id => state.properties[id]?.owner === to)) return { state, valid: false, error: 'Receiver no longer owns promised properties' };
   // Transfer properties
