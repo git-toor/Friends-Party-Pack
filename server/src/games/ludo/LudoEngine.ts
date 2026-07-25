@@ -11,6 +11,12 @@ export interface PlayerState {
   finishedCount: number;
 }
 
+export interface SixMove {
+  tokenIndex: number;
+  prevState: TokenState;
+  prevProgress: number;
+}
+
 export interface GameState {
   players: PlayerState[];
   currentPlayer: number;
@@ -19,7 +25,7 @@ export interface GameState {
   rollId: string | null;
   phase: TurnPhase;
   consecutiveSixes: number;
-  movedTokensBySix: number[];
+  movedTokensBySix: SixMove[];
   winner: number | null;
   _sv: number; // state version, incremented on every mutation
 }
@@ -200,12 +206,11 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     state.consecutiveSixes++;
     if (state.consecutiveSixes >= 3) {
       const events: GameEvent[] = [];
-      // Reset all tokens moved by sixes this turn back to home
-      for (const idx of state.movedTokensBySix) {
-        const tok = state.players[playerIndex].tokens[idx];
-        if (tok && tok.state !== 'home') {
-          tok.state = 'home';
-          tok.progress = -1;
+      for (const m of state.movedTokensBySix) {
+        const tok = state.players[playerIndex].tokens[m.tokenIndex];
+        if (tok) {
+          tok.state = m.prevState;
+          tok.progress = m.prevProgress;
         }
       }
       events.push({ type: 'PENALTY_FAIL', playerIndex, tokenIndex: -1 });
@@ -266,6 +271,8 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
   const dice = state.diceValue;
   const events: GameEvent[] = [];
   const wasSix = dice === 6;
+  const prevState = token.state;
+  const prevProgress = token.progress;
 
   if (token.state === 'home') {
     if (dice !== 6) return { state, valid: false, error: 'Need 6 to leave home' };
@@ -311,9 +318,9 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
     return { state, valid: false, error: 'Token already finished' };
   }
 
-  // Track tokens moved by sixes for penalty
-  if (wasSix && !state.movedTokensBySix.includes(tokenIndex)) {
-    state.movedTokensBySix.push(tokenIndex);
+  // Track tokens moved by sixes for penalty (save state BEFORE the move)
+  if (wasSix && !state.movedTokensBySix.some(m => m.tokenIndex === tokenIndex)) {
+    state.movedTokensBySix.push({ tokenIndex, prevState, prevProgress });
   }
 
   // Turn management
