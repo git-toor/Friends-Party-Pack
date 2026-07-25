@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import ChatBox, { dispatchChatMessage } from '../components/ChatBox.js';
 import { getWs } from '../api/ws.js';
 
@@ -19,6 +19,7 @@ export default function GamePage() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>();
   const location = useLocation();
   const state = location.state as any;
+  const [searchParams] = useSearchParams();
   const [ready, setReady] = useState(false);
   const [gameStatePush, setGameStatePush] = useState<any>(null);
   const [diceEvent, setDiceEvent] = useState<any>(null);
@@ -30,11 +31,10 @@ export default function GamePage() {
   const players = state?.players || [];
   const myPlayer = players[playerIndex] || { name: 'You' };
   const playerName = myPlayer.name || state?.playerName || 'You';
-  const playerId = state?.playerId || players[playerIndex]?.id || '';
+  const playerId = state?.playerId || players[playerIndex]?.id || searchParams.get('playerId') || '';
   const nsfw: boolean = state?.nsfw || state?.lobby?.settings?.nsfw || false;
 
-  const gameId = resolvedGameId || state?.gameId || state?.lobby?.gameId || 'yahtzee';
-  const GameComponent = GAME_COMPONENTS[gameId] || YahtzeeGame;
+  const gameId = resolvedGameId || state?.gameId || state?.lobby?.gameId;
 
   useEffect(() => {
     if (!sessionId) {
@@ -45,32 +45,39 @@ export default function GamePage() {
     if (!state?.gameId && !state?.lobby?.gameId) {
       fetch(`/api/session/${sessionId}`)
         .then(r => r.json())
-        .then(data => { if (data.gameId) setResolvedGameId(data.gameId); })
-        .catch(() => {});
+        .then(data => {
+          if (data.gameId) setResolvedGameId(data.gameId);
+          setReady(true);
+        })
+        .catch(() => setReady(true));
+    } else {
+      const ws = getWs();
+      ws.connect();
+      ws.send('JOIN_GAME', { sessionId, playerIndex });
+
+      const unsub = ws.on('GAME_STATE', (msg) => {
+        if (msg.payload?._actionPlayer === playerIndex) return;
+        if (msg.payload?.forPlayerIndex !== playerIndex) return;
+        setGameStatePush(msg.payload);
+      });
+
+      const unsubDice = ws.on('DICE_EVENT', (msg) => {
+        setDiceEvent(msg.payload);
+      });
+
+      const unsubChat = ws.on('CHAT_MESSAGE', (msg) => {
+        dispatchChatMessage(msg.payload);
+      });
+
+      setReady(true);
+      return () => { unsub(); unsubDice(); unsubChat(); };
     }
-    const ws = getWs();
-    ws.connect();
-    ws.send('JOIN_GAME', { sessionId, playerIndex });
-
-    const unsub = ws.on('GAME_STATE', (msg) => {
-      if (msg.payload?._actionPlayer === playerIndex) return;
-      if (msg.payload?.forPlayerIndex !== playerIndex) return;
-      setGameStatePush(msg.payload);
-    });
-
-    const unsubDice = ws.on('DICE_EVENT', (msg) => {
-      setDiceEvent(msg.payload);
-    });
-
-    const unsubChat = ws.on('CHAT_MESSAGE', (msg) => {
-      dispatchChatMessage(msg.payload);
-    });
-
-    setReady(true);
-    return () => { unsub(); unsubDice(); unsubChat(); };
   }, [sessionId, playerIndex, state?.gameId, state?.lobby?.gameId]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
+  if (!gameId) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
+
+  const GameComponent = GAME_COMPONENTS[gameId] || (() => <div style={{ padding: 40, textAlign: 'center', color: '#e94560' }}>Unknown game: {gameId}</div>);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>

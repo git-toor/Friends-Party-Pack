@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PLAYER_COLORS } from './constants.js';
-import { getTokenDef } from '../../components/TokenList.js';
+import { Token3DOverlay } from '../../components/Token3D.js';
 
 const S = 1.0;
 
@@ -141,23 +141,6 @@ const BOARD_DATA: { index: number; name: string; shortName: string; colorKey: st
   { index: 38, name: 'Chanda', shortName: 'Chanda', colorKey: 'tax' },
   { index: 39, name: 'Altamount Road', shortName: 'Altamount Road', colorKey: 'property_darkblue' },
 ];
-
-function TokenCircle({ playerIndex, cx, cy, tokenEmoji }: { playerIndex: number; cx: number; cy: number; tokenEmoji?: string }) {
-  const color = PLAYER_COLORS[playerIndex % PLAYER_COLORS.length];
-  if (tokenEmoji) {
-    return (
-      <g>
-        <circle cx={cx} cy={cy} r={0.22 * S} fill="#1a1a2e" stroke={color} strokeWidth={0.04 * S} />
-        <text x={cx} y={cy + 0.06 * S} textAnchor="middle" fontSize={0.25 * S} dominantBaseline="middle">
-          {tokenEmoji}
-        </text>
-      </g>
-    );
-  }
-  return (
-    <circle cx={cx} cy={cy} r={0.18 * S} fill={color} stroke="#fff" strokeWidth={0.04 * S} />
-  );
-}
 
 // Compute stacked token positions for players on the same tile
 function computeTokenPositions(tokens: TokenView[]): { playerIndex: number; cx: number; cy: number }[] {
@@ -356,7 +339,8 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
         transformOrigin: 'center center',
         transition: isPanning.current ? 'none' : 'transform 0.1s ease',
       }}>
-        <svg viewBox={`0 0 ${11 * S} ${11 * S}`} style={{ width: 'min(95vw, 90vh)', height: 'min(95vw, 90vh)' }}>
+        <div style={{ position: 'relative', width: 'min(95vw, 90vh)', height: 'min(95vw, 90vh)' }}>
+          <svg viewBox={`0 0 ${11 * S} ${11 * S}`} style={{ width: '100%', height: '100%' }}>
           <defs>
             <pattern id="boardBg" patternUnits="userSpaceOnUse" width={S} height={S}>
               <rect width={S} height={S} fill="#1a1a2e" />
@@ -473,12 +457,10 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
             <text x={1.65 * S} y={0.35 * S} fill="#e94560" fontSize={0.16 * S} fontWeight={600}>×{hotelsRemaining}</text>
           </g>
 
-          {/* Player tokens */}
-          {tokenPositions.map((tp, i) => (
-            <TokenCircle key={`${tp.playerIndex}-${i}`} playerIndex={tp.playerIndex} cx={tp.cx} cy={tp.cy}
-              tokenEmoji={playerTokens[tp.playerIndex] ? getTokenDef(playerTokens[tp.playerIndex]).emoji : undefined} />
-          ))}
+          {/* Player tokens - 3D overlay */}
         </svg>
+        <Token3DOverlay tokenPositions={tokenPositions} playerTokens={playerTokens} boardSize={11 * S} />
+        </div>
       </div>
     </div>
   );
