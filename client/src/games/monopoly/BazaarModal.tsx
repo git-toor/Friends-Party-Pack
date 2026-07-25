@@ -5,14 +5,14 @@ import { PLAYER_NAMES } from './constants.js';
 const SPACE_NAMES: Record<string, string> = {
   chandni_chowk: 'Chandni Chowk', hazratganj: 'Hazratganj', ghat_road: 'Ghat Road',
   mi_road: 'MI Road', law_garden: 'Law Garden', mall_road: 'Mall Road',
-  bapu_bazaar: 'Bapu Bazaar', lake_pichola: 'Lake Pichola', calangute: 'Calangute Bch',
+  bapu_bazaar: 'Bapu Bazaar', lake_pichola: 'Lake Pichola', baga_beach: 'Baga Beach',
   white_town: 'White Town', rock_beach: 'Rock Beach', mg_road: 'MG Road',
   marina_beach: 'Marina Beach', banjara_hills: 'Banjara Hills', park_street: 'Park Street',
   fc_road: 'FC Road', sg_highway: 'SG Highway', bandra_west: 'Bandra West',
-  connaught_place: 'Connaught Pl', cyber_hub: 'Cyber Hub', marine_drive: 'Marine Drive',
+  jor_bagh: 'Jor Bagh', cyber_hub: 'Cyber Hub', marine_drive: 'Marine Drive',
   altamount_road: 'Altamount Rd', vande_bharat: 'Vande Bharat Exp',
-  rajdhani: 'Rajdhani Exp', shatabdi: 'Shatabdi Exp', tejas: 'Tejas Exp',
-  water_supply: 'Water Supply', electricity_board: 'Electricity Bd',
+  rajdhani: 'Rajdhani Exp', shatabdi: 'Shatabdi Exp', duronto_exp: 'Duronto Exp',
+  jal_vibhaag: 'Jal Vibhaag', bijli_vibhag: 'Bijli Vibhag',
 };
 
 const GROUP_COLORS: Record<string, string> = {

@@ -2,11 +2,11 @@ export type SpaceType = 'property' | 'railroad' | 'utility' | 'tax' | 'chance' |
 export type TurnPhase = 'waiting_for_roll' | 'rolling_dice' | 'waiting_for_action' | 'turn_end';
 
 export type PropertyId = 'chandni_chowk' | 'hazratganj' | 'ghat_road' | 'mi_road' | 'law_garden'
-  | 'mall_road' | 'bapu_bazaar' | 'lake_pichola' | 'calangute' | 'white_town' | 'rock_beach'
+  | 'mall_road' | 'bapu_bazaar' | 'lake_pichola' | 'baga_beach' | 'white_town' | 'rock_beach'
   | 'mg_road' | 'marina_beach' | 'banjara_hills' | 'park_street' | 'fc_road' | 'sg_highway'
-  | 'bandra_west' | 'connaught_place' | 'cyber_hub' | 'marine_drive' | 'altamount_road'
-  | 'vande_bharat' | 'rajdhani' | 'shatabdi' | 'tejas'
-  | 'water_supply' | 'electricity_board';
+  | 'bandra_west' | 'jor_bagh' | 'cyber_hub' | 'marine_drive' | 'altamount_road'
+  | 'vande_bharat' | 'rajdhani' | 'shatabdi' | 'duronto_exp'
+  | 'jal_vibhaag' | 'bijli_vibhag';
 
 export type GroupId = 'brown' | 'light_blue' | 'pink' | 'orange' | 'red' | 'yellow' | 'green' | 'dark_blue';
 
@@ -53,11 +53,11 @@ export const BOARD: Record<SpaceId, SpaceConfig> = {
   law_garden: { id: 'law_garden', name: 'Law Garden', type: 'property', group: 'light_blue', price: 120, rent: [8, 40, 100, 300, 450, 600], houseCost: 50, mortgageValue: 60 },
   jail: { id: 'jail', name: 'Jail', type: 'jail' },
   mall_road: { id: 'mall_road', name: 'Mall Road', type: 'property', group: 'pink', price: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, mortgageValue: 70 },
-  water_supply: { id: 'water_supply', name: 'Water Supply', type: 'utility', price: 150, mortgageValue: 75 },
+  jal_vibhaag: { id: 'jal_vibhaag', name: 'Jal Vibhaag', type: 'utility', price: 150, mortgageValue: 75 },
   bapu_bazaar: { id: 'bapu_bazaar', name: 'Bapu Bazaar', type: 'property', group: 'pink', price: 140, rent: [10, 50, 150, 450, 625, 750], houseCost: 100, mortgageValue: 70 },
   lake_pichola: { id: 'lake_pichola', name: 'Lake Pichola', type: 'property', group: 'pink', price: 160, rent: [12, 60, 180, 500, 700, 900], houseCost: 100, mortgageValue: 80 },
   rajdhani: { id: 'rajdhani', name: 'Rajdhani Exp', type: 'railroad', price: 200, mortgageValue: 100 },
-  calangute: { id: 'calangute', name: 'Calangute Bch', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
+  baga_beach: { id: 'baga_beach', name: 'Baga Beach', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
   jugaad_2: { id: 'jugaad_2', name: 'Jugaad', type: 'cc' },
   white_town: { id: 'white_town', name: 'White Town', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], houseCost: 100, mortgageValue: 90 },
   rock_beach: { id: 'rock_beach', name: 'Rock Beach', type: 'property', group: 'orange', price: 200, rent: [16, 80, 220, 600, 800, 1000], houseCost: 100, mortgageValue: 100 },
@@ -69,14 +69,14 @@ export const BOARD: Record<SpaceId, SpaceConfig> = {
   shatabdi: { id: 'shatabdi', name: 'Shatabdi Exp', type: 'railroad', price: 200, mortgageValue: 100 },
   park_street: { id: 'park_street', name: 'Park Street', type: 'property', group: 'yellow', price: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, mortgageValue: 130 },
   fc_road: { id: 'fc_road', name: 'FC Road', type: 'property', group: 'yellow', price: 260, rent: [22, 110, 330, 800, 975, 1150], houseCost: 150, mortgageValue: 130 },
-  electricity_board: { id: 'electricity_board', name: 'Electricity Bd', type: 'utility', price: 150, mortgageValue: 75 },
+  bijli_vibhag: { id: 'bijli_vibhag', name: 'Bijli Vibhag', type: 'utility', price: 150, mortgageValue: 75 },
   sg_highway: { id: 'sg_highway', name: 'SG Highway', type: 'property', group: 'yellow', price: 280, rent: [24, 120, 360, 850, 1025, 1200], houseCost: 150, mortgageValue: 140 },
   go_to_jail: { id: 'go_to_jail', name: 'Go To Jail', type: 'go_to_jail' },
   bandra_west: { id: 'bandra_west', name: 'Bandra West', type: 'property', group: 'green', price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
-  connaught_place: { id: 'connaught_place', name: 'Connaught Pl', type: 'property', group: 'green', price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
+  jor_bagh: { id: 'jor_bagh', name: 'Jor Bagh', type: 'property', group: 'green', price: 300, rent: [26, 130, 390, 900, 1100, 1275], houseCost: 200, mortgageValue: 150 },
   jugaad_3: { id: 'jugaad_3', name: 'Jugaad', type: 'cc' },
   cyber_hub: { id: 'cyber_hub', name: 'Cyber Hub', type: 'property', group: 'green', price: 320, rent: [28, 150, 450, 1000, 1200, 1400], houseCost: 200, mortgageValue: 160 },
-  tejas: { id: 'tejas', name: 'Tejas Exp', type: 'railroad', price: 200, mortgageValue: 100 },
+  duronto_exp: { id: 'duronto_exp', name: 'Duronto Exp', type: 'railroad', price: 200, mortgageValue: 100 },
   kismat_3: { id: 'kismat_3', name: 'Kismat', type: 'chance' },
   marine_drive: { id: 'marine_drive', name: 'Marine Drive', type: 'property', group: 'dark_blue', price: 350, rent: [35, 175, 500, 1100, 1300, 1500], houseCost: 200, mortgageValue: 175 },
   luxury_tax: { id: 'luxury_tax', name: 'Luxury Tax', type: 'tax', taxAmount: 100 },
@@ -96,11 +96,11 @@ export const TILE_LAYOUT: { position: number; space: SpaceId; corner?: 'tl' | 't
   { position: 9, space: 'law_garden' },
   { position: 10, space: 'jail', corner: 'tr' },
   { position: 11, space: 'mall_road' },
-  { position: 12, space: 'water_supply' },
+  { position: 12, space: 'jal_vibhaag' },
   { position: 13, space: 'bapu_bazaar' },
   { position: 14, space: 'lake_pichola' },
   { position: 15, space: 'rajdhani' },
-  { position: 16, space: 'calangute' },
+  { position: 16, space: 'baga_beach' },
   { position: 17, space: 'jugaad_2' },
   { position: 18, space: 'white_town' },
   { position: 19, space: 'rock_beach' },
@@ -112,31 +112,31 @@ export const TILE_LAYOUT: { position: number; space: SpaceId; corner?: 'tl' | 't
   { position: 25, space: 'shatabdi' },
   { position: 26, space: 'park_street' },
   { position: 27, space: 'fc_road' },
-  { position: 28, space: 'electricity_board' },
+  { position: 28, space: 'bijli_vibhag' },
   { position: 29, space: 'sg_highway' },
   { position: 30, space: 'go_to_jail' },
   { position: 31, space: 'bandra_west' },
-  { position: 32, space: 'connaught_place' },
+  { position: 32, space: 'jor_bagh' },
   { position: 33, space: 'jugaad_3' },
   { position: 34, space: 'cyber_hub' },
-  { position: 35, space: 'tejas' },
+  { position: 35, space: 'duronto_exp' },
   { position: 36, space: 'kismat_3' },
   { position: 37, space: 'marine_drive' },
   { position: 38, space: 'luxury_tax' },
   { position: 39, space: 'altamount_road', corner: 'bl' },
 ];
 
-export const RAILROAD_IDS: PropertyId[] = ['vande_bharat', 'rajdhani', 'shatabdi', 'tejas'];
-export const UTILITY_IDS: PropertyId[] = ['water_supply', 'electricity_board'];
+export const RAILROAD_IDS: PropertyId[] = ['vande_bharat', 'rajdhani', 'shatabdi', 'duronto_exp'];
+export const UTILITY_IDS: PropertyId[] = ['jal_vibhaag', 'bijli_vibhag'];
 
 export const GROUP_PROPERTIES: Record<GroupId, PropertyId[]> = {
   brown: ['chandni_chowk', 'hazratganj'],
   light_blue: ['ghat_road', 'mi_road', 'law_garden'],
   pink: ['mall_road', 'bapu_bazaar', 'lake_pichola'],
-  orange: ['calangute', 'white_town', 'rock_beach'],
+  orange: ['baga_beach', 'white_town', 'rock_beach'],
   red: ['mg_road', 'marina_beach', 'banjara_hills'],
   yellow: ['park_street', 'fc_road', 'sg_highway'],
-  green: ['bandra_west', 'connaught_place', 'cyber_hub'],
+  green: ['bandra_west', 'jor_bagh', 'cyber_hub'],
   dark_blue: ['marine_drive', 'altamount_road'],
 };
 
@@ -171,7 +171,7 @@ interface Card {
   perHouse?: number; perHotel?: number;
 }
 
-const KISMAT_DECK: Card[] = [
+export const KISMAT_DECK: Card[] = [
   { id: 0, text: 'Advance to GO. Collect ₹200', type: 'move', targetPosition: 0 },
   { id: 1, text: 'Advance to MG Road, Bengaluru', type: 'move', targetPosition: 21 },
   { id: 2, text: 'Advance to Mall Road, Shimla', type: 'move', targetPosition: 11 },
@@ -190,7 +190,7 @@ const KISMAT_DECK: Card[] = [
   { id: 15, text: 'Get out of Jail Free (Sifarish Card)', type: 'jail_card' },
 ];
 
-const JUGAAD_DECK: Card[] = [
+export const JUGAAD_DECK: Card[] = [
   { id: 0, text: 'Advance to GO. Collect ₹200', type: 'move', targetPosition: 0 },
   { id: 1, text: 'Bank error in your favor. Collect ₹200', type: 'money', amount: 200 },
   { id: 2, text: "Doctor's fee. Pay ₹50", type: 'money', amount: -50 },
@@ -244,6 +244,17 @@ function drawJugaad(): Card {
     jugaadIndex = 0;
   }
   return jugaadDrawOrder[jugaadIndex++];
+}
+
+// Test helper: bypass shuffle to draw a specific card first
+export function __testSetKismatDeck(deck: Card[]): void {
+  kismatDrawOrder = deck;
+  kismatIndex = 0;
+}
+
+export function __testSetJugaadDeck(deck: Card[]): void {
+  jugaadDrawOrder = deck;
+  jugaadIndex = 0;
 }
 
 function findNearestRailroad(state: GameState, playerIndex: number): PropertyId {
@@ -686,23 +697,33 @@ function resolveLanding(state: GameState, playerIndex: number): GameEvent[] {
 
   if (space.type === 'chance') {
     const card = drawKismat();
-    state.lastAction = 'drew_kismat';
     events.push({ type: 'DREW_CARD', playerIndex, cardType: 'kismat', cardIndex: card.id, cardText: card.text });
+    const prevPos = state.players[playerIndex].position;
     const cardEvents = executeCard(state, playerIndex, card);
     events.push(...cardEvents);
-    state.phase = 'turn_end';
-    state.lastAction = 'drew_kismat';
+    if (state.players[playerIndex].position !== prevPos) {
+      const landingEvents = resolveLanding(state, playerIndex);
+      events.push(...landingEvents);
+    } else {
+      state.phase = 'turn_end';
+      state.lastAction = 'drew_kismat';
+    }
     return events;
   }
 
   if (space.type === 'cc') {
     const card = drawJugaad();
-    state.lastAction = 'drew_jugaad';
     events.push({ type: 'DREW_CARD', playerIndex, cardType: 'jugaad', cardIndex: card.id, cardText: card.text });
+    const prevPos = state.players[playerIndex].position;
     const cardEvents = executeCard(state, playerIndex, card);
     events.push(...cardEvents);
-    state.phase = 'turn_end';
-    state.lastAction = 'drew_jugaad';
+    if (state.players[playerIndex].position !== prevPos) {
+      const landingEvents = resolveLanding(state, playerIndex);
+      events.push(...landingEvents);
+    } else {
+      state.phase = 'turn_end';
+      state.lastAction = 'drew_jugaad';
+    }
     return events;
   }
 

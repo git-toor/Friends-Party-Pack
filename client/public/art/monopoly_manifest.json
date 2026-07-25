@@ -473,18 +473,18 @@
       "card_id": "vande_bharat",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 4023,
+      "seed": 4123,
       "workflow": "flux",
-      "prompt": "icon of a modern high speed train, Vande Bharat Express, blue and white train, sleek design, speed motion lines, landmark icon, flat vector illustration",
+      "prompt": "Vande Bharat on dark grey bg",
       "file": "/art/monopoly/vande_bharat_001.webp"
     },
     "rajdhani_001": {
       "card_id": "rajdhani",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 4024,
+      "seed": 4124,
       "workflow": "flux",
-      "prompt": "icon of a iconic red express train, Rajdhani Express, red engine, train on tracks, railway signal, landmark icon, flat vector illustration",
+      "prompt": "Rajdhani on dark grey bg",
       "file": "/art/monopoly/rajdhani_001.webp"
     },
     "shatabdi_001": {
@@ -518,9 +518,9 @@
       "card_id": "duronto_exp",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 4026,
+      "seed": 4126,
       "workflow": "flux",
-      "prompt": "icon of a modern red and white express train, Tejas Express, streamlined design, premium coach, speed motion, landmark icon, flat vector illustration",
+      "prompt": "icon train on dark grey background",
       "file": "/art/monopoly/duronto_exp_001.webp"
     },
     "jal_vibhaag_001": {
@@ -529,7 +529,7 @@
       "copy": 1,
       "seed": 4027,
       "workflow": "flux",
-      "prompt": "icon of a water utility facility, water tank, tap with water drops, pipeline, municipal water supply, landmark icon, flat vector illustration, blue colors",
+      "prompt": "icon of a traditional Indian stepwell baoli, ornate stone carved steps descending into water, arched alcoves and pillars, symmetrical geometric pattern, rippling water surface, historic water architecture, landmark icon, flat vector illustration, blue and sandstone colors",
       "file": "/art/monopoly/jal_vibhaag_001.webp"
     },
     "bijli_vibhag_001": {

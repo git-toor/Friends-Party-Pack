@@ -65,11 +65,11 @@ const SPACE_DATA: { index: number; name: string; spaceId: string; group?: number
   { index: 9, name: 'Law Garden', spaceId: 'law_garden', group: 1, price: 120, houseCost: 50, mortgageValue: 60, groupName: 'light_blue', rent: [8, 40, 100, 300, 450, 600] },
   { index: 10, name: 'Jail', spaceId: 'jail' },
   { index: 11, name: 'Mall Road', spaceId: 'mall_road', group: 2, price: 140, houseCost: 100, mortgageValue: 70, groupName: 'pink', rent: [10, 50, 150, 450, 625, 750] },
-  { index: 12, name: 'Jal Vibhaag', spaceId: 'water_supply', price: 150, mortgageValue: 75 },
+  { index: 12, name: 'Jal Vibhaag', spaceId: 'jal_vibhaag', price: 150, mortgageValue: 75 },
   { index: 13, name: 'Bapu Bazaar', spaceId: 'bapu_bazaar', group: 2, price: 140, houseCost: 100, mortgageValue: 70, groupName: 'pink', rent: [10, 50, 150, 450, 625, 750] },
   { index: 14, name: 'Lake Pichola', spaceId: 'lake_pichola', group: 2, price: 160, houseCost: 100, mortgageValue: 80, groupName: 'pink', rent: [12, 60, 180, 500, 700, 900] },
   { index: 15, name: 'Rajdhani Exp', spaceId: 'rajdhani', price: 200, mortgageValue: 100 },
-  { index: 16, name: 'Baga Beach', spaceId: 'calangute', group: 3, price: 180, houseCost: 100, mortgageValue: 90, groupName: 'orange', rent: [14, 70, 200, 550, 750, 950] },
+  { index: 16, name: 'Baga Beach', spaceId: 'baga_beach', group: 3, price: 180, houseCost: 100, mortgageValue: 90, groupName: 'orange', rent: [14, 70, 200, 550, 750, 950] },
   { index: 17, name: 'Jugaad', spaceId: 'jugaad_2' },
   { index: 18, name: 'White Town', spaceId: 'white_town', group: 3, price: 180, houseCost: 100, mortgageValue: 90, groupName: 'orange', rent: [14, 70, 200, 550, 750, 950] },
   { index: 19, name: 'Rock Beach', spaceId: 'rock_beach', group: 3, price: 200, houseCost: 100, mortgageValue: 100, groupName: 'orange', rent: [16, 80, 220, 600, 800, 1000] },
@@ -81,17 +81,17 @@ const SPACE_DATA: { index: number; name: string; spaceId: string; group?: number
   { index: 25, name: 'Shatabdi Exp', spaceId: 'shatabdi', price: 200, mortgageValue: 100 },
   { index: 26, name: 'Park Street', spaceId: 'park_street', group: 5, price: 260, houseCost: 150, mortgageValue: 130, groupName: 'yellow', rent: [22, 110, 330, 800, 975, 1150] },
   { index: 27, name: 'FC Road', spaceId: 'fc_road', group: 5, price: 260, houseCost: 150, mortgageValue: 130, groupName: 'yellow', rent: [22, 110, 330, 800, 975, 1150] },
-  { index: 28, name: 'Bijli Vibhag', spaceId: 'electricity_board', price: 150, mortgageValue: 75 },
+  { index: 28, name: 'Bijli Vibhag', spaceId: 'bijli_vibhag', price: 150, mortgageValue: 75 },
   { index: 29, name: 'SG Highway', spaceId: 'sg_highway', group: 5, price: 280, houseCost: 150, mortgageValue: 140, groupName: 'yellow', rent: [24, 120, 360, 850, 1025, 1200] },
   { index: 30, name: 'Chalo Jail', spaceId: 'go_to_jail' },
   { index: 31, name: 'Bandra West', spaceId: 'bandra_west', group: 6, price: 300, houseCost: 200, mortgageValue: 150, groupName: 'green', rent: [26, 130, 390, 900, 1100, 1275] },
-  { index: 32, name: 'Jor Bagh', spaceId: 'connaught_place', group: 6, price: 300, houseCost: 200, mortgageValue: 150, groupName: 'green', rent: [26, 130, 390, 900, 1100, 1275] },
+  { index: 32, name: 'Jor Bagh', spaceId: 'jor_bagh', group: 6, price: 300, houseCost: 200, mortgageValue: 150, groupName: 'green', rent: [26, 130, 390, 900, 1100, 1275] },
   { index: 33, name: 'Jugaad', spaceId: 'jugaad_3' },
   { index: 34, name: 'Cyber Hub', spaceId: 'cyber_hub', group: 6, price: 320, houseCost: 200, mortgageValue: 160, groupName: 'green', rent: [28, 150, 450, 1000, 1200, 1400] },
-  { index: 35, name: 'Duronto Exp', spaceId: 'tejas', price: 200, mortgageValue: 100 },
+  { index: 35, name: 'Duronto Exp', spaceId: 'duronto_exp', price: 200, mortgageValue: 100 },
   { index: 36, name: 'Kismat', spaceId: 'kismat_3' },
   { index: 37, name: 'Marine Drive', spaceId: 'marine_drive', group: 7, price: 350, houseCost: 200, mortgageValue: 175, groupName: 'dark_blue', rent: [35, 175, 500, 1100, 1300, 1500] },
-  { index: 38, name: 'Ghoos', spaceId: 'luxury_tax' },
+  { index: 38, name: 'Chanda', spaceId: 'luxury_tax' },
   { index: 39, name: 'Altamount Road', spaceId: 'altamount_road', group: 7, price: 400, houseCost: 200, mortgageValue: 200, groupName: 'dark_blue', rent: [50, 200, 600, 1400, 1700, 2000] },
 ];
 
@@ -133,6 +133,7 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   const [eventMsg, setEventMsg] = useState<string | null>(null);
   const [showBankrupt, setShowBankrupt] = useState(false);
   const [showCard, setShowCard] = useState<{ type: string; text: string; cardIndex?: number } | null>(null);
+  const [auctionError, setAuctionError] = useState<string | null>(null);
   const [selectedFanCard, setSelectedFanCard] = useState<number | null>(null);
   const [selectedPropForPopup, setSelectedPropForPopup] = useState<string | null>(null);
   const [showBazaar, setShowBazaar] = useState(false);
@@ -343,12 +344,19 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
 
   // ─── Auction actions ──
   const handleAuctionBid = useCallback(async (amount: number) => {
-    await sendAction('BID', { amount });
+    setAuctionError(null);
+    const res = await sendAction('BID', { amount });
+    if (res?.error) setAuctionError(res.error);
   }, [sendAction]);
 
   const handleAuctionPass = useCallback(async () => {
-    await sendAction('PASS');
+    setAuctionError(null);
+    const res = await sendAction('PASS');
+    if (res?.error) setAuctionError(res.error);
   }, [sendAction]);
+
+  // Clear auction error when interaction changes
+  useEffect(() => { setAuctionError(null); }, [gs.interaction]);
 
   // ─── Bazaar actions ──
   const handleProposeTrade = useCallback(async (payload: any) => {
@@ -577,6 +585,7 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
             playerNames={playerNames}
             onBid={handleAuctionBid}
             onPass={handleAuctionPass}
+            error={auctionError}
           />
         )}
       </AnimatePresence>
@@ -609,24 +618,23 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
               <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0.5, rotate: 10 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                 onClick={e => e.stopPropagation()}
-                style={{ borderRadius: 16, overflow: 'hidden', maxWidth: 340, boxShadow: '0 12px 48px rgba(0,0,0,0.6)', position: 'relative' }}>
-                {/* Card Art */}
+                style={{ borderRadius: 16, overflow: 'hidden', maxWidth: 340, boxShadow: '0 12px 48px rgba(0,0,0,0.6)', position: 'relative', background: '#16213e' }}>
+                {/* Card Art (original aspect ratio) */}
                 <img src={`/art/monopoly/${(showCard.type === 'kismat' ? KISMAT_ART_IDS : JUGAAD_ART_IDS)[showCard.cardIndex ?? 0]}_001.webp`}
                   alt={showCard.text}
-                  style={{ width: '100%', height: 280, objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', display: 'block' }}
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                {/* Overlay text */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px 20px',
-                  background: 'linear-gradient(transparent, rgba(0,0,0,0.85))' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: showCard.type === 'kismat' ? '#FF8C00' : '#4CAF50', textTransform: 'uppercase', letterSpacing: 1 }}>
+                {/* Text below the card */}
+                <div style={{ padding: '14px 18px 18px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, color: showCard.type === 'kismat' ? '#FF8C00' : '#4CAF50', textTransform: 'uppercase', letterSpacing: 1 }}>
                     {showCard.type === 'kismat' ? '✨ Kismat' : '💡 Jugaad'}
                   </div>
                   {((showCard.type === 'kismat' && showCard.cardIndex === 15) || (showCard.type === 'jugaad' && showCard.cardIndex === 4)) ? (
-                    <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.4, fontWeight: 600 }}>
+                    <div style={{ fontSize: 14, color: '#fff', lineHeight: 1.5, fontWeight: 600 }}>
                       🤝 Sifarish Card added to your inventory
                     </div>
                   ) : (
-                    <div style={{ fontSize: 14, color: '#fff', lineHeight: 1.4, fontWeight: 600 }}>{showCard.text}</div>
+                    <div style={{ fontSize: 14, color: '#fff', lineHeight: 1.5, fontWeight: 600 }}>{showCard.text}</div>
                   )}
                 </div>
                 <button onClick={() => setShowCard(null)}

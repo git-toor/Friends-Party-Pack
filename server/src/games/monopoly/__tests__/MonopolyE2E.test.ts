@@ -9,15 +9,15 @@ const P = {
   mi_road: 'mi_road' as PropertyId,
   law_garden: 'law_garden' as PropertyId,
   mall_road: 'mall_road' as PropertyId,
-  water_supply: 'water_supply' as PropertyId,
+  jal_vibhaag: 'jal_vibhaag' as PropertyId,
   bapu_bazaar: 'bapu_bazaar' as PropertyId,
   lake_pichola: 'lake_pichola' as PropertyId,
   rajdhani: 'rajdhani' as PropertyId,
-  calangute: 'calangute' as PropertyId,
+  baga_beach: 'baga_beach' as PropertyId,
   rock_beach: 'rock_beach' as PropertyId,
   shatabdi: 'shatabdi' as PropertyId,
-  tejas: 'tejas' as PropertyId,
-  electricity_board: 'electricity_board' as PropertyId,
+  duronto_exp: 'duronto_exp' as PropertyId,
+  bijli_vibhag: 'bijli_vibhag' as PropertyId,
   marine_drive: 'marine_drive' as PropertyId,
   altamount_road: 'altamount_road' as PropertyId,
 };
@@ -83,11 +83,11 @@ describe('Monopoly E2E Simulations', () => {
 
       // P1: roll [5,1]=6 → pos 12 (Water Supply)
       r = turn(g, 1, 5, 1, true);
-      expect(g.properties[P.water_supply].owner).toBe(1);
+      expect(g.properties[P.jal_vibhaag].owner).toBe(1);
 
       // P0: roll [2,4]=6 → pos 16 (Calangute), buy
       r = turn(g, 0, 2, 4, true);
-      expect(g.properties[P.calangute].owner).toBe(0);
+      expect(g.properties[P.baga_beach].owner).toBe(0);
 
       // P1: roll [5,2]=7 → pos 19 (Rock Beach)
       r = turn(g, 1, 5, 2, true);
@@ -187,7 +187,7 @@ describe('Monopoly E2E Simulations', () => {
 
     it('4 railroads charge ₹200', () => {
       const g = createGame(2, 0);
-      [P.vande_bharat, P.rajdhani, P.shatabdi, P.tejas].forEach(id => g.properties[id].owner = 1);
+      [P.vande_bharat, P.rajdhani, P.shatabdi, P.duronto_exp].forEach(id => g.properties[id].owner = 1);
       g.players[0].position = 20;
       turn(g, 0, 2, 3, false); // land on pos 25
       expect(g.players[0].money).toBe(1300);
@@ -200,7 +200,7 @@ describe('Monopoly E2E Simulations', () => {
   describe('Utility rent', () => {
     it('1 utility: 4× dice', () => {
       const g = createGame(2, 0);
-      g.properties[P.water_supply].owner = 1;
+      g.properties[P.jal_vibhaag].owner = 1;
       g.players[0].position = 6;
       const r = roll(g, 0, 3, 3); // total=6, land on 12
       expect(g.players[0].money).toBe(1500 - 4 * 6);
@@ -209,8 +209,8 @@ describe('Monopoly E2E Simulations', () => {
 
     it('2 utilities: 10× dice', () => {
       const g = createGame(2, 0);
-      g.properties[P.water_supply].owner = 1;
-      g.properties[P.electricity_board].owner = 1;
+      g.properties[P.jal_vibhaag].owner = 1;
+      g.properties[P.bijli_vibhag].owner = 1;
       g.players[0].position = 20;
       const r = roll(g, 0, 4, 4); // total=8, land on 28
       expect(g.players[0].money).toBe(1500 - 10 * 8);

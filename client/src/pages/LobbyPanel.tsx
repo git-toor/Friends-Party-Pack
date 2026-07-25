@@ -9,7 +9,13 @@ import { useWebSocket } from '../hooks/useWebSocket.js';
 
 const pageStyle: React.CSSProperties = {
   display: 'flex', flexDirection: 'column', alignItems: 'center',
-  padding: '30px 20px', height: '100%', overflowY: 'auto',
+  padding: '30px 20px', minHeight: '100%', overflowY: 'auto',
+  boxSizing: 'border-box',
+};
+
+const pageInnerStyle: React.CSSProperties = {
+  display: 'flex', flexDirection: 'column', alignItems: 'center',
+  width: '100%', maxWidth: 420,
 };
 
 const playerRowStyle: React.CSSProperties = {
@@ -44,7 +50,7 @@ export default function LobbyPanel() {
     GAME_STARTED: (payload: any) => {
       const myIndex = payload.players?.findIndex((p: any) => p.id === playerId);
       const myToken = payload.players?.find((p: any) => p.id === playerId)?.token;
-      navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: myIndex, playerName, lobby: payload.lobby, gameId: payload.lobby?.gameId, tokens: Object.fromEntries((payload.players || []).map((p: any, i: number) => [i, p.token])) } });
+      navigate(`/game/${payload.sessionId}`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: myIndex, playerName, lobby: payload.lobby, gameId: payload.lobby?.gameId, tokens: Object.fromEntries((payload.players || []).map((p: any, i: number) => [i, p.token])) } });
     },
   });
 
@@ -91,85 +97,87 @@ export default function LobbyPanel() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={{ fontSize: 20, marginBottom: 4 }}>Lobby</h1>
-      <div style={{ fontSize: 48, letterSpacing: 12, fontWeight: 700, color: '#e94560', marginBottom: 8 }}>
-        {code}
-      </div>
-      <p style={{ color: '#999', marginBottom: 16 }}>Share this code with friends</p>
-
-      {joinUrl && <QRCode url={joinUrl} />}
-
-      <Button variant="secondary" size="sm" style={{ marginTop: 12, marginBottom: 24 }}
-        onClick={() => {
-          navigator.clipboard.writeText(joinUrl);
-          const btn = document.activeElement as HTMLButtonElement;
-          if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000); }
-        }}>
-        📋 Copy Link
-      </Button>
-
-      <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
-        <h3 style={{ marginBottom: 8, color: '#999', fontSize: 14 }}>
-          Players ({players.length}/{lobby?.maxPlayers || '?'})
-        </h3>
-        {players.map(p => (
-          <div key={p.id} style={playerRowStyle}>
-            <span>{p.name} {p.isHost ? '👑' : ''}</span>
-            <span style={{ color: p.ready ? '#4ecca3' : '#666' }}>
-              {p.ready ? '✅ Ready' : '⏳ Waiting'}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {(lobby?.gameId === 'yahtzee' || lobby?.gameId === 'ludo' || lobby?.gameId === 'monopoly') && (
-        <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
-          <DiceAppearanceSelector dieCount={lobby?.gameId === 'ludo' ? 1 : lobby?.gameId === 'monopoly' ? 2 : 5} />
+      <div style={pageInnerStyle}>
+        <h1 style={{ fontSize: 20, marginBottom: 4 }}>Lobby</h1>
+        <div style={{ fontSize: 48, letterSpacing: 12, fontWeight: 700, color: '#e94560', marginBottom: 8 }}>
+          {code}
         </div>
-      )}
+        <p style={{ color: '#999', marginBottom: 16 }}>Share this code with friends</p>
 
-      {/* Token Selection */}
-      {(lobby?.gameId === 'monopoly') && (
-        <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
-          <h3 style={{ marginBottom: 8, color: '#999', fontSize: 14 }}>Choose Your Token</h3>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {AVAILABLE_TOKENS.map(token => {
-              const taken = players.some(p => p.token === token.id && p.id !== playerId);
-              const mine = players.find(p => p.id === playerId)?.token === token.id;
-              return (
-                <button key={token.id}
-                  onClick={() => {
-                    if (!taken && lobbyId) api.selectToken(lobbyId, playerId, token.id);
-                  }}
-                  disabled={taken}
-                  style={{
-                    width: 48, height: 48, borderRadius: 8,
-                    border: mine ? `2px solid ${token.color}` : taken ? '1px solid #333' : '1px solid #555',
-                    background: mine ? `${token.color}22` : taken ? '#1a1a2e' : '#16213e',
-                    fontSize: 22, cursor: taken ? 'not-allowed' : 'pointer',
-                    opacity: taken ? 0.3 : 1,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.15s ease',
-                  }}
-                  title={taken ? `${token.name} (taken)` : token.name}>
-                  <span>{token.emoji}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        {joinUrl && <QRCode url={joinUrl} />}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 360, alignItems: 'stretch' }}>
-        <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
-          {isReady ? 'Not Ready' : 'Ready'}
+        <Button variant="secondary" size="sm" style={{ marginTop: 12, marginBottom: 24 }}
+          onClick={() => {
+            navigator.clipboard.writeText(joinUrl);
+            const btn = document.activeElement as HTMLButtonElement;
+            if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000); }
+          }}>
+          📋 Copy Link
         </Button>
 
-        {isHost && (
-          <Button size="lg" disabled={players.length < 2 || !players.every(p => p.ready)} onClick={handleStart}>
-            Start Game
-          </Button>
+        <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
+          <h3 style={{ marginBottom: 8, color: '#999', fontSize: 14 }}>
+            Players ({players.length}/{lobby?.maxPlayers || '?'})
+          </h3>
+          {players.map(p => (
+            <div key={p.id} style={playerRowStyle}>
+              <span>{p.name} {p.isHost ? '👑' : ''}</span>
+              <span style={{ color: p.ready ? '#4ecca3' : '#666' }}>
+                {p.ready ? '✅ Ready' : '⏳ Waiting'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {(lobby?.gameId === 'yahtzee' || lobby?.gameId === 'ludo' || lobby?.gameId === 'monopoly') && (
+          <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
+            <DiceAppearanceSelector dieCount={lobby?.gameId === 'ludo' ? 1 : lobby?.gameId === 'monopoly' ? 2 : 5} />
+          </div>
         )}
+
+        {/* Token Selection */}
+        {(lobby?.gameId === 'monopoly') && (
+          <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
+            <h3 style={{ marginBottom: 8, color: '#999', fontSize: 14 }}>Choose Your Token</h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {AVAILABLE_TOKENS.map(token => {
+                const taken = players.some(p => p.token === token.id && p.id !== playerId);
+                const mine = players.find(p => p.id === playerId)?.token === token.id;
+                return (
+                  <button key={token.id}
+                    onClick={() => {
+                      if (!taken && lobbyId) api.selectToken(lobbyId, playerId, token.id);
+                    }}
+                    disabled={taken}
+                    style={{
+                      width: 48, height: 48, borderRadius: 8,
+                      border: mine ? `2px solid ${token.color}` : taken ? '1px solid #333' : '1px solid #555',
+                      background: mine ? `${token.color}22` : taken ? '#1a1a2e' : '#16213e',
+                      fontSize: 22, cursor: taken ? 'not-allowed' : 'pointer',
+                      opacity: taken ? 0.3 : 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={taken ? `${token.name} (taken)` : token.name}>
+                    <span>{token.emoji}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 360, alignItems: 'stretch' }}>
+          <Button size="lg" variant={isReady ? 'secondary' : 'primary'} onClick={handleReady}>
+            {isReady ? 'Not Ready' : 'Ready'}
+          </Button>
+
+          {isHost && (
+            <Button size="lg" disabled={players.length < 2 || !players.every(p => p.ready)} onClick={handleStart}>
+              Start Game
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

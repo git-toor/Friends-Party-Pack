@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createGame, handleAction, getValidActions, GAME_RULES, TILE_LAYOUT, RAILROAD_IDS, UTILITY_IDS, GROUP_PROPERTIES, type GameState, type PropertyId } from '../MonopolyEngine.js';
+import { createGame, handleAction, getValidActions, GAME_RULES, TILE_LAYOUT, RAILROAD_IDS, UTILITY_IDS, GROUP_PROPERTIES, KISMAT_DECK, JUGAAD_DECK, __testSetKismatDeck, __testSetJugaadDeck, type GameState, type PropertyId } from '../MonopolyEngine.js';
 
 const P = {
   chandni_chowk: 'chandni_chowk' as PropertyId,
   hazratganj: 'hazratganj' as PropertyId,
   vande_bharat: 'vande_bharat' as PropertyId,
   ghat_road: 'ghat_road' as PropertyId,
-  water_supply: 'water_supply' as PropertyId,
+  jal_vibhaag: 'jal_vibhaag' as PropertyId,
   rajdhani: 'rajdhani' as PropertyId,
-  calangute: 'calangute' as PropertyId,
+  baga_beach: 'baga_beach' as PropertyId,
   mall_road: 'mall_road' as PropertyId,
   shatabdi: 'shatabdi' as PropertyId,
-  tejas: 'tejas' as PropertyId,
-  electricity_board: 'electricity_board' as PropertyId,
+  duronto_exp: 'duronto_exp' as PropertyId,
+  bijli_vibhag: 'bijli_vibhag' as PropertyId,
   marine_drive: 'marine_drive' as PropertyId,
   altamount_road: 'altamount_road' as PropertyId,
   park_street: 'park_street' as PropertyId,
@@ -237,6 +237,14 @@ describe('MonopolyEngine', () => {
       expect(game.phase).toBe('waiting_for_roll');
     });
 
+    it('doubles + landing on unowned property shows buy option instead of re-roll', () => {
+      game.players[0].position = 0;
+      rollWithFixedValues(game, 0, 3, 3);
+      expect(game.doublesCount).toBe(1);
+      expect(game.phase).toBe('waiting_for_action');
+      expect(game.lastAction).toBe('can_buy');
+    });
+
     it('two consecutive doubles increments doublesCount to 2', () => {
       game.players[0].position = 38;
       rollWithFixedValues(game, 0, 1, 1);
@@ -328,17 +336,30 @@ describe('MonopolyEngine', () => {
       expect(result.events?.some(e => e.type === 'WENT_TO_JAIL')).toBe(true);
     });
 
-    it('kismat → turn_end, drew_kismat', () => {
+    it('kismat → drew_kismat event, valid state after card execution', () => {
       rollWithFixedValues(game, 0, 3, 4);
-      expect(game.phase).toBe('turn_end');
-      expect(game.lastAction).toBe('drew_kismat');
+      const events = game.eventLog || [];
+      expect(events.some(e => e.type === 'DREW_CARD')).toBe(true);
+      expect(['turn_end', 'waiting_for_action']).toContain(game.phase);
     });
 
-    it('jugaad → turn_end, drew_jugaad', () => {
+    it('jugaad → drew_jugaad event, valid state after card execution', () => {
       game.players[0].position = 39;
       rollWithFixedValues(game, 0, 1, 2);
-      expect(game.phase).toBe('turn_end');
-      expect(game.lastAction).toBe('drew_jugaad');
+      const events = game.eventLog || [];
+      expect(events.some(e => e.type === 'DREW_CARD')).toBe(true);
+      expect(['turn_end', 'waiting_for_action']).toContain(game.phase);
+    });
+
+    it('kismat move card triggers buy option at destination property', () => {
+      game.players[0].position = 4;
+      // Force "Advance to MG Road, Bengaluru" (card ID 1, targetPosition 21)
+      __testSetKismatDeck([KISMAT_DECK[1]]);
+      const total = 3; // position 4 + 3 = 7 (Kismat_1)
+      const r = rollWithFixedValues(game, 0, 1, 2);
+      expect(game.players[0].position).toBe(21); // MG Road
+      expect(game.phase).toBe('waiting_for_action');
+      expect(game.lastAction).toBe('can_buy');
     });
 
     it('GO (passing) → money collected, no_action', () => {
@@ -572,7 +593,7 @@ describe('MonopolyEngine', () => {
     });
 
     it('4 railroads: rent 200', () => {
-      [P.vande_bharat, P.rajdhani, P.shatabdi, P.tejas].forEach(id => game.properties[id].owner = 1);
+      [P.vande_bharat, P.rajdhani, P.shatabdi, P.duronto_exp].forEach(id => game.properties[id].owner = 1);
       game.players[0].position = 20;
       rollWithFixedValues(game, 0, 2, 3);
       expect(game.players[0].money).toBe(1300);
@@ -584,15 +605,15 @@ describe('MonopolyEngine', () => {
 
   describe('Pay Rent — Utilities', () => {
     it('1 utility: 4 × diceTotal', () => {
-      game.properties[P.water_supply].owner = 1;
+      game.properties[P.jal_vibhaag].owner = 1;
       const result = rollWithFixedValues(game, 0, 6, 6);
       expect(game.players[0].money).toBe(1500 - 4 * 12);
       expect(game.players[1].money).toBe(1500 + 48);
     });
 
     it('2 utilities: 10 × diceTotal', () => {
-      game.properties[P.water_supply].owner = 1;
-      game.properties[P.electricity_board].owner = 1;
+      game.properties[P.jal_vibhaag].owner = 1;
+      game.properties[P.bijli_vibhag].owner = 1;
       game.players[0].position = 20;
       const result = rollWithFixedValues(game, 0, 4, 4);
       expect(game.players[0].money).toBe(1500 - 10 * 8);

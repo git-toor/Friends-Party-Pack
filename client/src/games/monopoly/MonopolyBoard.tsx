@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PLAYER_COLORS } from './constants.js';
 import { getTokenDef } from '../../components/TokenList.js';
 
-const S = 1.5;
+const S = 1.0;
 
 const TILE_SPACE_IDS: string[] = [
   'chalo_tile', 'chandni_chowk', 'jugaad_tile', 'hazratganj', 'lagaan_tile', 'vande_bharat',
@@ -12,7 +12,7 @@ const TILE_SPACE_IDS: string[] = [
   'jugaad_tile_2', 'white_town', 'rock_beach', 'free_parking_tile', 'mg_road', 'kismat_tile_2',
   'marina_beach', 'banjara_hills', 'shatabdi', 'park_street', 'fc_road',
   'bijli_vibhag', 'sg_highway', 'chalo_jail_tile', 'bandra_west', 'jor_bagh',
-  'jugaad_tile_3', 'cyber_hub', 'duronto_exp', 'kismat_tile_3', 'marine_drive', 'ghoos',
+  'jugaad_tile_3', 'cyber_hub', 'duronto_exp', 'kismat_tile_3', 'marine_drive', 'chanda',
   'altamount_road',
 ];
 
@@ -138,7 +138,7 @@ const BOARD_DATA: { index: number; name: string; shortName: string; colorKey: st
   { index: 35, name: 'Duronto Exp', shortName: 'Duronto Exp', colorKey: 'railroad' },
   { index: 36, name: 'Kismat', shortName: 'Kismat', colorKey: 'chance' },
   { index: 37, name: 'Marine Drive', shortName: 'Marine Drive', colorKey: 'property_darkblue' },
-  { index: 38, name: 'Ghoos', shortName: 'Ghoos', colorKey: 'tax' },
+  { index: 38, name: 'Chanda', shortName: 'Chanda', colorKey: 'tax' },
   { index: 39, name: 'Altamount Road', shortName: 'Altamount Road', colorKey: 'property_darkblue' },
 ];
 
@@ -367,8 +367,8 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
           <rect x={0} y={0} width={11 * S} height={11 * S} fill="url(#boardBg)" rx={0.3 * S} />
           {/* Tiles */}
           {tiles.map(t => {
-            const isProperty = BOARD_DATA[t.index].colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax'].includes(BOARD_DATA[t.index].colorKey);
-            const isCardTile = BOARD_DATA[t.index].colorKey === 'go' || BOARD_DATA[t.index].colorKey === 'chance' || BOARD_DATA[t.index].colorKey === 'cc' || BOARD_DATA[t.index].colorKey === 'tax' || BOARD_DATA[t.index].colorKey === 'jail' || BOARD_DATA[t.index].colorKey === 'free_parking' || BOARD_DATA[t.index].colorKey === 'go_to_jail';
+            const isProperty = BOARD_DATA[t.index].colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax','railroad'].includes(BOARD_DATA[t.index].colorKey);
+            const isCardTile = BOARD_DATA[t.index].colorKey === 'go' || BOARD_DATA[t.index].colorKey === 'chance' || BOARD_DATA[t.index].colorKey === 'cc' || BOARD_DATA[t.index].colorKey === 'tax' || BOARD_DATA[t.index].colorKey === 'jail' || BOARD_DATA[t.index].colorKey === 'free_parking' || BOARD_DATA[t.index].colorKey === 'go_to_jail' || BOARD_DATA[t.index].colorKey === 'railroad';
             const PAD = 0.15 * S;
             const IS = S - 2 * PAD;
             return (
@@ -399,6 +399,17 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
                   preserveAspectRatio="xMidYMid slice"
                   style={{ pointerEvents: 'none' }}
                   onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
+              )}
+              {/* Railroads: name + price */}
+              {BOARD_DATA[t.index].colorKey === 'railroad' && (
+                <>
+                  <text x={t.x + 0.08 * S} y={t.y + S - 0.08 * S} textAnchor="start" fill="#fff" fontSize={0.07 * S} fontWeight={600}>
+                    {t.shortName}
+                  </text>
+                  <text x={t.x + S - 0.08 * S} y={t.y + S - 0.08 * S} textAnchor="end" fill="#fff" fontSize={0.07 * S} fontWeight={700}>
+                    ₹200
+                  </text>
+                </>
               )}
               {/* Corner labels */}
               {/* Corner labels hidden — art tiles have their own text */}

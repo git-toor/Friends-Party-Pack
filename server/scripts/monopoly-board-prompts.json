@@ -165,35 +165,35 @@
       "name": "Vande Bharat Express",
       "position": 5,
       "seed_base": 4023,
-      "prompt": "icon of a modern high speed train, Vande Bharat Express, blue and white train, sleek design, speed motion lines, landmark icon, flat vector illustration"
+      "prompt": "icon of a modern high speed train, Vande Bharat Express, blue and white train, sleek design, speed motion lines, centered on solid dark grey background #4A4A4A, landmark icon, flat vector illustration"
     },
     {
       "id": "rajdhani",
       "name": "Rajdhani Express",
       "position": 15,
       "seed_base": 4024,
-      "prompt": "icon of a iconic red express train, Rajdhani Express, red engine, train on tracks, railway signal, landmark icon, flat vector illustration"
+      "prompt": "icon of a iconic red express train, Rajdhani Express, red engine, train on tracks, railway signal, centered on solid dark grey background #4A4A4A, landmark icon, flat vector illustration"
     },
     {
       "id": "shatabdi",
       "name": "Shatabdi Express",
       "position": 25,
       "seed_base": 4025,
-      "prompt": "icon of a modern blue express train, Shatabdi Express, blue and silver train, station platform, passenger coach, landmark icon, flat vector illustration"
+      "prompt": "icon of a modern blue express train, Shatabdi Express, blue and silver train, station platform, passenger coach, centered on solid dark grey background #4A4A4A, landmark icon, flat vector illustration"
     },
     {
-      "id": "tejas",
-      "name": "Tejas Express",
+      "id": "duronto_exp",
+      "name": "Duronto Express",
       "position": 35,
       "seed_base": 4026,
-      "prompt": "icon of a modern red and white express train, Tejas Express, streamlined design, premium coach, speed motion, landmark icon, flat vector illustration"
+      "prompt": "icon of a modern red and white express train, Duronto Express, streamlined premium design, speed motion, centered on solid dark grey background #4A4A4A, landmark icon, flat vector illustration"
     },
     {
-      "id": "water_supply",
-      "name": "Water Supply",
+      "id": "jal_vibhaag",
+      "name": "Jal Vibhaag",
       "position": 12,
       "seed_base": 4027,
-      "prompt": "icon of a water utility facility, water tank, tap with water drops, pipeline, municipal water supply, landmark icon, flat vector illustration, blue colors"
+      "prompt": "icon of a traditional Indian stepwell baoli, ornate stone carved steps descending into water, arched alcoves and pillars, symmetrical geometric pattern, rippling water surface, historic water architecture, landmark icon, flat vector illustration, blue and sandstone colors"
     },
     {
       "id": "electricity_board",

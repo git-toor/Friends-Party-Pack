@@ -5,14 +5,14 @@ import { PLAYER_NAMES } from './constants.js';
 const SPACE_NAMES: Record<string, string> = {
   chandni_chowk: 'Chandni Chowk', hazratganj: 'Hazratganj', ghat_road: 'Ghat Road',
   mi_road: 'MI Road', law_garden: 'Law Garden', mall_road: 'Mall Road',
-  bapu_bazaar: 'Bapu Bazaar', lake_pichola: 'Lake Pichola', calangute: 'Calangute Bch',
+  bapu_bazaar: 'Bapu Bazaar', lake_pichola: 'Lake Pichola', baga_beach: 'Baga Beach',
   white_town: 'White Town', rock_beach: 'Rock Beach', mg_road: 'MG Road',
   marina_beach: 'Marina Beach', banjara_hills: 'Banjara Hills', park_street: 'Park Street',
   fc_road: 'FC Road', sg_highway: 'SG Highway', bandra_west: 'Bandra West',
-  connaught_place: 'Connaught Pl', cyber_hub: 'Cyber Hub', marine_drive: 'Marine Drive',
+  jor_bagh: 'Jor Bagh', cyber_hub: 'Cyber Hub', marine_drive: 'Marine Drive',
   altamount_road: 'Altamount Rd', vande_bharat: 'Vande Bharat Exp',
-  rajdhani: 'Rajdhani Exp', shatabdi: 'Shatabdi Exp', tejas: 'Tejas Exp',
-  water_supply: 'Water Supply', electricity_board: 'Electricity Bd',
+  rajdhani: 'Rajdhani Exp', shatabdi: 'Shatabdi Exp', duronto_exp: 'Duronto Exp',
+  jal_vibhaag: 'Jal Vibhaag', bijli_vibhag: 'Bijli Vibhag',
 };
 
 interface AuctionInteraction {
@@ -31,11 +31,12 @@ interface AuctionModalProps {
   playerNames: Record<number, string>;
   onBid: (amount: number) => void;
   onPass: () => void;
+  error?: string | null;
 }
 
 const QUICK_BIDS = [10, 25, 50, 100];
 
-export default function AuctionModal({ auction, playerIndex, playerNames, onBid, onPass }: AuctionModalProps) {
+export default function AuctionModal({ auction, playerIndex, playerNames, onBid, onPass, error }: AuctionModalProps) {
   const [customBid, setCustomBid] = useState('');
   const isMyTurn = auction.activePlayer === playerIndex;
   const isInAuction = !auction.passedPlayers.includes(playerIndex) && playerIndex !== auction.declinedBy;
@@ -84,7 +85,11 @@ export default function AuctionModal({ auction, playerIndex, playerNames, onBid,
 
         {isMyTurn && isInAuction ? (
           <div>
-            <div style={{ fontSize: 11, color: '#4CAF50', marginBottom: 8, fontWeight: 600 }}>▶ It's your turn to bid!</div>
+            <div style={{ fontSize: 11, color: '#4CAF50', marginBottom: 8, fontWeight: 600 }}>
+              {auction.currentBidder === playerIndex
+                ? "▶ You're the highest bidder — Pass to win!"
+                : '▶ It\'s your turn to bid!'}
+            </div>
             <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
               {QUICK_BIDS.map(amount => (
                 <button
@@ -124,6 +129,7 @@ export default function AuctionModal({ auction, playerIndex, playerNames, onBid,
                 background: 'transparent', color: '#888', cursor: 'pointer', fontSize: 13, fontWeight: 600,
               }}
             >Pass</button>
+            {error && <div style={{ marginTop: 8, fontSize: 11, color: '#e94560', textAlign: 'center', fontWeight: 600 }}>{error}</div>}
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: 12 }}>
