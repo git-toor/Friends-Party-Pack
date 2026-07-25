@@ -1,8 +1,9 @@
-export function useLudoSounds() {
-  const playDiceRoll = () => {};
-  const playTokenMove = () => {};
-  const playCapture = () => {};
-  const playHomeArrival = () => {};
-  const playWin = () => {};
-  return { playDiceRoll, playTokenMove, playCapture, playHomeArrival, playWin };
-}
+const NOOP = () => {};
+
+export const sounds = {
+  playDiceRoll: NOOP,
+  playTokenMove: NOOP,
+  playCapture: NOOP,
+  playHomeArrival: NOOP,
+  playWin: NOOP,
+};

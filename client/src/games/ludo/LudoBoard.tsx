@@ -84,7 +84,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
     const dir = stepAnim.to > stepAnim.from ? 1 : -1;
     for (let p = stepAnim.from; p !== stepAnim.to + dir; p += dir) {
       const pos = getBoardPosition(stepAnim.playerIndex, p, totalPlayers);
-      steps.push({ x: cx(pos.x), y: cy(pos.y) });
+      steps.push({ x: pos.x, y: pos.y });
     }
     let idx = 0;
     setStepTokenIdx(stepAnim.tokenIndex);
@@ -97,25 +97,27 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
       }
       setStepPos(steps[idx]);
       idx++;
-      stepFrameRef.current = window.setTimeout(tick, 100);
+      let delay = 200;
+      if (stepAnim.from === -1 && idx === 1) delay = 200;
+      stepFrameRef.current = window.setTimeout(tick, delay);
     };
     tick();
     return () => clearTimeout(stepFrameRef.current);
   }, [stepAnim, totalPlayers, onStepAnimDone]);
 
-  // token groups (exclude step-animating token)
+  // token groups (step-animating token is hidden — overlay plays the movement)
   const tokenGroups = useMemo(() => {
     const groups = new Map<string, TokenData[]>();
     for (const tok of tokens) {
       if (tok.state !== 'path' && tok.state !== 'stretch') continue;
-      if (stepTokenIdx !== null && tok.tokenIndex === stepAnim?.tokenIndex && tok.playerIndex === stepAnim.playerIndex) continue;
+      if (stepAnim && tok.playerIndex === stepAnim.playerIndex && tok.tokenIndex === stepAnim.tokenIndex) continue;
       const pos = getBoardPosition(tok.playerIndex, tok.progress, totalPlayers);
       const key = `${pos.x.toFixed(5)},${pos.y.toFixed(5)}`;
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key)!.push(tok);
     }
     return groups;
-  }, [tokens, stepTokenIdx, stepAnim, totalPlayers]);
+  }, [tokens, stepAnim, totalPlayers]);
 
   const pq = (pi: number) => playerQuadrant(pi, totalPlayers);
   const allQuadrants = [0, 1, 2, 3].map(q => ({
@@ -144,10 +146,11 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
       })}
       {PATH.map(([c,r], i) => {
         const s = SAFE_ABS.has(i);
+        const startFill: Record<number, string> = { 0: '#3498db', 13: '#e74c3c', 26: '#2ecc71', 39: '#f1c40f' };
         return <rect key={`p-${i}`} x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
           width={ts} height={ts} rx={0.003}
-          fill={s ? '#2a2a4a' : '#25244a'}
-          stroke={s ? '#f1c40f' : 'rgba(255,255,255,0.08)'}
+          fill={startFill[i] ?? (s ? '#2a2a4a' : '#25244a')}
+          stroke={s ? '#000000' : 'rgba(255,255,255,0.08)'}
           strokeWidth={s ? 0.003 : 0.0015} />;
       })}
       <rect x={6*G} y={6*G} width={3*G} height={3*G}
@@ -172,7 +175,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
       })}
       {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c,r]) => (
         <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r)} dy="0.35em"
-          textAnchor="middle" fontSize={starSize} fill="#f1c40f" opacity={0.9}
+          textAnchor="middle" fontSize={starSize} fill="#000000" opacity={0.9}
           style={{ userSelect: 'none' }}>★</text>
       ))}
 

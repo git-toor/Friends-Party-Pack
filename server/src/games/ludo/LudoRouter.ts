@@ -58,7 +58,7 @@ ludoRouter.post('/action', (req, res) => {
       // Broadcasting to them causes a race where stale state from the other player's
       // subsequent action can overwrite their current interactive state.
       if (i === playerIndex) continue;
-      broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i } });
+      broadcast({ type: 'GAME_STATE', payload: { ...sanitizeState(result.state, i), _actionPlayer: playerIndex, forPlayerIndex: i, _events: result.events } });
     }
     if (action.type === 'ROLL_DICE' || action.type === 'CONFIRM_DICE') {
       broadcast({ type: 'DICE_EVENT', payload: { action: action.type, playerIndex, value: result.diceValue } });

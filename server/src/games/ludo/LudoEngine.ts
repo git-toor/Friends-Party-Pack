@@ -19,12 +19,13 @@ export interface GameState {
   rollId: string | null;
   phase: TurnPhase;
   consecutiveSixes: number;
+  movedTokensBySix: number[];
   winner: number | null;
   _sv: number; // state version, incremented on every mutation
 }
 
 export interface GameEvent {
-  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED' | 'TURN_ENDED';
+  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED' | 'TURN_ENDED' | 'PENALTY_FAIL';
   playerIndex: number;
   tokenIndex: number;
   from?: number;
@@ -67,6 +68,7 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
     rollId: null,
     phase: 'waiting_for_roll',
     consecutiveSixes: 0,
+    movedTokensBySix: [],
     winner: null,
     _sv: 0,
   };
@@ -151,6 +153,7 @@ function advanceTurn(state: GameState): void {
   state.diceRolledBy = null;
   state.rollId = null;
   state.consecutiveSixes = 0;
+  state.movedTokensBySix = [];
 }
 
 function checkWin(state: GameState): void {
@@ -196,12 +199,23 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
   if (value === 6) {
     state.consecutiveSixes++;
     if (state.consecutiveSixes >= 3) {
+      const events: GameEvent[] = [];
+      // Reset all tokens moved by sixes this turn back to home
+      for (const idx of state.movedTokensBySix) {
+        const tok = state.players[playerIndex].tokens[idx];
+        if (tok && tok.state !== 'home') {
+          tok.state = 'home';
+          tok.progress = -1;
+        }
+      }
+      events.push({ type: 'PENALTY_FAIL', playerIndex, tokenIndex: -1 });
       state.diceValue = null;
       state.consecutiveSixes = 0;
+      state.movedTokensBySix = [];
       advanceTurn(state);
       bump(state);
       console.log(`[Ludo] P${playerIndex} 3 consecutive sixes → penalty, turn to P${state.currentPlayer}`);
-      return { state, valid: true, diceValue: value };
+      return { state, valid: true, diceValue: value, events };
     }
   } else {
     state.consecutiveSixes = 0;
@@ -295,6 +309,11 @@ export function moveToken(state: GameState, playerIndex: number, tokenIndex: num
     }
   } else {
     return { state, valid: false, error: 'Token already finished' };
+  }
+
+  // Track tokens moved by sixes for penalty
+  if (wasSix && !state.movedTokensBySix.includes(tokenIndex)) {
+    state.movedTokensBySix.push(tokenIndex);
   }
 
   // Turn management

@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LudoBoard, playerColorIndex } from './LudoBoard.js';
 import { Dice, type DiceHandle } from './Dice.js';
-import { useLudoSounds } from './sounds.js';
+import { sounds } from './sounds.js';
 import { PLAYER_COLORS, COLOR_NAMES } from './constants.js';
 import type { ChatMessage } from '../../components/ChatBox.js';
 
 interface GameEvent {
-  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED' | 'TURN_ENDED';
+  type: 'TOKEN_MOVED' | 'CAPTURE' | 'TOKEN_FINISHED' | 'BLOCK_FORMED' | 'TURN_ENDED' | 'PENALTY_FAIL';
   playerIndex: number;
   tokenIndex: number;
   from?: number;
@@ -25,6 +25,7 @@ interface LudoGameProps {
   sessionId?: string;
   players?: { name: string; index: number; id?: string }[];
   gameStatePush?: any;
+  diceEvent?: any;
   nsfw?: boolean;
 }
 
@@ -55,17 +56,18 @@ const EMPTY_STATE: LudoClientState = {
   validMoves: [],
 };
 
-export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush }: LudoGameProps) {
+export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush, diceEvent }: LudoGameProps) {
   const [gs, setGs] = useState<LudoClientState>(EMPTY_STATE);
   const svRef = useRef(-1);
   const [stepAnim, setStepAnim] = useState<{ tokenIndex: number; from: number; to: number; playerIndex: number } | null>(null);
   const prevPlayersRef = useRef<{ tokens: TokenView[]; finishedCount: number }[] | null>(null);
   const [showCapture, setShowCapture] = useState<{ player: number; token: number } | null>(null);
+  const [showFail, setShowFail] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
   const [chatMsgs, setChatMsgs] = useState<ChatMessage[]>([]);
   const rollingRef = useRef(false);
   const diceRef = useRef<DiceHandle>(null);
-  const sounds = useLudoSounds();
+
 
   const playerNames = players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {};
 
@@ -123,6 +125,15 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
 
   useEffect(() => {
     if (gameStatePush) {
+      // Check for FAIL event from broadcast (for non-acting players)
+      if (gameStatePush._events) {
+        for (const ev of gameStatePush._events as GameEvent[]) {
+          if (ev.type === 'PENALTY_FAIL') {
+            setShowFail(true);
+            setTimeout(() => setShowFail(false), 1000);
+          }
+        }
+      }
       // detect token moves from broadcast (for other players)
       const prev = prevPlayersRef.current;
       const next = gameStatePush.players;
@@ -132,7 +143,12 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
             const pt = prev[p]?.tokens[t];
             const nt = next[p]?.tokens[t];
             if (pt && nt && (pt.progress !== nt.progress || pt.state !== nt.state)) {
-              setStepAnim({ tokenIndex: t, from: pt.progress >= 0 ? pt.progress : Math.max(nt.progress - 1, 0), to: nt.progress >= 0 ? nt.progress : 0, playerIndex: p });
+              // Don't animate if token was reset to home (backward penalty)
+              if (nt.progress < 0) continue;
+              const from = pt.progress >= 0 ? pt.progress : -1;
+              const to = nt.progress >= 0 ? nt.progress : 0;
+              if (from >= to) continue;
+              setStepAnim({ tokenIndex: t, from, to, playerIndex: p });
             }
           }
         }
@@ -144,6 +160,15 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       }
     }
   }, [gameStatePush, sounds, updateState]);
+
+  // ─── Remote dice roll animation (for non-acting players) ──
+  useEffect(() => {
+    if (!diceEvent || !diceRef.current) return;
+    if (diceEvent.playerIndex === playerIndex) return;
+    if (diceEvent.action === 'CONFIRM_DICE' && diceEvent.value) {
+      diceRef.current.roll(diceEvent.value);
+    }
+  }, [diceEvent, playerIndex]);
 
   // ─── Server action — only state update, no client logic ──────
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
@@ -167,8 +192,16 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               sounds.playCapture();
               setTimeout(() => setShowCapture(null), 600);
             }
+            if (ev.type === 'PENALTY_FAIL') {
+              setShowFail(true);
+              setTimeout(() => setShowFail(false), 1000);
+            }
             if (ev.type === 'TOKEN_MOVED') {
-              setStepAnim({ tokenIndex: ev.tokenIndex, from: ev.from ?? 0, to: ev.to ?? 0, playerIndex: ev.playerIndex });
+              const from = ev.from ?? 0;
+              const to = ev.to ?? 0;
+              if (from < to) {
+                setStepAnim({ tokenIndex: ev.tokenIndex, from, to, playerIndex: ev.playerIndex });
+              }
             }
           }
         }
@@ -177,6 +210,8 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
       return data;
     } catch { return null; }
   }, [sessionId, playerIndex, sounds, updateState]);
+
+  const handleStepAnimDone = useCallback(() => setStepAnim(null), []);
 
   const handleRollResult = useCallback(async () => {
     if (rollingRef.current) return;
@@ -217,7 +252,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
   }, [canEndTurn, sendAction]);
 
   const handleBoardClick = useCallback(() => {
-    // Only dismiss the 3D dice visual — never modify game state
+    if (rollingRef.current) return;
     if (diceRef.current) diceRef.current.clear();
   }, []);
 
@@ -291,7 +326,7 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
               totalPlayers={gs.players.length}
               onTokenClick={handleTokenClick}
               stepAnim={stepAnim}
-              onStepAnimDone={() => setStepAnim(null)}
+              onStepAnimDone={handleStepAnimDone}
             />
           </div>
         )}
@@ -376,6 +411,27 @@ export default function LudoGame({ playerCount = 2, playerIndex = 0, playerName 
           >
             <div style={{ fontSize: 60, fontWeight: 900, color: '#ff4444', textShadow: '0 0 40px #ff0000', transform: 'rotate(-10deg)' }}>
               💥 CAPTURE!
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* FAIL effect (three sixes penalty) */}
+      <AnimatePresence>
+        {showFail && (
+          <motion.div
+            key="fail"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 900, pointerEvents: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <div style={{ fontSize: 72, fontWeight: 900, color: '#ff0000', textShadow: '0 0 50px #ff0000', transform: 'rotate(0deg)', fontFamily: 'monospace' }}>
+              ❌ FAIL
             </div>
           </motion.div>
         )}

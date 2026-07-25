@@ -19,6 +19,7 @@ export default function GamePage() {
   const state = location.state as any;
   const [ready, setReady] = useState(false);
   const [gameStatePush, setGameStatePush] = useState<any>(null);
+  const [diceEvent, setDiceEvent] = useState<any>(null);
   const [resolvedGameId, setResolvedGameId] = useState<string | null>(null);
 
   const sessionId = state?.sessionId || sessionIdParam;
@@ -55,12 +56,16 @@ export default function GamePage() {
       setGameStatePush(msg.payload);
     });
 
+    const unsubDice = ws.on('DICE_EVENT', (msg) => {
+      setDiceEvent(msg.payload);
+    });
+
     const unsubChat = ws.on('CHAT_MESSAGE', (msg) => {
       dispatchChatMessage(msg.payload);
     });
 
     setReady(true);
-    return () => { unsub(); unsubChat(); };
+    return () => { unsub(); unsubDice(); unsubChat(); };
   }, [sessionId, playerIndex, state?.gameId, state?.lobby?.gameId]);
 
   if (!ready) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Loading game...</div>;
@@ -77,6 +82,7 @@ export default function GamePage() {
             players={players}
             playerId={playerId}
             gameStatePush={gameStatePush}
+            diceEvent={diceEvent}
             nsfw={nsfw}
           />
         </Suspense>
