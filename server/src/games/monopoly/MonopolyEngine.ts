@@ -291,13 +291,48 @@ export interface GameState {
   lastAction: string | null; landedIndex: number | null;
   winner: number | null;
   housesRemaining: number; hotelsRemaining: number;
+  interaction: Interaction | null;
   eventLog: GameEvent[];
   _sv: number;
 }
 
+// ─── Interaction Types ────────────────────────────────
+
+export interface AuctionInteraction {
+  type: 'auction';
+  propertyId: PropertyId;
+  declinedBy: number;
+  currentBid: number;
+  currentBidder: number | null;
+  activePlayer: number;
+  passedPlayers: number[];
+}
+
+export interface TradeInteraction {
+  type: 'trade';
+  fromPlayer: number;
+  toPlayer: number;
+  give: { money: number; properties: PropertyId[]; jailCards: number };
+  ask: { money: number; properties: PropertyId[]; jailCards: number };
+  phase: 'editing' | 'proposed';
+}
+
+export interface BankruptcyInteraction {
+  type: 'bankruptcy';
+  playerIndex: number;
+  creditor: number | null;
+  amountOwed: number;
+  phase: 'mortgage_opportunity' | 'forced_bankruptcy';
+}
+
+export type Interaction = AuctionInteraction | TradeInteraction | BankruptcyInteraction;
+
 export type GameActionType = 'ROLL_DICE' | 'CONFIRM_DICE' | 'BUY_PROPERTY' | 'DECLINE_PROPERTY' | 'END_TURN'
   | 'PAY_GHOOS' | 'USE_SIFARISH_CARD'
-  | 'BUILD_BUNGALOW' | 'SELL_BUNGALOW' | 'BUILD_VILLA' | 'SELL_VILLA';
+  | 'BUILD_BUNGALOW' | 'SELL_BUNGALOW' | 'BUILD_VILLA' | 'SELL_VILLA'
+  | 'MORTGAGE' | 'UNMORTGAGE'
+  | 'BID' | 'PASS'
+  | 'PROPOSE_TRADE' | 'UPDATE_TRADE' | 'SEND_TRADE' | 'ACCEPT_TRADE' | 'REJECT_TRADE';
 
 export interface GameAction {
   type: GameActionType;
@@ -525,9 +560,23 @@ export function createGame(playerCount: number, startingPlayer?: number): GameSt
     winner: null,
     housesRemaining: GAME_RULES.maxHouses,
     hotelsRemaining: GAME_RULES.maxHotels,
+    interaction: null,
     eventLog: [],
     _sv: 0,
   };
+}
+
+// ─── Command Queue (internal) ─────────────────────────
+
+type CommandFunction = () => GameEvent[];
+
+function runQueue(commands: CommandFunction[]): GameEvent[] {
+  const allEvents: GameEvent[] = [];
+  for (const cmd of commands) {
+    const evts = cmd();
+    if (evts) allEvents.push(...evts);
+  }
+  return allEvents;
 }
 
 // ─── resolveLanding ─────────────────────────────────────
@@ -677,21 +726,22 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     state.doublesCount = 0;
   }
 
-  const oldPos = player.position;
-  const newPos = (oldPos + total) % 40;
-  player.position = newPos;
-  events.push({ type: 'PLAYER_MOVED', playerIndex, from: oldPos, to: newPos });
-
-  if ((oldPos + total) >= 40 && oldPos !== 0) {
-    player.money += GAME_RULES.passGoSalary;
-    events.push({ type: 'PASSED_GO', playerIndex, amount: GAME_RULES.passGoSalary });
-  }
-
-  const landingEvents = resolveLanding(state, playerIndex);
-  events.push(...landingEvents);
-
-  const bankruptcyEvents = handleBankruptcy(state, playerIndex);
-  events.push(...bankruptcyEvents);
+  const queueEvents = runQueue([
+    () => {
+      const oldPos = player.position;
+      const newPos = (oldPos + total) % 40;
+      player.position = newPos;
+      const evts: GameEvent[] = [{ type: 'PLAYER_MOVED', playerIndex, from: oldPos, to: newPos }];
+      if ((oldPos + total) >= 40 && oldPos !== 0) {
+        player.money += GAME_RULES.passGoSalary;
+        evts.push({ type: 'PASSED_GO', playerIndex, amount: GAME_RULES.passGoSalary });
+      }
+      return evts;
+    },
+    () => resolveLanding(state, playerIndex),
+    () => handleBankruptcy(state, playerIndex),
+  ]);
+  events.push(...queueEvents);
 
   if (state.winner !== null) {
     bump(state);
@@ -914,8 +964,31 @@ export function sellVilla(state: GameState, playerIndex: number, payload?: { pro
 
 export function getValidActions(state: GameState, playerIndex: number): GameActionType[] {
   if (state.winner !== null) return [];
-  if (state.currentPlayer !== playerIndex) return [];
   if (state.players[playerIndex]?.bankrupt) return [];
+
+  if (state.interaction) {
+    const ix = state.interaction;
+    if (ix.type === 'auction') {
+      const inAuction = ix.passedPlayers.includes(playerIndex) || playerIndex === ix.declinedBy;
+      if (inAuction) return [];
+      return ['BID', 'PASS'];
+    }
+    if (ix.type === 'trade') {
+      if (ix.phase === 'editing' && ix.fromPlayer === playerIndex) return ['UPDATE_TRADE', 'SEND_TRADE'];
+      if (ix.phase === 'proposed' && ix.toPlayer === playerIndex) return ['ACCEPT_TRADE', 'REJECT_TRADE'];
+      return [];
+    }
+    if (ix.type === 'bankruptcy') {
+      const actions: GameActionType[] = [];
+      if (ix.phase === 'mortgage_opportunity' && ix.playerIndex === playerIndex) {
+        actions.push('MORTGAGE');
+      }
+      return actions;
+    }
+    return [];
+  }
+
+  if (state.currentPlayer !== playerIndex) return [];
   const player = state.players[playerIndex];
   switch (state.phase) {
     case 'waiting_for_roll': {
@@ -976,6 +1049,7 @@ export function sanitizeState(state: GameState, playerIndex: number) {
     winner: state.winner,
     housesRemaining: state.housesRemaining,
     hotelsRemaining: state.hotelsRemaining,
+    interaction: state.interaction,
     eventLog: state.eventLog,
     isMyTurn,
     validActions: isMyTurn ? getValidActions(state, playerIndex) : [],
