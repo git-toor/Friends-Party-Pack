@@ -507,13 +507,14 @@ describe('MonopolyEngine', () => {
   // ─── DECLINE_PROPERTY ─────────────────────────────────
 
   describe('DECLINE_PROPERTY', () => {
-    it('phase = turn_end with no owner change', () => {
+    it('decline starts auction interaction', () => {
       game.phase = 'waiting_for_action';
       game.lastAction = 'can_buy';
       game.landedIndex = 3;
       const r = handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
       expect(r.valid).toBe(true);
-      expect(game.phase).toBe('turn_end');
+      expect(game.interaction).not.toBeNull();
+      expect(game.interaction!.type).toBe('auction');
       expect(game.properties[P.hazratganj].owner).toBeNull();
     });
 
@@ -784,8 +785,9 @@ describe('MonopolyEngine', () => {
   // ─── getValidActions ────────────────────────────────
 
   describe('getValidActions', () => {
-    it('waiting_for_roll → [ROLL_DICE]', () => {
-      expect(getValidActions(game, 0)).toEqual(['ROLL_DICE']);
+    it('waiting_for_roll includes ROLL_DICE', () => {
+      const actions = getValidActions(game, 0);
+      expect(actions).toContain('ROLL_DICE');
     });
 
     it('waiting_for_action + can_buy → [BUY_PROPERTY, DECLINE_PROPERTY]', () => {
@@ -796,12 +798,14 @@ describe('MonopolyEngine', () => {
       expect(actions).toContain('DECLINE_PROPERTY');
     });
 
-    it('turn_end includes END_TURN and BUILD actions', () => {
+    it('turn_end includes END_TURN, BUILD, MORTGAGE and TRADE actions', () => {
       game.phase = 'turn_end';
       const actions = getValidActions(game, 0);
       expect(actions).toContain('END_TURN');
       expect(actions).toContain('BUILD_BUNGALOW');
       expect(actions).toContain('BUILD_VILLA');
+      expect(actions).toContain('MORTGAGE');
+      expect(actions).toContain('PROPOSE_TRADE');
     });
 
     it('waiting_for_roll in jail includes PAY_GHOOS and USE_SIFARISH_CARD', () => {
@@ -913,6 +917,176 @@ describe('MonopolyEngine', () => {
       const logLen = game.eventLog.length;
       handleAction(game, 1, { type: 'ROLL_DICE' });
       expect(game.eventLog.length).toBe(logLen);
+    });
+  });
+
+  // ─── Phase 3: Mortgages ───────────────────────────
+
+  describe('Mortgages', () => {
+    it('mortgageProperty receives mortgage value', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'MORTGAGE', payload: { propertyId: P.chandni_chowk } });
+      expect(r.valid).toBe(true);
+      expect(game.properties[P.chandni_chowk].mortgaged).toBe(true);
+      expect(game.players[0].money).toBe(1530); // +30
+    });
+
+    it('rejects mortgage of already mortgaged property', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.properties[P.chandni_chowk].mortgaged = true;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'MORTGAGE', payload: { propertyId: P.chandni_chowk } });
+      expect(r.valid).toBe(false);
+    });
+
+    it('rejects mortgage of property with houses', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.properties[P.chandni_chowk].houses = 1;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'MORTGAGE', payload: { propertyId: P.chandni_chowk } });
+      expect(r.valid).toBe(false);
+    });
+
+    it('unmortgageProperty pays back +10% interest', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.properties[P.chandni_chowk].mortgaged = true;
+      game.players[0].money = 1500;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'UNMORTGAGE', payload: { propertyId: P.chandni_chowk } });
+      expect(r.valid).toBe(true);
+      expect(game.properties[P.chandni_chowk].mortgaged).toBe(false);
+      expect(game.players[0].money).toBe(1467); // 1500 - ceil(30 * 1.1) = 1500 - 33
+    });
+
+    it('rejects unmortgage of non-mortgaged property', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'UNMORTGAGE', payload: { propertyId: P.chandni_chowk } });
+      expect(r.valid).toBe(false);
+    });
+
+    it('mortgage of railroad works', () => {
+      game.properties[P.vande_bharat].owner = 0;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'MORTGAGE', payload: { propertyId: P.vande_bharat } });
+      expect(r.valid).toBe(true);
+      expect(game.players[0].money).toBe(1600); // +100
+    });
+  });
+
+  // ─── Phase 3: Auctions ────────────────────────────
+
+  describe('Auctions', () => {
+    it('decline property starts auction interaction', () => {
+      game.phase = 'waiting_for_action';
+      game.lastAction = 'can_buy';
+      game.landedIndex = 3;
+      const r = handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
+      expect(r.valid).toBe(true);
+      expect(game.interaction).not.toBeNull();
+      expect(game.interaction!.type).toBe('auction');
+    });
+
+    it('auction: bid accepts valid bid', () => {
+      game.phase = 'waiting_for_action';
+      game.lastAction = 'can_buy';
+      game.landedIndex = 3;
+      handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
+      game.interaction = { type: 'auction', propertyId: P.hazratganj, declinedBy: 0, currentBid: 0, currentBidder: null, activePlayer: 1, passedPlayers: [] };
+      const r = handleAction(game, 1, { type: 'BID', payload: { amount: 10 } });
+      expect(r.valid).toBe(true);
+      expect((game.interaction! as any).currentBid).toBe(10);
+      expect((game.interaction! as any).currentBidder).toBe(1);
+    });
+
+    it('auction: pass ends auction when only bidder remains', () => {
+      game.phase = 'waiting_for_action';
+      game.lastAction = 'can_buy';
+      game.landedIndex = 3;
+      handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
+      game.interaction = { type: 'auction', propertyId: P.hazratganj, declinedBy: 0, currentBid: 15, currentBidder: 1, activePlayer: 1, passedPlayers: [] };
+      const r = handleAction(game, 1, { type: 'PASS' });
+      expect(r.valid).toBe(true);
+      expect(game.interaction).toBeNull();
+      expect(game.properties[P.hazratganj].owner).toBe(1);
+      expect(game.players[1].money).toBe(1485);
+    });
+
+    it('auction: all pass leaves property unowned', () => {
+      game.phase = 'waiting_for_action';
+      game.lastAction = 'can_buy';
+      game.landedIndex = 3;
+      handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
+      game.interaction = { type: 'auction', propertyId: P.hazratganj, declinedBy: 0, currentBid: 0, currentBidder: null, activePlayer: 1, passedPlayers: [] };
+      const r = handleAction(game, 1, { type: 'PASS' });
+      expect(r.valid).toBe(true);
+      expect(game.interaction).toBeNull();
+      expect(game.properties[P.hazratganj].owner).toBeNull();
+    });
+  });
+
+  // ─── Phase 3: Trading ─────────────────────────────
+
+  describe('Trading', () => {
+    it('proposeTrade creates trade interaction', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'PROPOSE_TRADE', payload: { toPlayer: 1, giveProperties: [P.chandni_chowk], askMoney: 50 } });
+      expect(r.valid).toBe(true);
+      expect(game.interaction).not.toBeNull();
+      expect(game.interaction!.type).toBe('trade');
+    });
+
+    it('acceptTrade transfers property', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.phase = 'turn_end';
+      handleAction(game, 0, { type: 'PROPOSE_TRADE', payload: { toPlayer: 1, giveProperties: [P.chandni_chowk], askMoney: 50 } });
+      const r = handleAction(game, 1, { type: 'ACCEPT_TRADE' });
+      expect(r.valid).toBe(true);
+      expect(game.properties[P.chandni_chowk].owner).toBe(1);
+      expect(game.interaction).toBeNull();
+    });
+
+    it('acceptTrade transfers money correctly', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.phase = 'turn_end';
+      handleAction(game, 0, { type: 'PROPOSE_TRADE', payload: { toPlayer: 1, giveProperties: [P.chandni_chowk], askMoney: 50 } });
+      handleAction(game, 1, { type: 'ACCEPT_TRADE' });
+      expect(game.players[0].money).toBe(1550); // 1500+50
+      expect(game.players[1].money).toBe(1450); // 1500-50
+    });
+
+    it('rejectTrade clears interaction', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.phase = 'turn_end';
+      handleAction(game, 0, { type: 'PROPOSE_TRADE', payload: { toPlayer: 1, giveProperties: [P.chandni_chowk], askMoney: 50 } });
+      const r = handleAction(game, 1, { type: 'REJECT_TRADE' });
+      expect(r.valid).toBe(true);
+      expect(game.interaction).toBeNull();
+      expect(game.properties[P.chandni_chowk].owner).toBe(0);
+    });
+
+    it('proposeTrade rejects if buildings exist', () => {
+      game.properties[P.chandni_chowk].owner = 0;
+      game.properties[P.chandni_chowk].houses = 2;
+      game.phase = 'turn_end';
+      const r = handleAction(game, 0, { type: 'PROPOSE_TRADE', payload: { toPlayer: 1, giveProperties: [P.chandni_chowk], askMoney: 50 } });
+      expect(r.valid).toBe(false);
+    });
+  });
+
+  // ─── Phase 3: Interaction model ───────────────────
+
+  describe('Interaction model', () => {
+    it('actions blocked during auction interaction', () => {
+      game.phase = 'waiting_for_action';
+      game.lastAction = 'can_buy';
+      game.landedIndex = 3;
+      handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
+      game.interaction = { type: 'auction', propertyId: P.hazratganj, declinedBy: 0, currentBid: 0, currentBidder: null, activePlayer: 1, passedPlayers: [] };
+      const r = handleAction(game, 1, { type: 'ROLL_DICE' });
+      expect(r.valid).toBe(false);
     });
   });
 });
