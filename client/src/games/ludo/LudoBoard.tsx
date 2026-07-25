@@ -4,7 +4,7 @@ import {
   getBoardPosition, getHomeTokensByQuadrant,
   getHomeStretchByQuadrant, playerQuadrant,
 } from './BoardLayout.js';
-import { PLAYER_COLORS } from './constants.js';
+import { PLAYER_COLORS, PIECE_COLORS, START_COLORS } from './constants.js';
 
 const G = 1 / 15;
 
@@ -57,12 +57,12 @@ function Pawn({ cx, cy, color, isMovable }: { cx: number; cy: number; color: str
   return (
     <g>
       <ellipse cx={cx + s*0.05} cy={cy + s*0.55} rx={s*0.5} ry={s*0.12} fill="rgba(0,0,0,0.12)" />
-      <rect x={cx - s*0.5} y={cy + s*0.2} width={s} height={s*0.28} rx={s*0.06} fill={color} stroke="rgba(0,0,0,0.15)" strokeWidth={0.0015} />
+      <rect x={cx - s*0.5} y={cy + s*0.2} width={s} height={s*0.28} rx={s*0.06} fill={color} stroke="#FFFFFF" strokeWidth={0.002} />
       <path d={`M ${cx - s*0.4} ${cy + s*0.2} L ${cx - s*0.15} ${cy - s*0.15} L ${cx + s*0.15} ${cy - s*0.15} L ${cx + s*0.4} ${cy + s*0.2} Z`}
-        fill={color} stroke="rgba(0,0,0,0.15)" strokeWidth={0.0015} />
-      <rect x={cx - s*0.2} y={cy - s*0.18} width={s*0.4} height={s*0.06} rx={s*0.015} fill="rgba(0,0,0,0.08)" />
-      <circle cx={cx} cy={cy - s*0.32} r={s*0.22} fill={color} stroke="rgba(0,0,0,0.15)" strokeWidth={0.0015} />
-      <ellipse cx={cx - s*0.06} cy={cy - s*0.36} rx={s*0.08} ry={s*0.05} fill="rgba(255,255,255,0.18)" />
+        fill={color} stroke="#FFFFFF" strokeWidth={0.002} />
+      <rect x={cx - s*0.2} y={cy - s*0.18} width={s*0.4} height={s*0.06} rx={s*0.015} fill="#FFFFFF" opacity={0.6} />
+      <circle cx={cx} cy={cy - s*0.32} r={s*0.22} fill={color} stroke="#FFFFFF" strokeWidth={0.002} />
+      <ellipse cx={cx - s*0.06} cy={cy - s*0.36} rx={s*0.08} ry={s*0.05} fill="#FFFFFF" opacity={0.3} />
       {isMovable && (
         <circle cx={cx} cy={cy} r={s*0.6} fill="none" stroke={color} strokeWidth={0.003}>
           <animate attributeName="opacity" values="0.2;0.8;0.2" dur="1.5s" repeatCount="indefinite" />
@@ -146,10 +146,9 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
       })}
       {PATH.map(([c,r], i) => {
         const s = SAFE_ABS.has(i);
-        const startFill: Record<number, string> = { 0: '#3498db', 13: '#e74c3c', 26: '#2ecc71', 39: '#f1c40f' };
         return <rect key={`p-${i}`} x={c*G + (G - ts)/2} y={r*G + (G - ts)/2}
           width={ts} height={ts} rx={0.003}
-          fill={startFill[i] ?? (s ? '#2a2a4a' : '#25244a')}
+          fill={s ? '#2C2D3A' : '#25244a'}
           stroke={s ? '#000000' : 'rgba(255,255,255,0.08)'}
           strokeWidth={s ? 0.003 : 0.0015} />;
       })}
@@ -158,10 +157,10 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
       {(() => {
         const ctr = 7.5 * G, l = ex(6), r = ex(9), t = ex(6), b = ex(9);
         return (<>
-          <polygon points={`${ctr},${ctr} ${l},${t} ${l},${b}`} fill="rgba(231,76,60,0.2)" />
-          <polygon points={`${ctr},${ctr} ${l},${t} ${r},${t}`} fill="rgba(46,204,113,0.2)" />
-          <polygon points={`${ctr},${ctr} ${r},${t} ${r},${b}`} fill="rgba(241,196,15,0.2)" />
-          <polygon points={`${ctr},${ctr} ${l},${b} ${r},${b}`} fill="rgba(52,152,219,0.2)" />
+          <polygon points={`${ctr},${ctr} ${l},${t} ${l},${b}`} fill={`${PLAYER_COLORS[1]}33`} />
+          <polygon points={`${ctr},${ctr} ${l},${t} ${r},${t}`} fill={`${PLAYER_COLORS[2]}33`} />
+          <polygon points={`${ctr},${ctr} ${r},${t} ${r},${b}`} fill={`${PLAYER_COLORS[3]}33`} />
+          <polygon points={`${ctr},${ctr} ${l},${b} ${r},${b}`} fill={`${PLAYER_COLORS[0]}33`} />
           <circle cx={ctr} cy={ctr} r={0.015} fill="rgba(255,255,255,0.1)" />
         </>);
       })()}
@@ -169,20 +168,20 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
         const a = allQuadrants.find(x => x.q === q)?.isActive ?? false;
         return (getHomeTokensByQuadrant(q) || []).map(([c,r], i) => (
           <circle key={`ht-${q}-${i}`} cx={cx(c)} cy={cy(r)} r={G*0.22}
-            fill={a ? `${PLAYER_COLORS[q]}20` : `${PLAYER_COLORS[q]}10`}
-            stroke={a ? `${PLAYER_COLORS[q]}35` : `${PLAYER_COLORS[q]}15`} strokeWidth={0.002} />
+            fill={a ? `${START_COLORS[q]}60` : `${START_COLORS[q]}30`}
+            stroke={a ? `${START_COLORS[q]}80` : `${START_COLORS[q]}50`} strokeWidth={0.002} />
         ));
       })}
       {PATH.filter((_, i) => SAFE_ABS.has(i)).map(([c,r]) => (
         <text key={`star-${c}-${r}`} x={cx(c)} y={cy(r)} dy="0.35em"
-          textAnchor="middle" fontSize={starSize} fill="#000000" opacity={0.9}
+          textAnchor="middle" fontSize={starSize} fill="#E0E0FF" opacity={0.9}
           style={{ userSelect: 'none' }}>★</text>
       ))}
 
       {/* Step-animating token */}
       {stepPos && stepTokenIdx !== null && stepAnim && (
         <Pawn cx={stepPos.x} cy={stepPos.y}
-          color={PLAYER_COLORS[playerColorIndex(stepAnim.playerIndex, totalPlayers)]} />
+          color={PIECE_COLORS[playerColorIndex(stepAnim.playerIndex, totalPlayers)]} />
       )}
 
       {/* Path/stretch tokens */}
@@ -195,7 +194,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
             <g key={`t-${tok.playerIndex}-${tok.tokenIndex}`}
               style={{ cursor: validMoves.includes(tok.tokenIndex) ? 'pointer' : 'default' }}
               onClick={() => validMoves.includes(tok.tokenIndex) && onTokenClick(tok.tokenIndex)}>
-              <Pawn cx={offsets[i].x} cy={offsets[i].y} color={PLAYER_COLORS[cIdx]}
+              <Pawn cx={offsets[i].x} cy={offsets[i].y} color={PIECE_COLORS[cIdx]}
                 isMovable={validMoves.includes(tok.tokenIndex)} />
             </g>
           );
@@ -211,7 +210,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
           <g key={`h-${tok.playerIndex}-${tok.tokenIndex}`}
             style={{ cursor: validMoves.includes(tok.tokenIndex) ? 'pointer' : 'default' }}
             onClick={() => validMoves.includes(tok.tokenIndex) && onTokenClick(tok.tokenIndex)}>
-            <Pawn cx={cell.x} cy={cell.y} color={PLAYER_COLORS[cIdx]}
+            <Pawn cx={cell.x} cy={cell.y} color={PIECE_COLORS[cIdx]}
               isMovable={validMoves.includes(tok.tokenIndex)} />
           </g>
         );
@@ -223,7 +222,7 @@ export function LudoBoard({ tokens, validMoves, totalPlayers, onTokenClick, step
         return (
           <circle key={`f-${tok.playerIndex}-${tok.tokenIndex}`}
             cx={cx(7.5)} cy={cy(7.5)} r={G*0.18}
-            fill={PLAYER_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} opacity={0.7} />
+            fill={PIECE_COLORS[cIdx]} stroke="rgba(0,0,0,0.2)" strokeWidth={0.002} opacity={0.7} />
         );
       })}
     </svg>
