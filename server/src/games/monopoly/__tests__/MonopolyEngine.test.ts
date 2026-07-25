@@ -47,6 +47,14 @@ describe('MonopolyEngine', () => {
       expect(game.winner).toBeNull();
     });
 
+    it('housesRemaining starts at 32', () => {
+      expect(game.housesRemaining).toBe(32);
+    });
+
+    it('hotelsRemaining starts at 12', () => {
+      expect(game.hotelsRemaining).toBe(12);
+    });
+
     it('accepts optional startingPlayer parameter', () => {
       const g = createGame(4, 2);
       expect(g.currentPlayer).toBe(2);
@@ -109,15 +117,16 @@ describe('MonopolyEngine', () => {
       expect(game.diceTotal).toBe(7);
     });
 
-    it('moves player by diceTotal', () => {
-      rollWithFixedValues(game, 0, 3, 4);
-      expect(game.players[0].position).toBe(7);
+    it('moves player by diceTotal (non-card landing)', () => {
+      // [1,3]=4 from 0 → pos 4 (Income Tax, non-card/non-buyable)
+      rollWithFixedValues(game, 0, 1, 3);
+      expect(game.players[0].position).toBe(4);
     });
 
     it('rejects stale rollId', () => {
       const r = handleAction(game, 0, { type: 'ROLL_DICE' });
       game.rollId = 'different-id';
-      const c = handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId, values: [3, 4] } });
+      const c = handleAction(game, 0, { type: 'CONFIRM_DICE', payload: { rollId: r.rollId!, values: [3, 4] } });
       expect(c.valid).toBe(false);
     });
 
@@ -185,62 +194,56 @@ describe('MonopolyEngine', () => {
   // ─── CONFIRM_DICE — Doubles ─────────────────────────
 
   describe('CONFIRM_DICE — Doubles', () => {
-    it('rolling doubles allows re-roll (phase → waiting_for_roll)', () => {
-      // Place player on an unowned property and land on nothing special
-      game.players[0].position = 0;
-      const result = rollWithFixedValues(game, 0, 1, 1);
+    it('rolling doubles allows re-roll when landing on non-buyable space', () => {
+      // From 38 with [1,1] → pos 0 (GO), pass GO, not buyable → re-roll
+      game.players[0].position = 38;
+      rollWithFixedValues(game, 0, 1, 1);
       expect(game.doublesCount).toBe(1);
       expect(game.phase).toBe('waiting_for_roll');
     });
 
-    it('two doubles → doublesCount = 2', () => {
-      rollWithFixedValues(game, 0, 1, 1);
-      expect(game.doublesCount).toBe(1);
-      // Player is now at pos 2, on Jugaad. Roll again.
-      rollWithFixedValues(game, 0, 2, 2);
+    it('two consecutive doubles increments doublesCount to 2', () => {
+      game.players[0].position = 38;
+      rollWithFixedValues(game, 0, 1, 1); // pos 0, GO. doublesCount=1
+      rollWithFixedValues(game, 0, 2, 2); // pos 4, Tax. doublesCount=2
       expect(game.doublesCount).toBe(2);
     });
 
     it('three doubles → goes to jail', () => {
-      // Roll 1: [1,1] from 0 → pos 2 (Jugaad, non-buyable) ✓
-      rollWithFixedValues(game, 0, 1, 1);
-      // Roll 2: [2,2] from 2 → pos 6 (Ghat Road, buyable → need to decline)
-      rollWithFixedValues(game, 0, 2, 2);
-      // Decline the buyable property to continue (doublesCount=2 still active)
-      handleAction(game, 0, { type: 'DECLINE_PROPERTY' });
-      // Roll 3: [3,3] from 6 → pos 12 → 3rd double → jail
-      const result = rollWithFixedValues(game, 0, 3, 3);
+      game.players[0].position = 38;
+      rollWithFixedValues(game, 0, 1, 1); // pos 0, GO.
+      rollWithFixedValues(game, 0, 2, 2); // pos 4, Tax.
+      const result = rollWithFixedValues(game, 0, 3, 3); // 3rd double → jail
       expect(game.players[0].inJail).toBe(true);
       expect(game.players[0].position).toBe(10);
       expect(game.phase).toBe('turn_end');
     });
 
-    it('non-doubles after doubles resets doublesCount', () => {
-      // First: [1,1] (doubles) from 0 → pos 2, phase = waiting_for_roll
-      rollWithFixedValues(game, 0, 1, 1);
-      // End the turn to clear doubles
-      game.phase = 'turn_end';
-      handleAction(game, 0, { type: 'END_TURN' });
-      // Now player 1's turn. Pass back to player 0.
-      game.phase = 'turn_end';
-      handleAction(game, 1, { type: 'END_TURN' });
-      // Roll non-doubles: [2,3] from 2 → pos 7 (Kismat)
-      const result = rollWithFixedValues(game, 0, 2, 3);
-      expect(game.doublesCount).toBe(0);
-    });
-
     it('ROLLED_DOUBLES event emitted', () => {
+      game.players[0].position = 38;
       const result = rollWithFixedValues(game, 0, 1, 1);
       expect(result.events?.some(e => e.type === 'ROLLED_DOUBLES')).toBe(true);
     });
 
     it('THREE_DOUBLES event emitted on 3rd consecutive double', () => {
+      game.players[0].position = 38;
       rollWithFixedValues(game, 0, 1, 1);
       rollWithFixedValues(game, 0, 2, 2);
-      handleAction(game, 0, { type: 'DECLINE_PROPERTY' }); // handles Ghat Road buyable
       const result = rollWithFixedValues(game, 0, 3, 3);
       expect(result.events?.some(e => e.type === 'THREE_DOUBLES')).toBe(true);
       expect(result.events?.some(e => e.type === 'WENT_TO_JAIL')).toBe(true);
+    });
+
+    it('non-doubles after doubles resets doublesCount', () => {
+      game.players[0].position = 38;
+      rollWithFixedValues(game, 0, 1, 1); // double, pos 0, phase=waiting_for_roll
+      // End the turn, pass to P1, then back to P0
+      game.phase = 'turn_end';
+      handleAction(game, 0, { type: 'END_TURN' }); // P1's turn
+      game.phase = 'turn_end';
+      handleAction(game, 1, { type: 'END_TURN' }); // P0's turn again
+      const result = rollWithFixedValues(game, 0, 2, 3); // non-doubles
+      expect(game.doublesCount).toBe(0);
     });
   });
 
@@ -248,7 +251,6 @@ describe('MonopolyEngine', () => {
 
   describe('CONFIRM_DICE — Landing Resolution', () => {
     it('unowned property → waiting_for_action, lastAction = can_buy', () => {
-      // Land on pos 3 (Hazratganj, unowned brown) from pos 0 with total=3
       rollWithFixedValues(game, 0, 1, 2);
       expect(game.phase).toBe('waiting_for_action');
       expect(game.lastAction).toBe('can_buy');
@@ -270,7 +272,6 @@ describe('MonopolyEngine', () => {
     });
 
     it('income tax → pay 200, turn_end', () => {
-      // Land on pos 4 (Income Tax) from pos 0 with total=4
       rollWithFixedValues(game, 0, 1, 3);
       expect(game.players[0].money).toBe(1300);
       expect(game.phase).toBe('turn_end');
@@ -278,7 +279,6 @@ describe('MonopolyEngine', () => {
     });
 
     it('luxury tax → pay 100', () => {
-      // Land on pos 38 (Luxury Tax). Start at pos 30, total = 8
       game.players[0].position = 30;
       rollWithFixedValues(game, 0, 3, 5);
       expect(game.players[0].money).toBe(1400);
@@ -286,7 +286,6 @@ describe('MonopolyEngine', () => {
     });
 
     it('go_to_jail → position 10, inJail, turn_end', () => {
-      // Land on pos 30 (Go To Jail). Start at pos 20, total = 10
       game.players[0].position = 20;
       const result = rollWithFixedValues(game, 0, 4, 6);
       expect(game.players[0].position).toBe(10);
@@ -295,22 +294,20 @@ describe('MonopolyEngine', () => {
       expect(result.events?.some(e => e.type === 'WENT_TO_JAIL')).toBe(true);
     });
 
-    it('kismat → turn_end, landed_kismat', () => {
-      // Land on pos 7 (Kismat). From pos 0, total = 7
+    it('kismat → turn_end, drew_kismat', () => {
       rollWithFixedValues(game, 0, 3, 4);
       expect(game.phase).toBe('turn_end');
-      expect(game.lastAction).toBe('landed_kismat');
+      expect(game.lastAction).toBe('drew_kismat');
     });
 
-    it('jugaad → turn_end, landed_jugaad', () => {
-      // Land on pos 2 (Jugaad). From pos 39, total = 3 → wraps to 2
+    it('jugaad → turn_end, drew_jugaad', () => {
       game.players[0].position = 39;
       rollWithFixedValues(game, 0, 1, 2);
       expect(game.phase).toBe('turn_end');
-      expect(game.lastAction).toBe('landed_jugaad');
+      expect(game.lastAction).toBe('drew_jugaad');
     });
 
-    it('GO (passing) → money collected, no_action (doubles override phase)', () => {
+    it('GO (passing) → money collected, no_action', () => {
       game.players[0].position = 38;
       rollWithFixedValues(game, 0, 1, 1);
       expect(game.players[0].money).toBe(1700);
@@ -318,30 +315,84 @@ describe('MonopolyEngine', () => {
     });
 
     it('jail → turn_end (just visiting)', () => {
-      // Land on pos 10 (Jail). From pos 0, total = 10
       rollWithFixedValues(game, 0, 4, 6);
       expect(game.phase).toBe('turn_end');
       expect(game.lastAction).toBe('no_action');
     });
 
     it('free parking → turn_end', () => {
-      // Land on pos 20 (Free Parking). From pos 10, total = 10
       game.players[0].position = 10;
-      rollWithFixedValues(game, 0, 5, 5); // doubles! Lands on 20
+      rollWithFixedValues(game, 0, 5, 5);
       expect(game.lastAction).toBe('no_action');
+    });
+
+    it('kismat card generates DREW_CARD event', () => {
+      const result = rollWithFixedValues(game, 0, 3, 4);
+      expect(result.events?.some(e => e.type === 'DREW_CARD')).toBe(true);
+    });
+
+    it('jugaad card generates DREW_CARD event', () => {
+      game.players[0].position = 39;
+      const result = rollWithFixedValues(game, 0, 1, 2);
+      expect(result.events?.some(e => e.type === 'DREW_CARD')).toBe(true);
     });
   });
 
-  // ─── Jail (Phase 1: auto-pay) ───────────────────────
+  // ─── Jail (Phase 2) ─────────────────────────────────
 
   describe('Jail', () => {
-    it('auto-pays 50 ghoos on roll when in jail', () => {
+    it('going to jail sets inJail and position 10', () => {
+      game.players[0].inJail = true;
+      game.players[0].position = 10;
+      expect(game.players[0].inJail).toBe(true);
+    });
+
+    it('stays in jail on first non-doubles roll', () => {
+      game.players[0].inJail = true;
+      game.players[0].position = 10;
+      rollWithFixedValues(game, 0, 2, 3);
+      expect(game.players[0].inJail).toBe(true);
+      expect(game.players[0].jailTurns).toBe(1);
+      expect(game.phase).toBe('turn_end');
+    });
+
+    it('escapes jail on doubles roll', () => {
       game.players[0].inJail = true;
       game.players[0].position = 10;
       game.players[0].money = 1500;
-      rollWithFixedValues(game, 0, 2, 3);
+      rollWithFixedValues(game, 0, 3, 3);
+      expect(game.players[0].inJail).toBe(false);
+      // Moved from 10+6=16→pos 16 (Calangute Beach, buyable)
+    });
+
+    it('auto-pays ghoos on 3rd turn in jail', () => {
+      game.players[0].inJail = true;
+      game.players[0].position = 10;
+      game.players[0].jailTurns = 2;
+      game.players[0].money = 1500;
+      rollWithFixedValues(game, 0, 2, 3); // non-doubles, 3rd turn → auto-pay
       expect(game.players[0].inJail).toBe(false);
       expect(game.players[0].money).toBe(1450);
+    });
+
+    it('payGhoos deducts 50 and frees player', () => {
+      game.players[0].inJail = true;
+      game.players[0].position = 10;
+      game.players[0].money = 1500;
+      const r = handleAction(game, 0, { type: 'PAY_GHOOS' });
+      expect(r.valid).toBe(true);
+      expect(game.players[0].inJail).toBe(false);
+      expect(game.players[0].money).toBe(1450);
+    });
+
+    it('useSifarishCard consumes a card and frees player', () => {
+      game.players[0].inJail = true;
+      game.players[0].position = 10;
+      game.players[0].jailFreeCards = 1;
+      const r = handleAction(game, 0, { type: 'USE_SIFARISH_CARD' });
+      expect(r.valid).toBe(true);
+      expect(game.players[0].inJail).toBe(false);
+      expect(game.players[0].jailFreeCards).toBe(0);
     });
   });
 
@@ -438,7 +489,7 @@ describe('MonopolyEngine', () => {
       game.properties[3].owner = 1;
       const initialP0 = game.players[0].money;
       const initialP1 = game.players[1].money;
-      rollWithFixedValues(game, 0, 1, 2); // land on pos 3 (Hazratganj)
+      rollWithFixedValues(game, 0, 1, 2);
       expect(game.players[0].money).toBe(initialP0 - 4);
       expect(game.players[1].money).toBe(initialP1 + 4);
     });
@@ -462,7 +513,6 @@ describe('MonopolyEngine', () => {
   describe('Pay Rent — Railroads', () => {
     it('1 railroad: rent 25', () => {
       game.properties[5].owner = 1;
-      // Land on pos 5 (Vande Bharat). From pos 0, total = 5
       rollWithFixedValues(game, 0, 2, 3);
       expect(game.players[0].money).toBe(1475);
       expect(game.players[1].money).toBe(1525);
@@ -471,7 +521,6 @@ describe('MonopolyEngine', () => {
     it('2 railroads: rent 50', () => {
       game.properties[5].owner = 1;
       game.properties[15].owner = 1;
-      // Land on pos 15. From pos 10, total = 5
       game.players[0].position = 10;
       rollWithFixedValues(game, 0, 1, 4);
       expect(game.players[0].money).toBe(1450);
@@ -480,7 +529,6 @@ describe('MonopolyEngine', () => {
 
     it('4 railroads: rent 200', () => {
       [5, 15, 25, 35].forEach(i => game.properties[i].owner = 1);
-      // Land on pos 25. From pos 20, total = 5
       game.players[0].position = 20;
       rollWithFixedValues(game, 0, 2, 3);
       expect(game.players[0].money).toBe(1300);
@@ -493,7 +541,6 @@ describe('MonopolyEngine', () => {
   describe('Pay Rent — Utilities', () => {
     it('1 utility: 4 × diceTotal', () => {
       game.properties[12].owner = 1;
-      // Land on pos 12. From pos 0, total = 12
       const result = rollWithFixedValues(game, 0, 6, 6);
       expect(game.players[0].money).toBe(1500 - 4 * 12);
       expect(game.players[1].money).toBe(1500 + 48);
@@ -502,7 +549,6 @@ describe('MonopolyEngine', () => {
     it('2 utilities: 10 × diceTotal', () => {
       game.properties[12].owner = 1;
       game.properties[28].owner = 1;
-      // Land on pos 28. From pos 20, total = 8
       game.players[0].position = 20;
       const result = rollWithFixedValues(game, 0, 4, 4);
       expect(game.players[0].money).toBe(1500 - 10 * 8);
@@ -514,14 +560,12 @@ describe('MonopolyEngine', () => {
 
   describe('Pay Tax', () => {
     it('income tax: -200 with PAID_TAX event', () => {
-      // Land on pos 4. From pos 0, total = 4
       const result = rollWithFixedValues(game, 0, 1, 3);
       expect(game.players[0].money).toBe(1300);
       expect(result.events?.some(e => e.type === 'PAID_TAX')).toBe(true);
     });
 
     it('luxury tax: -100', () => {
-      // Land on pos 38. From pos 30, total = 8
       game.players[0].position = 30;
       rollWithFixedValues(game, 0, 3, 5);
       expect(game.players[0].money).toBe(1400);
@@ -534,7 +578,6 @@ describe('MonopolyEngine', () => {
     it('money < 0 after rent → bankrupt, BANKRUPT event', () => {
       game.players[0].money = 1;
       game.properties[5].owner = 1;
-      // Land on RR 5, rent 25, money = 1-25 = -24
       const result = rollWithFixedValues(game, 0, 2, 3);
       expect(game.players[0].bankrupt).toBe(true);
       expect(result.events?.some(e => e.type === 'BANKRUPT')).toBe(true);
@@ -617,6 +660,86 @@ describe('MonopolyEngine', () => {
     });
   });
 
+  // ─── Building Actions ──────────────────────────────
+
+  describe('Building (Bungalows & Villas)', () => {
+    it('buildBungalow requires monopoly', () => {
+      game.properties[1].owner = 0; // only 1/2 brown properties owned
+      const r = handleAction(game, 0, { type: 'BUILD_BUNGALOW', payload: { propertyIndex: 1 } });
+      expect(r.valid).toBe(false);
+      expect(r.error).toContain('Must own entire color group');
+    });
+
+    it('buildBungalow works with monopoly and even building', () => {
+      game.properties[1].owner = 0;
+      game.properties[3].owner = 0; // both brown owned
+      game.players[0].money = 1500;
+      const r = handleAction(game, 0, { type: 'BUILD_BUNGALOW', payload: { propertyIndex: 1 } });
+      expect(r.valid).toBe(true);
+      expect(game.properties[1].houses).toBe(1);
+      expect(game.players[0].money).toBe(1450); // 50 cost
+      expect(game.housesRemaining).toBe(31);
+      expect(r.events?.some(e => e.type === 'BUNGALOW_BUILT')).toBe(true);
+    });
+
+    it('even-building rule: can only build on property with fewest houses', () => {
+      game.properties[1].owner = 0;
+      game.properties[3].owner = 0;
+      game.players[0].money = 1500;
+      handleAction(game, 0, { type: 'BUILD_BUNGALOW', payload: { propertyIndex: 1 } });
+      // Now houses: [1]=1, [3]=0. Try to build on [1] again (has 1, [3] has 0)
+      const r = handleAction(game, 0, { type: 'BUILD_BUNGALOW', payload: { propertyIndex: 1 } });
+      expect(r.valid).toBe(false);
+      expect(r.error).toContain('evenly');
+      // Build on [3] instead (has 0, min is 0)
+      const r2 = handleAction(game, 0, { type: 'BUILD_BUNGALOW', payload: { propertyIndex: 3 } });
+      expect(r2.valid).toBe(true);
+      expect(game.properties[3].houses).toBe(1);
+    });
+
+    it('sellBungalow refunds half cost', () => {
+      game.properties[1].owner = 0;
+      game.properties[3].owner = 0;
+      game.properties[1].houses = 1;
+      game.housesRemaining = 31; // manually set house consumed 1
+      game.players[0].money = 1500;
+      const r = handleAction(game, 0, { type: 'SELL_BUNGALOW', payload: { propertyIndex: 1 } });
+      expect(r.valid).toBe(true);
+      expect(game.properties[1].houses).toBe(0);
+      expect(game.players[0].money).toBe(1525); // 50/2 = 25 refund
+      expect(game.housesRemaining).toBe(32);
+    });
+
+    it('buildVilla requires 4 bungalows on all group properties', () => {
+      game.properties[37].owner = 0; // Marine Drive
+      game.properties[39].owner = 0; // Altamount Road
+      game.properties[37].houses = 4;
+      game.properties[39].houses = 4;
+      game.players[0].money = 1500;
+      const r = handleAction(game, 0, { type: 'BUILD_VILLA', payload: { propertyIndex: 37 } });
+      expect(r.valid).toBe(true);
+      expect(game.properties[37].houses).toBe(5); // 5 = villa
+      expect(game.hotelsRemaining).toBe(11);
+      expect(game.housesRemaining).toBe(36); // 4 houses returned
+      expect(r.events?.some(e => e.type === 'VILLA_BUILT')).toBe(true);
+    });
+
+    it('sellVilla returns 4 houses to bank', () => {
+      game.properties[37].owner = 0;
+      game.properties[39].owner = 0;
+      game.properties[37].houses = 5; // villa
+      game.properties[39].houses = 4;
+      game.hotelsRemaining = 11;
+      game.housesRemaining = 36;
+      game.players[0].money = 1500;
+      const r = handleAction(game, 0, { type: 'SELL_VILLA', payload: { propertyIndex: 37 } });
+      expect(r.valid).toBe(true);
+      expect(game.properties[37].houses).toBe(4);
+      expect(game.hotelsRemaining).toBe(12);
+      expect(game.housesRemaining).toBe(32);
+    });
+  });
+
   // ─── getValidActions ────────────────────────────────
 
   describe('getValidActions', () => {
@@ -632,9 +755,22 @@ describe('MonopolyEngine', () => {
       expect(actions).toContain('DECLINE_PROPERTY');
     });
 
-    it('turn_end → [END_TURN]', () => {
+    it('turn_end includes END_TURN and BUILD actions', () => {
       game.phase = 'turn_end';
-      expect(getValidActions(game, 0)).toEqual(['END_TURN']);
+      const actions = getValidActions(game, 0);
+      expect(actions).toContain('END_TURN');
+      expect(actions).toContain('BUILD_BUNGALOW');
+      expect(actions).toContain('BUILD_VILLA');
+    });
+
+    it('waiting_for_roll in jail includes PAY_GHOOS and USE_SIFARISH_CARD', () => {
+      game.players[0].inJail = true;
+      game.players[0].money = 500;
+      game.players[0].jailFreeCards = 1;
+      const actions = getValidActions(game, 0);
+      expect(actions).toContain('ROLL_DICE');
+      expect(actions).toContain('PAY_GHOOS');
+      expect(actions).toContain('USE_SIFARISH_CARD');
     });
 
     it('rolling_dice → []', () => {
@@ -686,6 +822,18 @@ describe('MonopolyEngine', () => {
     it('dispatches END_TURN', () => {
       game.phase = 'turn_end';
       expect(handleAction(game, 0, { type: 'END_TURN' }).valid).toBe(true);
+    });
+
+    it('dispatches PAY_GHOOS', () => {
+      game.players[0].inJail = true;
+      game.players[0].money = 500;
+      expect(handleAction(game, 0, { type: 'PAY_GHOOS' }).valid).toBe(true);
+    });
+
+    it('dispatches USE_SIFARISH_CARD', () => {
+      game.players[0].inJail = true;
+      game.players[0].jailFreeCards = 1;
+      expect(handleAction(game, 0, { type: 'USE_SIFARISH_CARD' }).valid).toBe(true);
     });
 
     it('returns error for unknown action type', () => {
