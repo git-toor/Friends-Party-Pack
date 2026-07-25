@@ -16,9 +16,14 @@ CREATE TABLE IF NOT EXISTS lobby_players (
   name TEXT NOT NULL,
   is_host INTEGER NOT NULL DEFAULT 0,
   ready INTEGER NOT NULL DEFAULT 0,
-  joined_at INTEGER NOT NULL
+  joined_at INTEGER NOT NULL,
+  token TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_lobbies_code ON lobbies(code);
 CREATE INDEX IF NOT EXISTS idx_lobby_players_lobby ON lobby_players(lobby_id);
 `;
+
+export const MIGRATIONS = [
+  `ALTER TABLE lobby_players ADD COLUMN token TEXT`,
+];

@@ -6,9 +6,11 @@ interface OpponentBarProps {
   currentPlayer: number;
   playerNames: Record<number, string>;
   propertyCount?: Record<number, number>;
+  selectedPlayer?: number | null;
+  onSelectPlayer?: (playerIndex: number | null) => void;
 }
 
-export function OpponentBar({ players, currentPlayer, playerNames, propertyCount }: OpponentBarProps) {
+export function OpponentBar({ players, currentPlayer, playerNames, propertyCount, selectedPlayer, onSelectPlayer }: OpponentBarProps) {
   return (
     <div style={{
       display: 'flex', gap: 4, padding: '4px 8px', overflowX: 'auto',
@@ -18,15 +20,17 @@ export function OpponentBar({ players, currentPlayer, playerNames, propertyCount
       {players.map((p, i) => {
         if (p.bankrupt) return null;
         const isActive = i === currentPlayer;
+        const isSelected = selectedPlayer === i;
         const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
         const propCount = propertyCount?.[i] ?? 0;
         return (
-          <div key={i} style={{
+          <div key={i} onClick={() => onSelectPlayer?.(isSelected ? null : i)} style={{
             display: 'flex', alignItems: 'center', gap: 4,
             padding: '2px 8px', borderRadius: 6, fontSize: 11,
-            background: isActive ? `${color}33` : 'transparent',
-            border: isActive ? `1px solid ${color}` : '1px solid transparent',
-            whiteSpace: 'nowrap',
+            background: isSelected ? `${color}55` : isActive ? `${color}33` : 'transparent',
+            border: isSelected ? `2px solid ${color}` : isActive ? `1px solid ${color}` : '1px solid transparent',
+            whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
+            transition: 'all 0.15s ease',
           }}>
             <div style={{
               width: 10, height: 10, borderRadius: '50%',

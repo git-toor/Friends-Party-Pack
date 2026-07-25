@@ -819,9 +819,9 @@ describe('MonopolyEngine', () => {
       expect(actions).toContain('USE_SIFARISH_CARD');
     });
 
-    it('rolling_dice → []', () => {
+    it('rolling_dice → [PROPOSE_TRADE, MORTGAGE, UNMORTGAGE]', () => {
       game.phase = 'rolling_dice';
-      expect(getValidActions(game, 0)).toEqual([]);
+      expect(getValidActions(game, 0)).toEqual(['PROPOSE_TRADE', 'MORTGAGE', 'UNMORTGAGE']);
     });
 
     it('game over → []', () => {
@@ -829,8 +829,8 @@ describe('MonopolyEngine', () => {
       expect(getValidActions(game, 0)).toEqual([]);
     });
 
-    it('not your turn → []', () => {
-      expect(getValidActions(game, 1)).toEqual([]);
+    it('not your turn → [PROPOSE_TRADE, MORTGAGE, UNMORTGAGE]', () => {
+      expect(getValidActions(game, 1)).toEqual(['PROPOSE_TRADE', 'MORTGAGE', 'UNMORTGAGE']);
     });
 
     it('bankrupt player → []', () => {

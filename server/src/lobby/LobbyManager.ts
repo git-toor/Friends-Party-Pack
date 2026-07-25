@@ -20,6 +20,7 @@ export interface LobbyPlayer {
   isHost: boolean;
   ready: boolean;
   joinedAt: number;
+  token?: string;
 }
 
 export interface LobbyState {
@@ -115,6 +116,16 @@ export class LobbyManager {
     this.repo.addPlayer(player);
 
     return { lobbyId: lobby.id, playerId, lobby, players: [...players, player] };
+  }
+
+  selectToken(lobbyId: string, playerId: string, token: string): LobbyState | ApiError {
+    const lobby = this.repo.findById(lobbyId);
+    if (!lobby) return { error: 'Lobby not found' };
+    if (lobby.status !== 'OPEN') return { error: 'Game already started' };
+    const players = this.repo.getPlayers(lobbyId);
+    if (players.some(p => p.token === token && p.id !== playerId)) return { error: 'Token already taken' };
+    this.repo.setToken(lobbyId, playerId, token);
+    return this.getState(lobbyId);
   }
 
   ready(lobbyId: string, playerId: string, isReady: boolean): LobbyState | ApiError {

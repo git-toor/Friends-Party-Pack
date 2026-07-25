@@ -72,6 +72,16 @@ app.post('/api/lobby/ready', (req, res) => {
   }
 });
 
+app.post('/api/lobby/select-token', (req, res) => {
+  const result = lobbyManager.selectToken(req.body.lobbyId, req.body.playerId, req.body.token);
+  if ('error' in result) {
+    res.status(400).json(result);
+  } else {
+    wsServer.broadcast(`lobby:${req.body.lobbyId}`, { type: 'LOBBY_UPDATED', payload: result });
+    res.json(result);
+  }
+});
+
 app.post('/api/lobby/start', (req, res) => {
   const result = lobbyManager.start(req.body.lobbyId, req.body.playerId);
   if ('error' in result) {
@@ -83,7 +93,7 @@ app.post('/api/lobby/start', (req, res) => {
     const payload = {
       ...result,
       sessionId,
-      players: result.players.map((p: any, i: number) => ({ id: p.id, name: p.name, index: i })),
+      players: result.players.map((p: any, i: number) => ({ id: p.id, name: p.name, index: i, token: p.token })),
     };
     wsServer.broadcast(`lobby:${req.body.lobbyId}`, { type: 'GAME_STARTED', payload });
     res.json(payload);

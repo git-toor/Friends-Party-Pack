@@ -1,0 +1,459 @@
+{
+  "master_style": {
+    "base": {
+      "positive": "Indian illustrated style, bold vibrant colors, Mughal art inspired borders, traditional Indian patterns, miniature painting aesthetic, thick clean outlines, flat vector illustration, board game card artwork, centered character or scene, bright festive colors, professional card game art, clean transparent background",
+      "negative": "sketch, rough drawing, unfinished, messy lines, pencil, scribble, hand drawn, doodle, text, letters, words, numbers, logos, watermark, signature, photorealistic, 3d render, bad anatomy, extra limbs, blurry, low quality, dark horror, sad, gloomy"
+    }
+  },
+  "card_back": {
+    "base": {
+      "id": "monopoly_back",
+      "prompt": "symmetrical Indian paisley pattern, intricate mandala design, rich red and gold colors, traditional Mughal inspired ornament, card game back design, centered composition, thick outlines, flat vector style, festive elegant pattern, transparent background"
+    }
+  },
+  "card_back_options": [
+    {
+      "id": "option_a",
+      "name": "Option A — Paisley Mandala",
+      "prompt": "symmetrical Indian paisley pattern, intricate mandala design, rich red and gold colors, traditional Mughal inspired ornament, card game back design, centered composition, thick outlines, flat vector style"
+    },
+    {
+      "id": "option_b",
+      "name": "Option B — Rangoli Pattern",
+      "prompt": "colorful rangoli inspired geometric pattern, symmetrical floral design, vibrant festival colors, diwali themed card back, repeating pattern, thick black outlines, flat vector style"
+    },
+    {
+      "id": "option_c",
+      "name": "Option C — Elephant & Howdah",
+      "prompt": "royal elephant with decorated howdah, repeated in a pattern, indian festival procession style, ornate details, symmetrical design, card game back, thick outlines, flat vector colors"
+    },
+    {
+      "id": "option_d",
+      "name": "Option D — Taj Mahal Arch",
+      "prompt": "repeating taj mahal arch design, mughal architecture pattern, intricate geometric tile work, cream and blue colors, elegant card back, symmetrical layout, clean vector style"
+    },
+    {
+      "id": "option_e",
+      "name": "Option E — Haldi & Saffron",
+      "prompt": "warm turmeric yellow and saffron orange abstract pattern, indian spice inspired design, curved flowing lines, marigold flower motifs, festive card back, flat vector illustration"
+    }
+  ],
+  "cards": [
+    {
+      "id": "kismat_advance_go",
+      "name": "Advance to GO",
+      "subtitle": "Collect ₹200",
+      "frame_color": "orange",
+      "icon": "🏁",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2001,
+      "base": {
+        "prompt": "Indian illustrated style, grand arched gateway archway, ornamental torana design with marigold garlands, path leading forward, golden coins scattered ahead, festive welcome scene, bold colors red and gold, flat vector illustration, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_mg_road",
+      "name": "Advance to MG Road",
+      "subtitle": "Bengaluru's iconic street",
+      "frame_color": "orange",
+      "icon": "🏙️",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2002,
+      "base": {
+        "prompt": "Indian illustrated style, vibrant city street scene with colonial buildings, MG Road Bangalore, classic yellow and blue city buses, palm trees lining the road, neon shop signs, bustling street market, flat vector illustration, bold bright colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_mall_road",
+      "name": "Advance to Mall Road",
+      "subtitle": "Shimla's famous promenade",
+      "frame_color": "orange",
+      "icon": "🏔️",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2003,
+      "base": {
+        "prompt": "Indian illustrated style, scenic hill station promenade, Mall Road Shimla, snowy mountain backdrop, colonial architecture, colorful shops on both sides, horse carriages, tourists strolling, pine trees, flat vector illustration, cool blue and warm orange colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_vande_bharat",
+      "name": "Advance to Vande Bharat",
+      "subtitle": "India's fastest train",
+      "frame_color": "orange",
+      "icon": "🚄",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2004,
+      "base": {
+        "prompt": "Indian illustrated style, sleek blue Vande Bharat Express train speeding forward, modern railway station platform, saffron white green flag waving, speed motion lines, futuristic Indian train design, flat vector illustration, bold blue orange white colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_nearest_utility",
+      "name": "Advance to Utility",
+      "subtitle": "Nearest water or electricity",
+      "frame_color": "orange",
+      "icon": "💡",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2005,
+      "base": {
+        "prompt": "Indian illustrated style, water tap and light bulb icon, old Delhi style water pump hand pump, electric meter box, utility poles with wires, street side water connection, flat vector illustration, teal and yellow colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_nearest_rr",
+      "name": "Advance to Express",
+      "subtitle": "Nearest railway station",
+      "frame_color": "orange",
+      "icon": "🚂",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2006,
+      "base": {
+        "prompt": "Indian illustrated style, classic steam locomotive engine, old Indian railway station platform, vintage train with coal smoke, station signboard, platform number, railway tracks extending forward, flat vector illustration, dark green and red colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_dividend",
+      "name": "Bank Dividend",
+      "subtitle": "Collect ₹50",
+      "frame_color": "green",
+      "icon": "💰",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2007,
+      "base": {
+        "prompt": "Indian illustrated style, happy person receiving money from bank, Indian bank building with dome architecture, gold coins falling into open hands, Reserve Bank of India style building, cheerful expression, flat vector illustration, green and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_go_to_jail",
+      "name": "GO TO JAIL",
+      "subtitle": "Go directly to Jail",
+      "frame_color": "red",
+      "icon": "🔒",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2008,
+      "base": {
+        "prompt": "Indian illustrated style, old colonial style jail building, iron barred window, handcuffs, prison cell door with lock, scary policeman hat, person being led away, flat vector illustration, dark grey and red colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_repairs",
+      "name": "General Repairs",
+      "subtitle": "₹25 per bungalow, ₹100 per villa",
+      "frame_color": "red",
+      "icon": "🔧",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2009,
+      "base": {
+        "prompt": "Indian illustrated style, small green bungalow and red villa side by side, repair tools hammer and wrench, tool box, construction worker hat, sad house owner counting money, measurement tape, flat vector illustration, warm colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_poor_tax",
+      "name": "Poor Tax",
+      "subtitle": "Pay ₹15",
+      "frame_color": "red",
+      "icon": "📄",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2010,
+      "base": {
+        "prompt": "Indian illustrated style, tax document with stamps, sarkari form with official seal, person reluctantly paying coins, government office desk, old fashioned scale balance, flat vector illustration, brown and beige colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_rajdhani",
+      "name": "Rajdhani Express",
+      "subtitle": "Take a trip",
+      "frame_color": "orange",
+      "icon": "🚆",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2011,
+      "base": {
+        "prompt": "Indian illustrated style, red Rajdhani Express train with white stripe, silver colored coach, railway dinner service tray with chai, comfortable sleeper coach window, station platform with red carpet, flat vector illustration, red silver and blue colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_marine_drive",
+      "name": "Marine Drive Walk",
+      "subtitle": "Mumbai's queen's necklace",
+      "frame_color": "orange",
+      "icon": "🌊",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2012,
+      "base": {
+        "prompt": "Indian illustrated style, Marine Drive Mumbai coastline, curved road along Arabian Sea, art deco buildings, street lights glowing like necklace, evening sunset sky, waves crashing on promenade wall, flat vector illustration, blue purple and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_sarpanch",
+      "name": "You are Sarpanch",
+      "subtitle": "Pay each player ₹50",
+      "frame_color": "red",
+      "icon": "👑",
+      "rarity": "uncommon",
+      "size": [768, 1024],
+      "seed_base": 2013,
+      "base": {
+        "prompt": "Indian illustrated style, village sarpanch with official turban, gram panchayat meeting, giving money to villagers, village council scene, traditional Indian village background, banyan tree shade meeting, flat vector illustration, earthy warm colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_building_loan",
+      "name": "Building Loan Matures",
+      "subtitle": "Collect ₹150",
+      "frame_color": "green",
+      "icon": "🏦",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2014,
+      "base": {
+        "prompt": "Indian illustrated style, bank loan approval document with stamp, happy person receiving large payment, newly constructed house in background, bank manager shaking hands, loan papers with signature, flat vector illustration, green and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_crossword",
+      "name": "Crossword Winner",
+      "subtitle": "Collect ₹100",
+      "frame_color": "green",
+      "icon": "🏆",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 2015,
+      "base": {
+        "prompt": "Indian illustrated style, person holding a trophy celebrating, crossword puzzle grid completed, newspaper with crossword section, winner podium, confetti and stars, joyful cheering pose, flat vector illustration, bright festive colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "kismat_sifarish",
+      "name": "Sifarish Card",
+      "subtitle": "Get out of Jail Free",
+      "frame_color": "purple",
+      "icon": "🤝",
+      "rarity": "rare",
+      "size": [768, 1024],
+      "seed_base": 2016,
+      "base": {
+        "prompt": "Indian illustrated style, golden VIP pass with red ribbon, influential person making a phone call, sifarish recommendation note, handshake deal, government building in background, getting out of jail card, flat vector illustration, purple and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_advance_go",
+      "name": "Advance to GO",
+      "subtitle": "Collect ₹200",
+      "frame_color": "green",
+      "icon": "🏁",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3001,
+      "base": {
+        "prompt": "Indian illustrated style, grand arched gateway with welcome sign, traditional Indian toranam decoration, golden coins on the path, victory flag waving, celebration confetti, auspicious start scene, flat vector illustration, gold red and green colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_bank_error",
+      "name": "Bank Error",
+      "subtitle": "Collect ₹200 in your favor",
+      "frame_color": "green",
+      "icon": "🏦",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3002,
+      "base": {
+        "prompt": "Indian illustrated style, surprised bank customer receiving unexpected money, bank teller window, RBI style bank building, miscalculation document, happy lucky expression, money notes flying, flat vector illustration, green and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_doctor_fee",
+      "name": "Doctor's Fee",
+      "subtitle": "Pay ₹50",
+      "frame_color": "red",
+      "icon": "🩺",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3003,
+      "base": {
+        "prompt": "Indian illustrated style, doctor with stethoscope in clinic, patient paying medical fee, old fashioned Indian clinic interior, wooden desk with prescription pad, medical tools, ayurvedic medicine bottles, flat vector illustration, white and blue colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_stock_sale",
+      "name": "Stock Sale Profit",
+      "subtitle": "Collect ₹50",
+      "frame_color": "green",
+      "icon": "📈",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3004,
+      "base": {
+        "prompt": "Indian illustrated style, stock market chart going up green, happy investor with profit, Bombay Stock Exchange building, share certificates, calculator showing profit, rising graph arrow, flat vector illustration, green and blue colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_sifarish",
+      "name": "Sifarish Card",
+      "subtitle": "Get out of Jail Free",
+      "frame_color": "purple",
+      "icon": "🤝",
+      "rarity": "rare",
+      "size": [768, 1024],
+      "seed_base": 3005,
+      "base": {
+        "prompt": "Indian illustrated style, golden ticket with official stamp, influential connection making a call, sifarish letter with red seal, handshake deal behind bars, VIP access pass, connection and influence theme, flat vector illustration, purple and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_go_to_jail",
+      "name": "GO TO JAIL",
+      "subtitle": "Go directly to Jail",
+      "frame_color": "red",
+      "icon": "🔒",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3006,
+      "base": {
+        "prompt": "Indian illustrated style, old British era prison building, iron gates with lock, police constable with lathi, handcuffed prisoner being marched, jail uniform stripes, dark imposing structure, flat vector illustration, grey and red colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_opera_night",
+      "name": "Grand Opera Night",
+      "subtitle": "Collect ₹50 from each player",
+      "frame_color": "green",
+      "icon": "🎭",
+      "rarity": "uncommon",
+      "size": [768, 1024],
+      "seed_base": 3007,
+      "base": {
+        "prompt": "Indian illustrated style, grand Indian opera house performance, classical music concert, sitar and tabla players on stage, audience in traditional attire, ornate balconies and chandeliers, cultural evening scene, flat vector illustration, rich red and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_holiday_fund",
+      "name": "Holiday Fund Matures",
+      "subtitle": "Collect ₹100",
+      "frame_color": "green",
+      "icon": "🏖️",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3008,
+      "base": {
+        "prompt": "Indian illustrated style, happy family on vacation, Kerala backwaters houseboat, palm trees, holiday savings passbook with balance, suitcase and camera, relaxed vacation mood, flat vector illustration, tropical green and blue colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_tax_refund",
+      "name": "Income Tax Refund",
+      "subtitle": "Collect ₹20",
+      "frame_color": "green",
+      "icon": "🧾",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3009,
+      "base": {
+        "prompt": "Indian illustrated style, IT department refund check, relieved taxpayer, income tax return form with approved stamp, refund money arriving, government office seal, happy expression, flat vector illustration, green and white colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_life_insurance",
+      "name": "Life Insurance Matures",
+      "subtitle": "Collect ₹100",
+      "frame_color": "green",
+      "icon": "📋",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3010,
+      "base": {
+        "prompt": "Indian illustrated style, LIC insurance policy document, policy holder receiving maturity amount, traditional Indian family, insurance logo inspired, secure future theme, flat vector illustration, blue and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_hospital_fees",
+      "name": "Hospital Fees",
+      "subtitle": "Pay ₹100",
+      "frame_color": "red",
+      "icon": "🏥",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3011,
+      "base": {
+        "prompt": "Indian illustrated style, hospital building with red cross, patient paying medical bill, nurse at reception, ambulance vehicle, medical expenses receipt, worried patient counting money, flat vector illustration, white and red colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_school_fees",
+      "name": "School Fees",
+      "subtitle": "Pay ₹50",
+      "frame_color": "red",
+      "icon": "📚",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3012,
+      "base": {
+        "prompt": "Indian illustrated style, school building with flag, student with school bag, parent paying school fees at counter, books and notebooks, school fee receipt, traditional Indian school scene, flat vector illustration, blue and white colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_consultancy",
+      "name": "Consultancy Fee",
+      "subtitle": "Collect ₹25",
+      "frame_color": "green",
+      "icon": "💼",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3013,
+      "base": {
+        "prompt": "Indian illustrated style, professional consultant in suit giving advice, office desk with laptop, client paying consultation fee, modern Indian office background, business meeting, exchange of ideas and money, flat vector illustration, blue and grey colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_street_repairs",
+      "name": "Street Repairs",
+      "subtitle": "₹40 per bungalow, ₹115 per villa",
+      "frame_color": "red",
+      "icon": "🚧",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3014,
+      "base": {
+        "prompt": "Indian illustrated style, road construction scene, workers digging with tools, municipal corporation sign, orange cones and barriers, small houses along the street, assessment notice, flat vector illustration, orange and yellow colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_beauty_contest",
+      "name": "Beauty Contest Prize",
+      "subtitle": "Collect ₹10",
+      "frame_color": "green",
+      "icon": "👑",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3015,
+      "base": {
+        "prompt": "Indian illustrated style, traditional Indian beauty contest winner, wearing lehenga choli, winner crown and sash, stage with flowers, second place prize check, smiling contestant with bouquet, flat vector illustration, pink and gold colors, board game card, clean transparent background"
+      }
+    },
+    {
+      "id": "jugaad_inheritance",
+      "name": "You Inherit",
+      "subtitle": "Collect ₹100",
+      "frame_color": "green",
+      "icon": "📜",
+      "rarity": "common",
+      "size": [768, 1024],
+      "seed_base": 3016,
+      "base": {
+        "prompt": "Indian illustrated style, inheritance document with red ribbon, will paper with wax seal, ancestral property and money, traditional Indian family heirloom, lawyer handing over document, surprised heir, flat vector illustration, gold and burgundy colors, board game card, clean transparent background"
+      }
+    }
+  ]
+}

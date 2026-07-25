@@ -25,4 +25,7 @@ export const api = {
 
   getLobbyState: (lobbyId: string) =>
     request<any>('/lobby/state', { method: 'POST', body: JSON.stringify({ lobbyId }) }),
+
+  selectToken: (lobbyId: string, playerId: string, token: string) =>
+    request<any>('/lobby/select-token', { method: 'POST', body: JSON.stringify({ lobbyId, playerId, token }) }),
 };

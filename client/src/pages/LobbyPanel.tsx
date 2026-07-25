@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button.js';
 import { QRCode } from '../components/QRCode.js';
 import { DiceAppearanceSelector } from '../components/DiceAppearance.js';
+import { AVAILABLE_TOKENS } from '../components/TokenList.js';
 import { api } from '../api/client.js';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 
@@ -41,7 +42,9 @@ export default function LobbyPanel() {
       if (payload.players) setPlayers(payload.players);
     },
     GAME_STARTED: (payload: any) => {
-      navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: payload.players?.findIndex((p: any) => p.id === playerId), playerName, lobby: payload.lobby, gameId: payload.lobby?.gameId } });
+      const myIndex = payload.players?.findIndex((p: any) => p.id === playerId);
+      const myToken = payload.players?.find((p: any) => p.id === playerId)?.token;
+      navigate(`/game/session`, { state: { sessionId: payload.sessionId, players: payload.players, playerIndex: myIndex, playerName, lobby: payload.lobby, gameId: payload.lobby?.gameId, tokens: Object.fromEntries((payload.players || []).map((p: any, i: number) => [i, p.token])) } });
     },
   });
 
@@ -122,6 +125,38 @@ export default function LobbyPanel() {
       {(lobby?.gameId === 'yahtzee' || lobby?.gameId === 'ludo' || lobby?.gameId === 'monopoly') && (
         <div style={{ width: '100%', maxWidth: 400, marginBottom: 16 }}>
           <DiceAppearanceSelector dieCount={lobby?.gameId === 'ludo' ? 1 : lobby?.gameId === 'monopoly' ? 2 : 5} />
+        </div>
+      )}
+
+      {/* Token Selection */}
+      {(lobby?.gameId === 'monopoly') && (
+        <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
+          <h3 style={{ marginBottom: 8, color: '#999', fontSize: 14 }}>Choose Your Token</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {AVAILABLE_TOKENS.map(token => {
+              const taken = players.some(p => p.token === token.id && p.id !== playerId);
+              const mine = players.find(p => p.id === playerId)?.token === token.id;
+              return (
+                <button key={token.id}
+                  onClick={() => {
+                    if (!taken && lobbyId) api.selectToken(lobbyId, playerId, token.id);
+                  }}
+                  disabled={taken}
+                  style={{
+                    width: 48, height: 48, borderRadius: 8,
+                    border: mine ? `2px solid ${token.color}` : taken ? '1px solid #333' : '1px solid #555',
+                    background: mine ? `${token.color}22` : taken ? '#1a1a2e' : '#16213e',
+                    fontSize: 22, cursor: taken ? 'not-allowed' : 'pointer',
+                    opacity: taken ? 0.3 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}
+                  title={taken ? `${token.name} (taken)` : token.name}>
+                  <span>{token.emoji}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 

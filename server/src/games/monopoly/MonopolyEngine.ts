@@ -487,7 +487,7 @@ function computeRentAmount(state: GameState, propId: PropertyId, diceTotal: numb
     if (prop.houses === 5) return space.rent![5];
     if (prop.houses > 0) return space.rent![prop.houses];
     const groupProps = GROUP_PROPERTIES[space.group!];
-    const monopoly = groupProps.every(id => state.properties[id]?.owner === owner);
+    const monopoly = groupProps.every(id => state.properties[id]?.owner === owner && !state.properties[id]?.mortgaged);
     return monopoly ? space.rent![0] * 2 : space.rent![0];
   }
   return 0;
@@ -753,12 +753,19 @@ export function confirmDice(state: GameState, playerIndex: number, payload?: { r
     } else {
       player.jailTurns++;
       if (player.jailTurns >= 3) {
-        const payAmount = Math.min(GAME_RULES.jailFine, player.money);
-        player.money -= payAmount;
-        player.stats.totalMoneySpent += payAmount;
-        player.inJail = false;
-        player.jailTurns = 0;
-        events.push({ type: 'PAID_TAX', playerIndex, amount: payAmount });
+        if (player.jailFreeCards > 0) {
+          player.jailFreeCards--;
+          player.inJail = false;
+          player.jailTurns = 0;
+          events.push({ type: 'SIFARISH_USED', playerIndex });
+        } else {
+          const payAmount = Math.min(GAME_RULES.jailFine, player.money);
+          player.money -= payAmount;
+          player.stats.totalMoneySpent += payAmount;
+          player.inJail = false;
+          player.jailTurns = 0;
+          events.push({ type: 'PAID_TAX', playerIndex, amount: payAmount });
+        }
       } else {
         state.phase = 'turn_end';
         state.lastAction = 'stayed_in_jail';
@@ -888,9 +895,8 @@ export function endTurn(state: GameState, playerIndex: number): GameResult {
 
 export function mortgageProperty(state: GameState, playerIndex: number, payload?: { propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
-  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
-  if (state.phase === 'rolling_dice' || state.phase === 'waiting_for_action') return { state, valid: false, error: 'Cannot mortgage now' };
-  if (state.interaction) return { state, valid: false, error: 'Cannot mortgage during ' + state.interaction.type };
+  if (state.phase === 'rolling_dice') return { state, valid: false, error: 'Cannot mortgage now' };
+  if (state.interaction && state.interaction.type !== 'bankruptcy') return { state, valid: false, error: 'Cannot mortgage during ' + state.interaction.type };
   const propId = payload?.propertyId;
   if (!propId) return { state, valid: false, error: 'No property specified' };
   const prop = state.properties[propId];
@@ -1017,7 +1023,6 @@ export function pass(state: GameState, playerIndex: number): GameResult {
 
 export function proposeTrade(state: GameState, playerIndex: number, payload?: { toPlayer?: number; giveMoney?: number; giveProperties?: PropertyId[]; giveJailCards?: number; askMoney?: number; askProperties?: PropertyId[]; askJailCards?: number }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
-  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   if (state.phase === 'rolling_dice') return { state, valid: false, error: 'Cannot trade now' };
   if (state.interaction) return { state, valid: false, error: 'Cannot trade during ' + state.interaction.type };
   const toPlayer = payload?.toPlayer;
@@ -1155,8 +1160,7 @@ export function useSifarishCard(state: GameState, playerIndex: number): GameResu
 
 export function buildBungalow(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
-  if (state.phase !== 'turn_end' && state.phase !== 'waiting_for_roll') return { state, valid: false, error: 'Cannot build now' };
-  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
+  if (state.phase === 'rolling_dice') return { state, valid: false, error: 'Cannot build now' };
   const propId = payload?.propertyId;
   if (!propId) return { state, valid: false, error: 'No property specified' };
   const prop = state.properties[propId];
@@ -1196,7 +1200,6 @@ export function buildBungalow(state: GameState, playerIndex: number, payload?: {
 
 export function sellBungalow(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
-  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   const propId = payload?.propertyId;
   if (!propId) return { state, valid: false, error: 'No property specified' };
   const prop = state.properties[propId];
@@ -1204,6 +1207,12 @@ export function sellBungalow(state: GameState, playerIndex: number, payload?: { 
   if (!prop || space.type !== 'property') return { state, valid: false, error: 'Not a property' };
   if (prop.owner !== playerIndex) return { state, valid: false, error: 'Not your property' };
   if (prop.houses <= 0 || prop.houses >= 5) return { state, valid: false, error: 'No bungalows to sell' };
+  if (!space.group) return { state, valid: false, error: 'No color group' };
+  // Even selling rule: can only sell a house if all properties in group have >= current houses
+  const groupProps = getGroupPropertyIds(space.group);
+  const groupHouseCounts = groupProps.map(id => state.properties[id].houses);
+  const max = Math.max(...groupHouseCounts);
+  if (prop.houses < max) return { state, valid: false, error: 'Must sell houses evenly across group' };
   const refund = Math.floor(space.houseCost! / 2);
   state.players[playerIndex].money += refund;
   prop.houses--;
@@ -1215,7 +1224,7 @@ export function sellBungalow(state: GameState, playerIndex: number, payload?: { 
 
 export function buildVilla(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
-  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
+  if (state.phase === 'rolling_dice') return { state, valid: false, error: 'Cannot build now' };
   const propId = payload?.propertyId;
   if (!propId) return { state, valid: false, error: 'No property specified' };
   const prop = state.properties[propId];
@@ -1256,7 +1265,6 @@ export function buildVilla(state: GameState, playerIndex: number, payload?: { pr
 
 export function sellVilla(state: GameState, playerIndex: number, payload?: { propertyIndex?: number; propertyId?: PropertyId }): GameResult {
   if (state.winner !== null) return { state, valid: false, error: 'Game over' };
-  if (state.currentPlayer !== playerIndex) return { state, valid: false, error: 'Not your turn' };
   const propId = payload?.propertyId;
   if (!propId) return { state, valid: false, error: 'No property specified' };
   const prop = state.properties[propId];
@@ -1264,6 +1272,7 @@ export function sellVilla(state: GameState, playerIndex: number, payload?: { pro
   if (!prop || space.type !== 'property') return { state, valid: false, error: 'Not a property' };
   if (prop.owner !== playerIndex) return { state, valid: false, error: 'Not your property' };
   if (prop.houses !== 5) return { state, valid: false, error: 'Not a villa' };
+  if (state.housesRemaining < 4) return { state, valid: false, error: 'Not enough houses in bank to replace villa' };
   const refund = Math.floor(space.houseCost! / 2);
   state.players[playerIndex].money += refund;
   prop.houses = 4;
@@ -1280,29 +1289,33 @@ export function getValidActions(state: GameState, playerIndex: number): GameActi
   if (state.winner !== null) return [];
   if (state.players[playerIndex]?.bankrupt) return [];
 
+  // Anyone can propose a trade or manage buildings/mortgages at any time
+  const alwaysAllowed: GameActionType[] = ['PROPOSE_TRADE', 'MORTGAGE', 'UNMORTGAGE'];
+
   if (state.interaction) {
     const ix = state.interaction;
     if (ix.type === 'auction') {
       const inAuction = ix.passedPlayers.includes(playerIndex) || playerIndex === ix.declinedBy;
-      if (inAuction) return [];
-      return ['BID', 'PASS'];
+      if (inAuction) return [...alwaysAllowed];
+      return ['BID', 'PASS', ...alwaysAllowed];
     }
     if (ix.type === 'trade') {
-      if (ix.phase === 'editing' && ix.fromPlayer === playerIndex) return ['UPDATE_TRADE', 'SEND_TRADE'];
-      if (ix.phase === 'proposed' && ix.toPlayer === playerIndex) return ['ACCEPT_TRADE', 'REJECT_TRADE'];
-      return [];
+      const actions = [...alwaysAllowed];
+      if (ix.phase === 'editing' && ix.fromPlayer === playerIndex) actions.push('UPDATE_TRADE', 'SEND_TRADE');
+      if (ix.phase === 'proposed' && ix.toPlayer === playerIndex) actions.push('ACCEPT_TRADE', 'REJECT_TRADE');
+      return actions;
     }
     if (ix.type === 'bankruptcy') {
-      const actions: GameActionType[] = [];
+      const actions = [...alwaysAllowed];
       if (ix.phase === 'mortgage_opportunity' && ix.playerIndex === playerIndex) {
         actions.push('MORTGAGE');
       }
       return actions;
     }
-    return [];
+    return alwaysAllowed;
   }
 
-  if (state.currentPlayer !== playerIndex) return [];
+  if (state.currentPlayer !== playerIndex) return alwaysAllowed;
   const player = state.players[playerIndex];
   switch (state.phase) {
     case 'waiting_for_roll': {
@@ -1310,14 +1323,17 @@ export function getValidActions(state: GameState, playerIndex: number): GameActi
       if (player.inJail && player.money >= 50) actions.push('PAY_GHOOS');
       if (player.inJail && player.jailFreeCards > 0) actions.push('USE_SIFARISH_CARD');
       actions.push('MORTGAGE', 'UNMORTGAGE', 'PROPOSE_TRADE');
+      if (player.monopolies.length > 0) {
+        actions.push('BUILD_BUNGALOW', 'BUILD_VILLA', 'SELL_BUNGALOW', 'SELL_VILLA');
+      }
       return actions;
     }
     case 'waiting_for_action':
-      return state.lastAction === 'can_buy' ? ['BUY_PROPERTY', 'DECLINE_PROPERTY'] : [];
+      return state.lastAction === 'can_buy' ? ['BUY_PROPERTY', 'DECLINE_PROPERTY', ...alwaysAllowed] : alwaysAllowed;
     case 'turn_end':
       return ['END_TURN', 'BUILD_BUNGALOW', 'SELL_BUNGALOW', 'BUILD_VILLA', 'SELL_VILLA', 'MORTGAGE', 'UNMORTGAGE', 'PROPOSE_TRADE'];
     default:
-      return [];
+      return alwaysAllowed;
   }
 }
 
@@ -1361,6 +1377,8 @@ export function handleAction(state: GameState, playerIndex: number, action: Game
 
 export function sanitizeState(state: GameState, playerIndex: number) {
   const isMyTurn = playerIndex === state.currentPlayer;
+  const kismatRemaining = KISMAT_DECK.length - kismatIndex;
+  const jugaadRemaining = JUGAAD_DECK.length - jugaadIndex;
   return {
     players: state.players.map(p => ({ ...p, stats: p.stats })),
     properties: state.properties,
@@ -1378,5 +1396,7 @@ export function sanitizeState(state: GameState, playerIndex: number) {
     isMyTurn,
     validActions: isMyTurn ? getValidActions(state, playerIndex) : [],
     _sv: state._sv,
+    kismatRemaining,
+    jugaadRemaining,
   };
 }

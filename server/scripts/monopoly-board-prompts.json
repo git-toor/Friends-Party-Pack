@@ -1,0 +1,206 @@
+{
+  "master_style": {
+    "base": {
+      "positive": "Indian illustrated vector icon, simplified flat design, bold clean outlines, vibrant colors, iconic landmark illustration, sticker style, game board tile icon, centered composition, transparent background",
+      "negative": "sketch, rough, messy, pencil, text, letters, words, watermark, photorealistic, 3d render, blurry, low quality, complex background, dark, sad"
+    }
+  },
+  "tiles": [
+    {
+      "id": "chandni_chowk",
+      "name": "Chandni Chowk",
+      "position": 1,
+      "seed_base": 4001,
+      "prompt": "icon of a traditional old delhi street market, chandni chowk archway, rickshaw, colorful shops, crowd, landmark icon, flat vector illustration, vibrant colors, simplified icon style"
+    },
+    {
+      "id": "hazratganj",
+      "name": "Hazratganj",
+      "position": 3,
+      "seed_base": 4002,
+      "prompt": "icon of a colonial era shopping street, hazratganj lucknow, vintage lamp posts, old buildings, tree lined avenue, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "ghat_road",
+      "name": "Ghat Road",
+      "position": 6,
+      "seed_base": 4003,
+      "prompt": "icon of a winding coastal road, ghat section, mountains on one side, sea on other, curved road with palm trees, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "mi_road",
+      "name": "MI Road",
+      "position": 8,
+      "seed_base": 4004,
+      "prompt": "icon of a busy city road with buildings, MI Road jaipur, pink city architecture, shop fronts, urban street, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "law_garden",
+      "name": "Law Garden",
+      "position": 9,
+      "seed_base": 4005,
+      "prompt": "icon of a garden park with walking paths, law garden ahmedabad, trees, fountain, traditional Gujarati night market stalls, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "mall_road",
+      "name": "Mall Road",
+      "position": 11,
+      "seed_base": 4006,
+      "prompt": "icon of a hill station promenade, Mall Road shimla, snowy mountains behind, colonial buildings, horse carriage, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "bapu_bazaar",
+      "name": "Bapu Bazaar",
+      "position": 13,
+      "seed_base": 4007,
+      "prompt": "icon of a traditional market street, bapu bazaar jaipur, colorful textiles hanging, traditional jewelry shops, desert pink architecture, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "lake_pichola",
+      "name": "Lake Pichola",
+      "position": 14,
+      "seed_base": 4008,
+      "prompt": "icon of a scenic lake with palace, lake pichola udaipur, boat on water, city palace complex, surrounding hills, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "calangute",
+      "name": "Calangute Beach",
+      "position": 16,
+      "seed_base": 4009,
+      "prompt": "icon of a tropical beach scene, calangute goa, palm trees, beach shack, sun lounger, ocean waves, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "white_town",
+      "name": "White Town",
+      "position": 18,
+      "seed_base": 4010,
+      "prompt": "icon of a white colonial town, white town pondicherry, french colonial buildings, bougainvillea flowers, street with scooters, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "rock_beach",
+      "name": "Rock Beach",
+      "position": 19,
+      "seed_base": 4011,
+      "prompt": "icon of a rocky shoreline beach, rock beach pondicherry, large rocks, lighthouse in distance, sea waves, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "mg_road",
+      "name": "MG Road",
+      "position": 21,
+      "seed_base": 4012,
+      "prompt": "icon of a modern city avenue, MG Road bangalore, glass buildings, metro pillar, shopping complex, urban scene, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "marina_beach",
+      "name": "Marina Beach",
+      "position": 23,
+      "seed_base": 4013,
+      "prompt": "icon of the longest urban beach, marina beach chennai, statue of triumph, shoreline with waves, beach vendors, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "banjara_hills",
+      "name": "Banjara Hills",
+      "position": 24,
+      "seed_base": 4014,
+      "prompt": "icon of an upscale neighborhood, banjara hills hyderabad, luxury villa, tree lined road, modern bungalow, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "park_street",
+      "name": "Park Street",
+      "position": 26,
+      "seed_base": 4015,
+      "prompt": "icon of a famous dining and nightlife street, park street kolkata, old buildings, restaurants, street lamps, vintage signage, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "fc_road",
+      "name": "FC Road",
+      "position": 27,
+      "seed_base": 4016,
+      "prompt": "icon of a vibrant student street, FC Road pune, cafes, book shops, young crowd, college culture, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "sg_highway",
+      "name": "SG Highway",
+      "position": 29,
+      "seed_base": 4017,
+      "prompt": "icon of a modern express highway, SG Highway ahmedabad, flyover bridge, cars, commercial buildings, urban infrastructure, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "bandra_west",
+      "name": "Bandra West",
+      "position": 31,
+      "seed_base": 4018,
+      "prompt": "icon of a trendy seaside suburb, bandra west mumbai, bandra fort, sea view, colorful street art, cafe culture, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "connaught_place",
+      "name": "Connaught Place",
+      "position": 32,
+      "seed_base": 4019,
+      "prompt": "icon of a circular colonial market, connaught place delhi, white colonnaded buildings, inner circle market, central park, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "cyber_hub",
+      "name": "Cyber Hub",
+      "position": 34,
+      "seed_base": 4020,
+      "prompt": "icon of a modern tech hub complex, cyber hub gurgaon, glass buildings, restaurant plaza, corporate campus, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "marine_drive",
+      "name": "Marine Drive",
+      "position": 37,
+      "seed_base": 4021,
+      "prompt": "icon of a curved seaside promenade, marine drive mumbai, art deco buildings, street lights, sea wall, queen's necklace view, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "altamount_road",
+      "name": "Altamount Road",
+      "position": 39,
+      "seed_base": 4022,
+      "prompt": "icon of an exclusive luxury street, altamount road mumbai, premium high rise apartments, expensive cars, elite neighborhood, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "vande_bharat",
+      "name": "Vande Bharat Express",
+      "position": 5,
+      "seed_base": 4023,
+      "prompt": "icon of a modern high speed train, Vande Bharat Express, blue and white train, sleek design, speed motion lines, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "rajdhani",
+      "name": "Rajdhani Express",
+      "position": 15,
+      "seed_base": 4024,
+      "prompt": "icon of a iconic red express train, Rajdhani Express, red engine, train on tracks, railway signal, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "shatabdi",
+      "name": "Shatabdi Express",
+      "position": 25,
+      "seed_base": 4025,
+      "prompt": "icon of a modern blue express train, Shatabdi Express, blue and silver train, station platform, passenger coach, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "tejas",
+      "name": "Tejas Express",
+      "position": 35,
+      "seed_base": 4026,
+      "prompt": "icon of a modern red and white express train, Tejas Express, streamlined design, premium coach, speed motion, landmark icon, flat vector illustration"
+    },
+    {
+      "id": "water_supply",
+      "name": "Water Supply",
+      "position": 12,
+      "seed_base": 4027,
+      "prompt": "icon of a water utility facility, water tank, tap with water drops, pipeline, municipal water supply, landmark icon, flat vector illustration, blue colors"
+    },
+    {
+      "id": "electricity_board",
+      "name": "Electricity Board",
+      "position": 28,
+      "seed_base": 4028,
+      "prompt": "icon of an electricity utility, power lines, electric pole, transformer, glowing light bulb, electrical grid, landmark icon, flat vector illustration, yellow and orange colors"
+    }
+  ]
+}

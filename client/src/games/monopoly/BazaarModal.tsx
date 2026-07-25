@@ -84,7 +84,7 @@ export default function BazaarModal({ playerIndex, players, properties, playerNa
   const canAccept = isProposed && amReceiver;
 
   const handleSend = useCallback(() => {
-    if (!targetPlayer) return;
+    if (targetPlayer === null || targetPlayer === undefined) return;
     onProposeTrade({
       toPlayer: targetPlayer,
       giveMoney, giveProperties: giveProps, giveJailCards,

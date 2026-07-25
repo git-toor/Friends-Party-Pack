@@ -1,6 +1,20 @@
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PLAYER_COLORS } from './constants.js';
+import { getTokenDef } from '../../components/TokenList.js';
+
+const S = 1.5;
+
+const TILE_SPACE_IDS: string[] = [
+  'go', 'chandni_chowk', 'jugaad_1', 'hazratganj', 'income_tax', 'vande_bharat',
+  'ghat_road', 'kismat_1', 'mi_road', 'law_garden', 'jail', 'mall_road',
+  'water_supply', 'bapu_bazaar', 'lake_pichola', 'rajdhani', 'calangute',
+  'jugaad_2', 'white_town', 'rock_beach', 'free_parking', 'mg_road', 'kismat_2',
+  'marina_beach', 'banjara_hills', 'shatabdi', 'park_street', 'fc_road',
+  'electricity_board', 'sg_highway', 'go_to_jail', 'bandra_west', 'connaught_place',
+  'jugaad_3', 'cyber_hub', 'tejas', 'kismat_3', 'marine_drive', 'luxury_tax',
+  'altamount_road',
+];
 
 interface TokenView {
   playerIndex: number;
@@ -15,9 +29,16 @@ interface StepAnimData {
 
 interface MonopolyBoardProps {
   tokens: TokenView[];
+  playerTokens?: Record<number, string>;
   stepAnim: StepAnimData | null;
   onStepAnimDone: () => void;
   totalPlayers: number;
+  kismatRemaining?: number;
+  jugaadRemaining?: number;
+  housesRemaining?: number;
+  hotelsRemaining?: number;
+  propertyBuildings?: Record<number, number>;
+  propertyOwners?: Record<number, number>;
 }
 
 interface TileInfo {
@@ -31,11 +52,11 @@ interface TileInfo {
 }
 
 function getTilePos(position: number): { x: number; y: number } {
-  if (position === 0) return { x: 10, y: 10 };
-  if (position <= 10) return { x: 10 - position, y: 10 };
-  if (position <= 20) return { x: 0, y: 10 - (position - 10) };
-  if (position <= 30) return { x: position - 20, y: 0 };
-  return { x: 10, y: position - 30 };
+  if (position === 0) return { x: 10 * S, y: 10 * S };
+  if (position <= 10) return { x: (10 - position) * S, y: 10 * S };
+  if (position <= 20) return { x: 0, y: (10 - (position - 10)) * S };
+  if (position <= 30) return { x: (position - 20) * S, y: 0 };
+  return { x: 10 * S, y: (position - 30) * S };
 }
 
 const TILE_COLORS: Record<string, string> = {
@@ -108,10 +129,20 @@ const BOARD_DATA: { index: number; name: string; shortName: string; colorKey: st
   { index: 39, name: 'Altamount Rd', shortName: 'Altamount', colorKey: 'property_darkblue' },
 ];
 
-function TokenCircle({ playerIndex, cx, cy }: { playerIndex: number; cx: number; cy: number }) {
+function TokenCircle({ playerIndex, cx, cy, tokenEmoji }: { playerIndex: number; cx: number; cy: number; tokenEmoji?: string }) {
   const color = PLAYER_COLORS[playerIndex % PLAYER_COLORS.length];
+  if (tokenEmoji) {
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={0.22 * S} fill="#1a1a2e" stroke={color} strokeWidth={0.04 * S} />
+        <text x={cx} y={cy + 0.06 * S} textAnchor="middle" fontSize={0.25 * S} dominantBaseline="middle">
+          {tokenEmoji}
+        </text>
+      </g>
+    );
+  }
   return (
-    <circle cx={cx} cy={cy} r={0.18} fill={color} stroke="#fff" strokeWidth={0.04} />
+    <circle cx={cx} cy={cy} r={0.18 * S} fill={color} stroke="#fff" strokeWidth={0.04 * S} />
   );
 }
 
@@ -127,14 +158,14 @@ function computeTokenPositions(tokens: TokenView[]): { playerIndex: number; cx: 
     const pos = parseInt(posStr);
     const pts = byPos[pos];
     const center = getTilePos(pos);
-    const tileCx = center.x + 0.5;
-    const tileCy = center.y + 0.5;
+    const tileCx = center.x + S / 2;
+    const tileCy = center.y + S / 2;
     if (pts.length === 1) {
       positions.push({ playerIndex: pts[0].playerIndex, cx: tileCx, cy: tileCy });
     } else {
       pts.forEach((t, i) => {
         const angle = (i / pts.length) * Math.PI * 2;
-        const radius = 0.2;
+        const radius = 0.2 * S;
         positions.push({
           playerIndex: t.playerIndex,
           cx: tileCx + Math.cos(angle) * radius,
@@ -146,11 +177,11 @@ function computeTokenPositions(tokens: TokenView[]): { playerIndex: number; cx: 
   return positions;
 }
 
-export function MonopolyBoard({ tokens, stepAnim, onStepAnimDone, totalPlayers }: MonopolyBoardProps) {
+export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimDone, totalPlayers, kismatRemaining = 16, jugaadRemaining = 16, housesRemaining = 32, hotelsRemaining = 12, propertyBuildings = {}, propertyOwners = {} }: MonopolyBoardProps) {
   const [animStep, setAnimStep] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Step animation
+  // Step animation (Ludo-style: one interval tick per tile)
   useEffect(() => {
     if (!stepAnim) {
       setAnimStep(null);
@@ -162,18 +193,20 @@ export function MonopolyBoard({ tokens, stepAnim, onStepAnimDone, totalPlayers }
       return;
     }
     let step = 0;
-    const totalSteps = Math.min(movement, 10); // cap at 10 steps for visual clarity
-    const interval = 120;
-    setAnimStep(0);
+    const totalSteps = movement;
+    const interval = 200; // ms per tile — visible stepping like Ludo
+    // Start at step 1 so the token immediately shows on the first new tile
+    setAnimStep(1);
 
     timerRef.current = setInterval(() => {
       step++;
-      if (step >= totalSteps) {
+      const nextStep = step + 1; // we started at 1
+      if (nextStep >= totalSteps) {
         if (timerRef.current) clearInterval(timerRef.current);
         setAnimStep(null);
         onStepAnimDone();
       } else {
-        setAnimStep(step);
+        setAnimStep(nextStep);
       }
     }, interval);
 
@@ -184,18 +217,20 @@ export function MonopolyBoard({ tokens, stepAnim, onStepAnimDone, totalPlayers }
 
   // Compute current token positions (with stepAnim override)
   const tokenPositions = useMemo(() => {
-    if (stepAnim && animStep !== null) {
+    if (stepAnim) {
+      // When animStep is null (first render before useEffect fires),
+      // show the moving player at their START position (no teleport)
       const movement = ((stepAnim.to - stepAnim.from) + 40) % 40;
-      const totalSteps = Math.min(movement, 10);
-      const currentProgress = (animStep / totalSteps) * movement;
-      const currentPos = (stepAnim.from + currentProgress) % 40;
+      const currentPos = animStep !== null
+        ? (stepAnim.from + animStep) % 40
+        : stepAnim.from;
       const filteredTokens = tokens.filter(t => t.playerIndex !== stepAnim.playerIndex);
       const result = computeTokenPositions(filteredTokens);
       const center = getTilePos(Math.round(currentPos));
       result.push({
         playerIndex: stepAnim.playerIndex,
-        cx: center.x + 0.5,
-        cy: center.y + 0.5,
+        cx: center.x + S / 2,
+        cy: center.y + S / 2,
       });
       return result;
     }
@@ -300,6 +335,7 @@ export function MonopolyBoard({ tokens, stepAnim, onStepAnimDone, totalPlayers }
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         cursor: isPanning.current ? 'grabbing' : 'grab',
         touchAction: 'none',
+        background: 'radial-gradient(ellipse at center, #1e2a4a 0%, #0f1628 100%)',
       }}
     >
       <div style={{
@@ -307,94 +343,158 @@ export function MonopolyBoard({ tokens, stepAnim, onStepAnimDone, totalPlayers }
         transformOrigin: 'center center',
         transition: isPanning.current ? 'none' : 'transform 0.1s ease',
       }}>
-        <svg viewBox="0 0 11 11" style={{ width: 'min(80vw, 80vh)', height: 'min(80vw, 80vh)' }}>
+        <svg viewBox={`0 0 ${11 * S} ${11 * S}`} style={{ width: 'min(95vw, 90vh)', height: 'min(95vw, 90vh)' }}>
+          <defs>
+            <linearGradient id="kismatGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#1a1a3e" />
+              <stop offset="100%" stopColor="#2a2a5e" />
+            </linearGradient>
+            <linearGradient id="jugaadGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#1a2a1e" />
+              <stop offset="100%" stopColor="#2a3a2e" />
+            </linearGradient>
+            <pattern id="boardBg" patternUnits="userSpaceOnUse" width={S} height={S}>
+              <rect width={S} height={S} fill="#1a1a2e" />
+              <circle cx={0.5 * S} cy={0.5 * S} r={0.02 * S} fill="#2a2a4e" />
+            </pattern>
+          </defs>
+          {/* Board background */}
+          <rect x={0} y={0} width={11 * S} height={11 * S} fill="url(#boardBg)" rx={0.3 * S} />
           {/* Tiles */}
-          {tiles.map(t => (
+          {tiles.map(t => {
+            const isProperty = BOARD_DATA[t.index].colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax'].includes(BOARD_DATA[t.index].colorKey);
+            return (
             <g key={t.index}>
+              {/* Property tile: dark fill, no outer stroke (avoids overlap with neighbors) */}
               <rect
-                x={t.x} y={t.y} width={1} height={1}
-                fill={t.color}
-                stroke="#1a1a2e" strokeWidth={0.03}
-                rx={0.05}
+                x={t.x} y={t.y} width={S} height={S}
+                fill={isProperty ? '#1a1a2e' : t.color}
+                rx={0}
               />
+              {/* Property art at full opacity */}
+              {isProperty && (
+                <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
+                  x={t.x} y={t.y}
+                  width={S} height={S}
+                  preserveAspectRatio="xMidYMid slice"
+                  style={{ pointerEvents: 'none', borderRadius: 0 }}
+                  onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
+              )}
+              {/* Color strip at top of property tile */}
+              {isProperty && (
+                <rect x={t.x} y={t.y} width={S} height={0.12 * S}
+                  fill={t.color} rx={0} />
+              )}
               {/* Corner labels */}
               {(t.index === 0) && (
-                <text x={t.x + 0.5} y={t.y + 0.55} textAnchor="middle" fill="#fff" fontSize={0.35} fontWeight={700}>
-                  GO
-                </text>
+                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.25 * S} fontWeight={700}>GO</text>
               )}
               {(t.index === 10) && (
-                <text x={t.x + 0.5} y={t.y + 0.5} textAnchor="middle" fill="#fff" fontSize={0.2} fontWeight={600}>
-                  JAIL
-                </text>
+                <><rect x={t.x + 0.1 * S} y={t.y + 0.1 * S} width={S - 0.2 * S} height={S - 0.2 * S} fill="none" stroke="#999" strokeWidth={0.03 * S} rx={0.05 * S} />
+                <rect x={t.x + 0.15 * S} y={t.y + 0.1 * S} width={S - 0.3 * S} height={S - 0.2 * S} fill="none" stroke="#777" strokeWidth={0.02 * S} rx={0.03 * S} />
+                <rect x={t.x + 0.1 * S} y={t.y + 0.1 * S} width={S - 0.2 * S} height={S - 0.2 * S} fill="none" stroke="#888" strokeWidth={0.015 * S} />
+                <line x1={t.x + 0.22 * S} y1={t.y + 0.1 * S} x2={t.x + 0.22 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
+                <line x1={t.x + 0.38 * S} y1={t.y + 0.1 * S} x2={t.x + 0.38 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
+                <line x1={t.x + 0.54 * S} y1={t.y + 0.1 * S} x2={t.x + 0.54 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
+                <line x1={t.x + 0.7 * S} y1={t.y + 0.1 * S} x2={t.x + 0.7 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
+                <text x={t.x + S / 2} y={t.y + S / 2 + 0.2 * S} textAnchor="middle" fill="#fff" fontSize={0.15 * S} fontWeight={700}>JAIL</text>
+                <text x={t.x + S / 2} y={t.y + 0.2 * S} textAnchor="middle" fill="#aaa" fontSize={0.08 * S}>Just</text>
+                <text x={t.x + S / 2} y={t.y + 0.28 * S} textAnchor="middle" fill="#aaa" fontSize={0.08 * S}>Visiting</text></>
               )}
               {(t.index === 20) && (
-                <text x={t.x + 0.5} y={t.y + 0.45} textAnchor="middle" fill="#eee" fontSize={0.18} fontWeight={600}>
-                  FREE
-                </text>
-              )}
-              {(t.index === 20) && (
-                <text x={t.x + 0.5} y={t.y + 0.65} textAnchor="middle" fill="#eee" fontSize={0.18} fontWeight={600}>
-                  PARKING
-                </text>
+                <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#eee" fontSize={0.13 * S} fontWeight={600}>FREE</text>
+                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#eee" fontSize={0.13 * S} fontWeight={600}>PARKING</text></>
               )}
               {(t.index === 30) && (
-                <text x={t.x + 0.5} y={t.y + 0.45} textAnchor="middle" fill="#fff" fontSize={0.16} fontWeight={600}>
-                  GO TO
-                </text>
+                <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>GO TO</text>
+                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>JAIL</text></>
               )}
-              {(t.index === 30) && (
-                <text x={t.x + 0.5} y={t.y + 0.65} textAnchor="middle" fill="#fff" fontSize={0.16} fontWeight={600}>
-                  JAIL
-                </text>
-              )}
-              {/* Side tile labels - horizontal for top/bottom, vertical for left/right */}
-              {t.index > 0 && t.index < 10 && (
-                <text x={t.x + 0.5} y={t.y + 0.5} textAnchor="middle" fill={t.textColor} fontSize={0.1} transform={`rotate(-90, ${t.x + 0.5}, ${t.y + 0.5})`}>
+              {/* Name at bottom of tile */}
+              {isProperty && (
+                <text x={t.x + S / 2} y={t.y + S - 0.14 * S} textAnchor="middle" fill="#fff" fontSize={0.08 * S} fontWeight={600}>
                   {t.shortName}
                 </text>
               )}
-              {t.index > 10 && t.index < 20 && (
-                <text x={t.x + 0.5} y={t.y + 0.5} textAnchor="middle" fill={t.textColor} fontSize={0.09} transform={`rotate(0, ${t.x + 0.5}, ${t.y + 0.5})`}>
-                  {t.shortName}
+              {/* Price below name */}
+              {isProperty && (
+                <text x={t.x + S / 2} y={t.y + S - 0.05 * S} textAnchor="middle" fill="#4ecca3" fontSize={0.07 * S} fontWeight={700}>
+                  ₹{t.index === 5 || t.index === 15 || t.index === 25 || t.index === 35 ? 200 : t.index === 12 || t.index === 28 ? 150 : BOARD_DATA[t.index].colorKey === 'property_brown' ? 60 : BOARD_DATA[t.index].colorKey === 'property_lightblue' ? (t.index === 9 ? 120 : 100) : ''}
                 </text>
               )}
-              {t.index > 20 && t.index < 30 && (
-                <text x={t.x + 0.5} y={t.y + 0.5} textAnchor="middle" fill={t.textColor} fontSize={0.1} transform={`rotate(90, ${t.x + 0.5}, ${t.y + 0.5})`}>
-                  {t.shortName}
-                </text>
+              {/* Buildings on tile */}
+              {propertyBuildings[t.index] > 0 && (
+                <g transform={`translate(${t.x + S / 2 - propertyBuildings[t.index] * 0.06 * S}, ${t.y + S - 0.18 * S})`}>
+                  {propertyBuildings[t.index] <= 4 ? (
+                    Array.from({ length: propertyBuildings[t.index] }, (_, i) => (
+                      <g key={i} transform={`translate(${i * 0.12 * S}, 0)`}>
+                        <rect x={0} y={-0.08 * S} width={0.1 * S} height={0.1 * S} rx={0.015 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
+                        <rect x={0.01 * S} y={-0.12 * S} width={0.08 * S} height={0.04 * S} rx={0.01 * S} fill="#66BB6A" />
+                        <rect x={0.02 * S} y={-0.14 * S} width={0.02 * S} height={0.02 * S} fill="#81C784" />
+                        <rect x={0.06 * S} y={-0.14 * S} width={0.02 * S} height={0.02 * S} fill="#81C784" />
+                      </g>
+                    ))
+                  ) : (
+                    <g>
+                      <rect x={-0.08 * S} y={-0.12 * S} width={0.16 * S} height={0.16 * S} rx={0.02 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
+                      <rect x={-0.04 * S} y={-0.16 * S} width={0.08 * S} height={0.04 * S} fill="#EF5350" />
+                      <rect x={-0.01 * S} y={-0.02 * S} width={0.02 * S} height={0.02 * S} fill="#fff" opacity={0.3} />
+                      <rect x={0.02 * S} y={-0.06 * S} width={0.02 * S} height={0.02 * S} fill="#fff" opacity={0.3} />
+                    </g>
+                  )}
+                </g>
               )}
-              {t.index > 30 && t.index < 40 && (
-                <text x={t.x + 0.5} y={t.y + 0.5} textAnchor="middle" fill={t.textColor} fontSize={0.09} transform={`rotate(0, ${t.x + 0.5}, ${t.y + 0.5})`}>
-                  {t.shortName}
-                </text>
-              )}
-              {/* Price tag for purchasable spaces */}
-              {[5, 12, 15, 25, 28, 35].includes(t.index) && (
-                <text x={t.x + 0.5} y={t.y + 0.75} textAnchor="middle" fill={t.textColor} fontSize={0.09}>
-                  ₹{t.index === 12 || t.index === 28 ? 150 : 200}
-                </text>
-              )}
-              {(t.index > 0 && t.index < 10 && t.index !== 2 && t.index !== 4 && t.index !== 7) && (
-                <text x={t.x + 0.5} y={t.y + 0.75} textAnchor="middle" fill={t.textColor} fontSize={0.09}>
-                  ₹{BOARD_DATA[t.index].colorKey === 'property_brown' ? 60 : BOARD_DATA[t.index].colorKey === 'property_lightblue' ? (t.index === 9 ? 120 : 100) : ''}
-                </text>
+              {/* Owner indicator on tile */}
+              {propertyOwners[t.index] !== undefined && (
+                <circle cx={t.x + 0.15 * S} cy={t.y + 0.15 * S} r={0.06 * S} fill={PLAYER_COLORS[propertyOwners[t.index] % PLAYER_COLORS.length]} stroke="#fff" strokeWidth={0.015 * S} />
               )}
             </g>
-          ))}
+            );
+          })}
 
-          {/* Center decoration */}
-          <rect x={1} y={1} width={9} height={9} fill="#16213e" rx={0.2} />
-          <text x={5.5} y={5} textAnchor="middle" fill="#e94560" fontSize={0.5} fontWeight={800}>
-            DESI
-          </text>
-          <text x={5.5} y={5.6} textAnchor="middle" fill="#e94560" fontSize={0.5} fontWeight={800}>
-            MONOPOLY
-          </text>
+          {/* Center area with card decks */}
+          <rect x={S} y={S} width={9 * S} height={9 * S} fill="#16213e" rx={0.15 * S} />
+          
+          {/* Kismat deck (reduced by half) */}
+          <g transform={`translate(${2.2 * S}, ${3.5 * S})`}>
+            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
+            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="url(#kismatGrad)" stroke="#333366" strokeWidth={0.02 * S} />
+            <text x={0.5 * S} y={0.7 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.35 * S} fontWeight={800}>★</text>
+            <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
+            <text x={0.83 * S} y={0.17 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{kismatRemaining}</text>
+          </g>
+          <text x={2.7 * S} y={5.3 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.14 * S} fontWeight={700}>KISMAT</text>
+          <text x={2.7 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Chance)</text>
+
+          {/* Jugaad deck (reduced by half) */}
+          <g transform={`translate(${7.8 * S}, ${3.5 * S})`}>
+            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
+            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="url(#jugaadGrad)" stroke="#336633" strokeWidth={0.02 * S} />
+            <text x={0.5 * S} y={0.7 * S} textAnchor="middle" fill="#4CAF50" fontSize={0.35 * S} fontWeight={800}>✦</text>
+            <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
+            <text x={0.83 * S} y={0.17 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{jugaadRemaining}</text>
+          </g>
+          <text x={8.3 * S} y={5.3 * S} textAnchor="middle" fill="#4CAF50" fontSize={0.14 * S} fontWeight={700}>JUGAAD</text>
+          <text x={8.3 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Community Chest)</text>
+
+          {/* Building Pool */}
+          <g transform={`translate(${5.5 * S - 1.2 * S}, ${6.5 * S})`}>
+            <rect width={2.4 * S} height={0.5 * S} rx={0.08 * S} fill="#1a1a2e" stroke="#333" strokeWidth={0.02 * S} />
+            {/* Houses */}
+            <rect x={0.1 * S} y={0.08 * S} width={0.2 * S} height={0.18 * S} rx={0.03 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
+            <rect x={0.1 * S} y={0.05 * S} width={0.2 * S} height={0.06 * S} rx={0.02 * S} fill="#66BB6A" />
+            <rect x={0.12 * S} y={0.04 * S} width={0.04 * S} height={0.04 * S} fill="#81C784" />
+            <rect x={0.24 * S} y={0.04 * S} width={0.04 * S} height={0.04 * S} fill="#81C784" />
+            <text x={0.45 * S} y={0.32 * S} fill="#4ecca3" fontSize={0.14 * S} fontWeight={600}>×{housesRemaining}</text>
+            {/* Hotels */}
+            <rect x={1.1 * S} y={0.08 * S} width={0.28 * S} height={0.18 * S} rx={0.02 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
+            <rect x={1.16 * S} y={0.04 * S} width={0.16 * S} height={0.06 * S} fill="#EF5350" />
+            <text x={1.5 * S} y={0.32 * S} fill="#e94560" fontSize={0.14 * S} fontWeight={600}>×{hotelsRemaining}</text>
+          </g>
 
           {/* Player tokens */}
           {tokenPositions.map((tp, i) => (
-            <TokenCircle key={`${tp.playerIndex}-${i}`} playerIndex={tp.playerIndex} cx={tp.cx} cy={tp.cy} />
+            <TokenCircle key={`${tp.playerIndex}-${i}`} playerIndex={tp.playerIndex} cx={tp.cx} cy={tp.cy}
+              tokenEmoji={playerTokens[tp.playerIndex] ? getTokenDef(playerTokens[tp.playerIndex]).emoji : undefined} />
           ))}
         </svg>
       </div>

@@ -30,9 +30,13 @@ export class LobbyRepository {
 
   addPlayer(player: LobbyPlayer): void {
     getDb().prepare(`
-      INSERT INTO lobby_players (id, lobby_id, name, is_host, ready, joined_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(player.id, player.lobbyId, player.name, player.isHost ? 1 : 0, player.ready ? 1 : 0, player.joinedAt);
+      INSERT INTO lobby_players (id, lobby_id, name, is_host, ready, joined_at, token)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(player.id, player.lobbyId, player.name, player.isHost ? 1 : 0, player.ready ? 1 : 0, player.joinedAt, player.token || null);
+  }
+
+  setToken(lobbyId: string, playerId: string, token: string): void {
+    getDb().prepare('UPDATE lobby_players SET token = ? WHERE lobby_id = ? AND id = ?').run(token, lobbyId, playerId);
   }
 
   getPlayers(lobbyId: string): LobbyPlayer[] {
@@ -44,6 +48,7 @@ export class LobbyRepository {
       isHost: !!r.is_host,
       ready: !!r.ready,
       joinedAt: r.joined_at,
+      token: r.token || undefined,
     }));
   }
 
