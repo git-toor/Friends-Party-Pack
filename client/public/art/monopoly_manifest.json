@@ -361,15 +361,6 @@
       "prompt": "icon of a scenic lake with palace, lake pichola udaipur, boat on water, city palace complex, surrounding hills, landmark icon, flat vector illustration",
       "file": "/art/monopoly/lake_pichola_001.webp"
     },
-    "calangute_001": {
-      "card_id": "calangute",
-      "expansion": "monopoly_board",
-      "copy": 1,
-      "seed": 4009,
-      "workflow": "flux",
-      "prompt": "icon of a tropical beach scene, calangute goa, palm trees, beach shack, sun lounger, ocean waves, landmark icon, flat vector illustration",
-      "file": "/art/monopoly/calangute_001.webp"
-    },
     "white_town_001": {
       "card_id": "white_town",
       "expansion": "monopoly_board",
@@ -451,15 +442,6 @@
       "prompt": "icon of a trendy seaside suburb, bandra west mumbai, bandra fort, sea view, colorful street art, cafe culture, landmark icon, flat vector illustration",
       "file": "/art/monopoly/bandra_west_001.webp"
     },
-    "connaught_place_001": {
-      "card_id": "connaught_place",
-      "expansion": "monopoly_board",
-      "copy": 1,
-      "seed": 4019,
-      "workflow": "flux",
-      "prompt": "icon of a circular colonial market, connaught place delhi, white colonnaded buildings, inner circle market, central park, landmark icon, flat vector illustration",
-      "file": "/art/monopoly/connaught_place_001.webp"
-    },
     "cyber_hub_001": {
       "card_id": "cyber_hub",
       "expansion": "monopoly_board",
@@ -514,32 +496,50 @@
       "prompt": "icon of a modern blue express train, Shatabdi Express, blue and silver train, station platform, passenger coach, landmark icon, flat vector illustration",
       "file": "/art/monopoly/shatabdi_001.webp"
     },
-    "tejas_001": {
-      "card_id": "tejas",
+    "baga_beach_001": {
+      "card_id": "baga_beach",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4009,
+      "workflow": "flux",
+      "prompt": "icon of a tropical beach scene, calangute goa, palm trees, beach shack, sun lounger, ocean waves, landmark icon, flat vector illustration",
+      "file": "/art/monopoly/baga_beach_001.webp"
+    },
+    "jor_bagh_001": {
+      "card_id": "jor_bagh",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4019,
+      "workflow": "flux",
+      "prompt": "icon of a circular colonial market, connaught place delhi, white colonnaded buildings, inner circle market, central park, landmark icon, flat vector illustration",
+      "file": "/art/monopoly/jor_bagh_001.webp"
+    },
+    "duronto_exp_001": {
+      "card_id": "duronto_exp",
       "expansion": "monopoly_board",
       "copy": 1,
       "seed": 4026,
       "workflow": "flux",
       "prompt": "icon of a modern red and white express train, Tejas Express, streamlined design, premium coach, speed motion, landmark icon, flat vector illustration",
-      "file": "/art/monopoly/tejas_001.webp"
+      "file": "/art/monopoly/duronto_exp_001.webp"
     },
-    "water_supply_001": {
-      "card_id": "water_supply",
+    "jal_vibhaag_001": {
+      "card_id": "jal_vibhaag",
       "expansion": "monopoly_board",
       "copy": 1,
       "seed": 4027,
       "workflow": "flux",
       "prompt": "icon of a water utility facility, water tank, tap with water drops, pipeline, municipal water supply, landmark icon, flat vector illustration, blue colors",
-      "file": "/art/monopoly/water_supply_001.webp"
+      "file": "/art/monopoly/jal_vibhaag_001.webp"
     },
-    "electricity_board_001": {
-      "card_id": "electricity_board",
+    "bijli_vibhag_001": {
+      "card_id": "bijli_vibhag",
       "expansion": "monopoly_board",
       "copy": 1,
       "seed": 4028,
       "workflow": "flux",
       "prompt": "icon of an electricity utility, power lines, electric pole, transformer, glowing light bulb, electrical grid, landmark icon, flat vector illustration, yellow and orange colors",
-      "file": "/art/monopoly/electricity_board_001.webp"
+      "file": "/art/monopoly/bijli_vibhag_001.webp"
     }
   }
 }

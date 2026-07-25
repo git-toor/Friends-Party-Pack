@@ -8,11 +8,11 @@ const S = 1.5;
 const TILE_SPACE_IDS: string[] = [
   'go', 'chandni_chowk', 'jugaad_1', 'hazratganj', 'income_tax', 'vande_bharat',
   'ghat_road', 'kismat_1', 'mi_road', 'law_garden', 'jail', 'mall_road',
-  'water_supply', 'bapu_bazaar', 'lake_pichola', 'rajdhani', 'calangute',
+  'jal_vibhaag', 'bapu_bazaar', 'lake_pichola', 'rajdhani', 'baga_beach',
   'jugaad_2', 'white_town', 'rock_beach', 'free_parking', 'mg_road', 'kismat_2',
   'marina_beach', 'banjara_hills', 'shatabdi', 'park_street', 'fc_road',
-  'electricity_board', 'sg_highway', 'go_to_jail', 'bandra_west', 'connaught_place',
-  'jugaad_3', 'cyber_hub', 'tejas', 'kismat_3', 'marine_drive', 'luxury_tax',
+  'bijli_vibhag', 'sg_highway', 'go_to_jail', 'bandra_west', 'jor_bagh',
+  'jugaad_3', 'cyber_hub', 'duronto_exp', 'kismat_3', 'marine_drive', 'ghoos',
   'altamount_road',
 ];
 
@@ -60,23 +60,36 @@ function getTilePos(position: number): { x: number; y: number } {
 }
 
 const TILE_COLORS: Record<string, string> = {
-  go: '#e94560',
-  property_brown: '#8B4513',
-  property_lightblue: '#87CEEB',
-  property_pink: '#FF69B4',
-  property_orange: '#FF8C00',
-  property_red: '#FF0000',
-  property_yellow: '#FFD700',
-  property_green: '#006400',
-  property_darkblue: '#00008B',
-  railroad: '#2C2C2C',
-  utility: '#555555',
-  tax: '#C4956A',
-  chance: '#FF8C00',
-  cc: '#4CAF50',
-  jail: '#666666',
+  go: '#C62828',
+  property_brown: '#A0522D',
+  property_lightblue: '#B0D4E8',
+  property_pink: '#E88DB0',
+  property_orange: '#E08A30',
+  property_red: '#C62828',
+  property_yellow: '#D4A820',
+  property_green: '#2E7D32',
+  property_darkblue: '#1A237E',
+  railroad: '#4A4A4A',
+  utility: '#707070',
+  tax: '#B89668',
+  chance: '#D47820',
+  cc: '#3D8B40',
+  jail: '#6B6B6B',
   free_parking: '#2a2a3e',
-  go_to_jail: '#D32F2F',
+  go_to_jail: '#B71C1C',
+};
+
+const PROPERTY_PRICES: Record<string, number> = {
+  property_brown: 60,
+  property_lightblue: 0, // varies: 100, 120
+  property_pink: 140,
+  property_orange: 180,
+  property_red: 220,
+  property_yellow: 260,
+  property_green: 300,
+  property_darkblue: 350,
+  railroad: 200,
+  utility: 150,
 };
 
 const TILE_TEXT_COLORS: Record<string, string> = {
@@ -87,46 +100,46 @@ const TILE_TEXT_COLORS: Record<string, string> = {
 };
 
 const BOARD_DATA: { index: number; name: string; shortName: string; colorKey: string }[] = [
-  { index: 0, name: 'GO', shortName: 'GO', colorKey: 'go' },
-  { index: 1, name: 'Chandni Chowk', shortName: 'Chandni', colorKey: 'property_brown' },
+  { index: 0, name: 'CHALO', shortName: 'CHALO', colorKey: 'go' },
+  { index: 1, name: 'Chandni Chowk', shortName: 'Chandni Chowk', colorKey: 'property_brown' },
   { index: 2, name: 'Jugaad', shortName: 'Jugaad', colorKey: 'cc' },
-  { index: 3, name: 'Hazratganj', shortName: 'Hazratgnj', colorKey: 'property_brown' },
-  { index: 4, name: 'Income Tax', shortName: 'Tax', colorKey: 'tax' },
-  { index: 5, name: 'Vande Bharat Exp', shortName: 'VandeBhrat', colorKey: 'railroad' },
-  { index: 6, name: 'Ghat Road', shortName: 'Ghat Rd', colorKey: 'property_lightblue' },
+  { index: 3, name: 'Hazratganj', shortName: 'Hazratganj', colorKey: 'property_brown' },
+  { index: 4, name: 'Income Tax', shortName: 'Income Tax', colorKey: 'tax' },
+  { index: 5, name: 'Vande Bharat', shortName: 'Vande Bharat', colorKey: 'railroad' },
+  { index: 6, name: 'Ghat Road', shortName: 'Ghat Road', colorKey: 'property_lightblue' },
   { index: 7, name: 'Kismat', shortName: 'Kismat', colorKey: 'chance' },
   { index: 8, name: 'MI Road', shortName: 'MI Road', colorKey: 'property_lightblue' },
-  { index: 9, name: 'Law Garden', shortName: 'Law Grdn', colorKey: 'property_lightblue' },
-  { index: 10, name: 'Jail', shortName: 'JAIL', colorKey: 'jail' },
-  { index: 11, name: 'Mall Road', shortName: 'Mall Rd', colorKey: 'property_pink' },
-  { index: 12, name: 'Water Supply', shortName: 'Water', colorKey: 'utility' },
-  { index: 13, name: 'Bapu Bazaar', shortName: 'Bapu Bzr', colorKey: 'property_pink' },
-  { index: 14, name: 'Lake Pichola', shortName: 'Pichola', colorKey: 'property_pink' },
-  { index: 15, name: 'Rajdhani Exp', shortName: 'Rajdhani', colorKey: 'railroad' },
-  { index: 16, name: 'Calangute Bch', shortName: 'Calangute', colorKey: 'property_orange' },
+  { index: 9, name: 'Law Garden', shortName: 'Law Garden', colorKey: 'property_lightblue' },
+  { index: 10, name: 'Jail', shortName: 'Jail', colorKey: 'jail' },
+  { index: 11, name: 'Mall Road', shortName: 'Mall Road', colorKey: 'property_pink' },
+  { index: 12, name: 'Jal Vibhaag', shortName: 'Jal Vibhaag', colorKey: 'utility' },
+  { index: 13, name: 'Bapu Bazaar', shortName: 'Bapu Bazaar', colorKey: 'property_pink' },
+  { index: 14, name: 'Lake Pichola', shortName: 'Lake Pichola', colorKey: 'property_pink' },
+  { index: 15, name: 'Rajdhani Exp', shortName: 'Rajdhani Exp', colorKey: 'railroad' },
+  { index: 16, name: 'Baga Beach', shortName: 'Baga Beach', colorKey: 'property_orange' },
   { index: 17, name: 'Jugaad', shortName: 'Jugaad', colorKey: 'cc' },
-  { index: 18, name: 'White Town', shortName: 'White Tn', colorKey: 'property_orange' },
-  { index: 19, name: 'Rock Beach', shortName: 'Rock Bch', colorKey: 'property_orange' },
-  { index: 20, name: 'Free Parking', shortName: 'FREE', colorKey: 'free_parking' },
+  { index: 18, name: 'White Town', shortName: 'White Town', colorKey: 'property_orange' },
+  { index: 19, name: 'Rock Beach', shortName: 'Rock Beach', colorKey: 'property_orange' },
+  { index: 20, name: 'Free Parking', shortName: 'Free Parking', colorKey: 'free_parking' },
   { index: 21, name: 'MG Road', shortName: 'MG Road', colorKey: 'property_red' },
   { index: 22, name: 'Kismat', shortName: 'Kismat', colorKey: 'chance' },
-  { index: 23, name: 'Marina Beach', shortName: 'Marina', colorKey: 'property_red' },
-  { index: 24, name: 'Banjara Hills', shortName: 'Banjara', colorKey: 'property_red' },
-  { index: 25, name: 'Shatabdi Exp', shortName: 'Shatabdi', colorKey: 'railroad' },
-  { index: 26, name: 'Park Street', shortName: 'Park St', colorKey: 'property_yellow' },
+  { index: 23, name: 'Marina Beach', shortName: 'Marina Beach', colorKey: 'property_red' },
+  { index: 24, name: 'Banjara Hills', shortName: 'Banjara Hills', colorKey: 'property_red' },
+  { index: 25, name: 'Shatabdi Exp', shortName: 'Shatabdi Exp', colorKey: 'railroad' },
+  { index: 26, name: 'Park Street', shortName: 'Park Street', colorKey: 'property_yellow' },
   { index: 27, name: 'FC Road', shortName: 'FC Road', colorKey: 'property_yellow' },
-  { index: 28, name: 'Electricity Bd', shortName: 'Electric', colorKey: 'utility' },
-  { index: 29, name: 'SG Highway', shortName: 'SG Hwy', colorKey: 'property_yellow' },
-  { index: 30, name: 'Go To Jail', shortName: 'GT JAIL', colorKey: 'go_to_jail' },
-  { index: 31, name: 'Bandra West', shortName: 'Bandra W', colorKey: 'property_green' },
-  { index: 32, name: 'Connaught Pl', shortName: 'C Place', colorKey: 'property_green' },
+  { index: 28, name: 'Bijli Vibhag', shortName: 'Bijli Vibhag', colorKey: 'utility' },
+  { index: 29, name: 'SG Highway', shortName: 'SG Highway', colorKey: 'property_yellow' },
+  { index: 30, name: 'Chalo Jail', shortName: 'Chalo Jail', colorKey: 'go_to_jail' },
+  { index: 31, name: 'Bandra West', shortName: 'Bandra West', colorKey: 'property_green' },
+  { index: 32, name: 'Jor Bagh', shortName: 'Jor Bagh', colorKey: 'property_green' },
   { index: 33, name: 'Jugaad', shortName: 'Jugaad', colorKey: 'cc' },
-  { index: 34, name: 'Cyber Hub', shortName: 'Cyber Hb', colorKey: 'property_green' },
-  { index: 35, name: 'Tejas Exp', shortName: 'Tejas', colorKey: 'railroad' },
+  { index: 34, name: 'Cyber Hub', shortName: 'Cyber Hub', colorKey: 'property_green' },
+  { index: 35, name: 'Duronto Exp', shortName: 'Duronto Exp', colorKey: 'railroad' },
   { index: 36, name: 'Kismat', shortName: 'Kismat', colorKey: 'chance' },
-  { index: 37, name: 'Marine Drive', shortName: 'Marine D', colorKey: 'property_darkblue' },
-  { index: 38, name: 'Luxury Tax', shortName: 'Lux Tax', colorKey: 'tax' },
-  { index: 39, name: 'Altamount Rd', shortName: 'Altamount', colorKey: 'property_darkblue' },
+  { index: 37, name: 'Marine Drive', shortName: 'Marine Drive', colorKey: 'property_darkblue' },
+  { index: 38, name: 'Ghoos', shortName: 'Ghoos', colorKey: 'tax' },
+  { index: 39, name: 'Altamount Road', shortName: 'Altamount Road', colorKey: 'property_darkblue' },
 ];
 
 function TokenCircle({ playerIndex, cx, cy, tokenEmoji }: { playerIndex: number; cx: number; cy: number; tokenEmoji?: string }) {
@@ -158,8 +171,8 @@ function computeTokenPositions(tokens: TokenView[]): { playerIndex: number; cx: 
     const pos = parseInt(posStr);
     const pts = byPos[pos];
     const center = getTilePos(pos);
-    const tileCx = center.x + S / 2;
-    const tileCy = center.y + S / 2;
+    const tileCx = center.x + 0.5;
+    const tileCy = center.y + 0.5;
     if (pts.length === 1) {
       positions.push({ playerIndex: pts[0].playerIndex, cx: tileCx, cy: tileCy });
     } else {
@@ -229,8 +242,8 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
       const center = getTilePos(Math.round(currentPos));
       result.push({
         playerIndex: stepAnim.playerIndex,
-        cx: center.x + S / 2,
-        cy: center.y + S / 2,
+        cx: center.x + 0.5,
+        cy: center.y + 0.5,
       });
       return result;
     }
@@ -363,89 +376,70 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
           {/* Tiles */}
           {tiles.map(t => {
             const isProperty = BOARD_DATA[t.index].colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax'].includes(BOARD_DATA[t.index].colorKey);
+            const PAD = 0.15 * S; // padding around image
+            const IS = S - 2 * PAD; // image size
             return (
             <g key={t.index}>
-              {/* Property tile: dark fill, no outer stroke (avoids overlap with neighbors) */}
-              <rect
-                x={t.x} y={t.y} width={S} height={S}
-                fill={isProperty ? '#1a1a2e' : t.color}
-                rx={0}
-              />
-              {/* Property art at full opacity */}
+              {/* Base fill: property color */}
+              <rect x={t.x} y={t.y} width={S} height={S} fill={isProperty ? t.color : t.color} stroke="#111" strokeWidth={0.015 * S} rx={0} />
+              {/* Property tile: image centered, name|price at bottom */}
               {isProperty && (
-                <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
-                  x={t.x} y={t.y}
-                  width={S} height={S}
-                  preserveAspectRatio="xMidYMid slice"
-                  style={{ pointerEvents: 'none', borderRadius: 0 }}
-                  onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
-              )}
-              {/* Color strip at top of property tile */}
-              {isProperty && (
-                <rect x={t.x} y={t.y} width={S} height={0.12 * S}
-                  fill={t.color} rx={0} />
+                <>
+                  {/* Art image centered in tile */}
+                  <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
+                    x={t.x + PAD} y={t.y + PAD}
+                    width={IS} height={IS}
+                    preserveAspectRatio="xMidYMid slice"
+                    style={{ pointerEvents: 'none' }}
+                    onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
+                  {/* Name | Price at bottom of tile (below image) */}
+                  <text x={t.x + PAD} y={t.y + S - 0.05 * S} textAnchor="start" fill={t.textColor} fontSize={0.07 * S} fontWeight={600}>
+                    {t.shortName}
+                  </text>
+                  <text x={t.x + S - PAD} y={t.y + S - 0.05 * S} textAnchor="end" fill={t.textColor} fontSize={0.07 * S} fontWeight={700}>
+                    ₹{t.index === 1 || t.index === 3 ? 60 : t.index === 6 || t.index === 8 ? 100 : t.index === 9 ? 120 : PROPERTY_PRICES[BOARD_DATA[t.index].colorKey] || ''}
+                  </text>
+                </>
               )}
               {/* Corner labels */}
               {(t.index === 0) && (
-                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.25 * S} fontWeight={700}>GO</text>
+                <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.2 * S} fontWeight={700}>CHALO</text>
               )}
               {(t.index === 10) && (
-                <><rect x={t.x + 0.1 * S} y={t.y + 0.1 * S} width={S - 0.2 * S} height={S - 0.2 * S} fill="none" stroke="#999" strokeWidth={0.03 * S} rx={0.05 * S} />
-                <rect x={t.x + 0.15 * S} y={t.y + 0.1 * S} width={S - 0.3 * S} height={S - 0.2 * S} fill="none" stroke="#777" strokeWidth={0.02 * S} rx={0.03 * S} />
-                <rect x={t.x + 0.1 * S} y={t.y + 0.1 * S} width={S - 0.2 * S} height={S - 0.2 * S} fill="none" stroke="#888" strokeWidth={0.015 * S} />
-                <line x1={t.x + 0.22 * S} y1={t.y + 0.1 * S} x2={t.x + 0.22 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
-                <line x1={t.x + 0.38 * S} y1={t.y + 0.1 * S} x2={t.x + 0.38 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
-                <line x1={t.x + 0.54 * S} y1={t.y + 0.1 * S} x2={t.x + 0.54 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
-                <line x1={t.x + 0.7 * S} y1={t.y + 0.1 * S} x2={t.x + 0.7 * S} y2={t.y + S - 0.1 * S} stroke="#888" strokeWidth={0.02 * S} />
-                <text x={t.x + S / 2} y={t.y + S / 2 + 0.2 * S} textAnchor="middle" fill="#fff" fontSize={0.15 * S} fontWeight={700}>JAIL</text>
-                <text x={t.x + S / 2} y={t.y + 0.2 * S} textAnchor="middle" fill="#aaa" fontSize={0.08 * S}>Just</text>
-                <text x={t.x + S / 2} y={t.y + 0.28 * S} textAnchor="middle" fill="#aaa" fontSize={0.08 * S}>Visiting</text></>
+                <><rect x={t.x + 0.2 * S} y={t.y + 0.1 * S} width={0.6 * S} height={0.6 * S} fill="none" stroke="#999" strokeWidth={0.03 * S} rx={0.05 * S} />
+                <rect x={t.x + 0.25 * S} y={t.y + 0.1 * S} width={0.5 * S} height={0.6 * S} fill="none" stroke="#777" strokeWidth={0.02 * S} rx={0.03 * S} />
+                <rect x={t.x + 0.2 * S} y={t.y + 0.1 * S} width={0.6 * S} height={0.6 * S} fill="none" stroke="#888" strokeWidth={0.015 * S} />
+                <line x1={t.x + 0.28 * S} y1={t.y + 0.1 * S} x2={t.x + 0.28 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
+                <line x1={t.x + 0.36 * S} y1={t.y + 0.1 * S} x2={t.x + 0.36 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
+                <line x1={t.x + 0.44 * S} y1={t.y + 0.1 * S} x2={t.x + 0.44 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
+                <line x1={t.x + 0.52 * S} y1={t.y + 0.1 * S} x2={t.x + 0.52 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
+                <line x1={t.x + 0.6 * S} y1={t.y + 0.1 * S} x2={t.x + 0.6 * S} y2={t.y + 0.7 * S} stroke="#888" strokeWidth={0.015 * S} />
+                <text x={t.x + S / 2} y={t.y + 0.45 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>JAIL</text>
+                <text x={t.x + S / 2} y={t.y + 0.82 * S} textAnchor="middle" fill="#aaa" fontSize={0.07 * S}>Just Visiting</text></>
               )}
               {(t.index === 20) && (
                 <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#eee" fontSize={0.13 * S} fontWeight={600}>FREE</text>
                 <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#eee" fontSize={0.13 * S} fontWeight={600}>PARKING</text></>
               )}
               {(t.index === 30) && (
-                <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>GO TO</text>
+                <><text x={t.x + S / 2} y={t.y + S / 2 - 0.1 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>CHALO</text>
                 <text x={t.x + S / 2} y={t.y + S / 2 + 0.08 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={600}>JAIL</text></>
               )}
-              {/* Name at bottom of tile */}
-              {isProperty && (
-                <text x={t.x + S / 2} y={t.y + S - 0.14 * S} textAnchor="middle" fill="#fff" fontSize={0.08 * S} fontWeight={600}>
-                  {t.shortName}
-                </text>
-              )}
-              {/* Price below name */}
-              {isProperty && (
-                <text x={t.x + S / 2} y={t.y + S - 0.05 * S} textAnchor="middle" fill="#4ecca3" fontSize={0.07 * S} fontWeight={700}>
-                  ₹{t.index === 5 || t.index === 15 || t.index === 25 || t.index === 35 ? 200 : t.index === 12 || t.index === 28 ? 150 : BOARD_DATA[t.index].colorKey === 'property_brown' ? 60 : BOARD_DATA[t.index].colorKey === 'property_lightblue' ? (t.index === 9 ? 120 : 100) : ''}
-                </text>
-              )}
-              {/* Buildings on tile */}
-              {propertyBuildings[t.index] > 0 && (
-                <g transform={`translate(${t.x + S / 2 - propertyBuildings[t.index] * 0.06 * S}, ${t.y + S - 0.18 * S})`}>
+              {/* Buildings on tile — at the top (above image) */}
+              {isProperty && propertyBuildings[t.index] > 0 && (
+                <g transform={`translate(${t.x + S / 2 - propertyBuildings[t.index] * 0.06 * S}, ${t.y + 0.06 * S})`}>
                   {propertyBuildings[t.index] <= 4 ? (
                     Array.from({ length: propertyBuildings[t.index] }, (_, i) => (
-                      <g key={i} transform={`translate(${i * 0.12 * S}, 0)`}>
-                        <rect x={0} y={-0.08 * S} width={0.1 * S} height={0.1 * S} rx={0.015 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
-                        <rect x={0.01 * S} y={-0.12 * S} width={0.08 * S} height={0.04 * S} rx={0.01 * S} fill="#66BB6A" />
-                        <rect x={0.02 * S} y={-0.14 * S} width={0.02 * S} height={0.02 * S} fill="#81C784" />
-                        <rect x={0.06 * S} y={-0.14 * S} width={0.02 * S} height={0.02 * S} fill="#81C784" />
-                      </g>
+                      <rect key={i} x={i * 0.1 * S} y={-0.04 * S} width={0.08 * S} height={0.08 * S} rx={0.015 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
                     ))
                   ) : (
-                    <g>
-                      <rect x={-0.08 * S} y={-0.12 * S} width={0.16 * S} height={0.16 * S} rx={0.02 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
-                      <rect x={-0.04 * S} y={-0.16 * S} width={0.08 * S} height={0.04 * S} fill="#EF5350" />
-                      <rect x={-0.01 * S} y={-0.02 * S} width={0.02 * S} height={0.02 * S} fill="#fff" opacity={0.3} />
-                      <rect x={0.02 * S} y={-0.06 * S} width={0.02 * S} height={0.02 * S} fill="#fff" opacity={0.3} />
-                    </g>
+                    <rect x={-0.06 * S} y={-0.06 * S} width={0.12 * S} height={0.1 * S} rx={0.015 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
                   )}
                 </g>
               )}
-              {/* Owner indicator on tile */}
-              {propertyOwners[t.index] !== undefined && (
-                <circle cx={t.x + 0.15 * S} cy={t.y + 0.15 * S} r={0.06 * S} fill={PLAYER_COLORS[propertyOwners[t.index] % PLAYER_COLORS.length]} stroke="#fff" strokeWidth={0.015 * S} />
+              {/* Owner indicator — on the left side, beside the image */}
+              {isProperty && propertyOwners[t.index] !== undefined && (
+                <circle cx={t.x + 0.06 * S} cy={t.y + S / 2} r={0.05 * S} fill={PLAYER_COLORS[propertyOwners[t.index] % PLAYER_COLORS.length]} stroke="#fff" strokeWidth={0.015 * S} />
               )}
             </g>
             );
@@ -453,42 +447,40 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
 
           {/* Center area with card decks */}
           <rect x={S} y={S} width={9 * S} height={9 * S} fill="#16213e" rx={0.15 * S} />
-          
-          {/* Kismat deck (reduced by half) */}
+
+          {/* Kismat deck (reduced size) */}
           <g transform={`translate(${2.2 * S}, ${3.5 * S})`}>
-            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
-            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="url(#kismatGrad)" stroke="#333366" strokeWidth={0.02 * S} />
+            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
+            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="url(#kismatGrad)" stroke="#333366" strokeWidth={0.02 * S} />
             <text x={0.5 * S} y={0.7 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.35 * S} fontWeight={800}>★</text>
             <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
-            <text x={0.83 * S} y={0.17 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{kismatRemaining}</text>
+            <text x={0.825 * S} y={0.175 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{kismatRemaining}</text>
           </g>
           <text x={2.7 * S} y={5.3 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.14 * S} fontWeight={700}>KISMAT</text>
           <text x={2.7 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Chance)</text>
 
-          {/* Jugaad deck (reduced by half) */}
+          {/* Jugaad deck (reduced size) */}
           <g transform={`translate(${7.8 * S}, ${3.5 * S})`}>
-            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
-            <rect width={1 * S} height={1.4 * S} rx={0.1 * S} fill="url(#jugaadGrad)" stroke="#336633" strokeWidth={0.02 * S} />
+            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="rgba(0,0,0,0.3)" transform={`translate(${0.03 * S}, ${0.03 * S})`} />
+            <rect width={S} height={1.4 * S} rx={0.1 * S} fill="url(#jugaadGrad)" stroke="#336633" strokeWidth={0.02 * S} />
             <text x={0.5 * S} y={0.7 * S} textAnchor="middle" fill="#4CAF50" fontSize={0.35 * S} fontWeight={800}>✦</text>
             <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
-            <text x={0.83 * S} y={0.17 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{jugaadRemaining}</text>
+            <text x={0.825 * S} y={0.175 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{jugaadRemaining}</text>
           </g>
           <text x={8.3 * S} y={5.3 * S} textAnchor="middle" fill="#4CAF50" fontSize={0.14 * S} fontWeight={700}>JUGAAD</text>
           <text x={8.3 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Community Chest)</text>
 
           {/* Building Pool */}
           <g transform={`translate(${5.5 * S - 1.2 * S}, ${6.5 * S})`}>
-            <rect width={2.4 * S} height={0.5 * S} rx={0.08 * S} fill="#1a1a2e" stroke="#333" strokeWidth={0.02 * S} />
-            {/* Houses */}
-            <rect x={0.1 * S} y={0.08 * S} width={0.2 * S} height={0.18 * S} rx={0.03 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
-            <rect x={0.1 * S} y={0.05 * S} width={0.2 * S} height={0.06 * S} rx={0.02 * S} fill="#66BB6A" />
-            <rect x={0.12 * S} y={0.04 * S} width={0.04 * S} height={0.04 * S} fill="#81C784" />
-            <rect x={0.24 * S} y={0.04 * S} width={0.04 * S} height={0.04 * S} fill="#81C784" />
-            <text x={0.45 * S} y={0.32 * S} fill="#4ecca3" fontSize={0.14 * S} fontWeight={600}>×{housesRemaining}</text>
-            {/* Hotels */}
-            <rect x={1.1 * S} y={0.08 * S} width={0.28 * S} height={0.18 * S} rx={0.02 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
-            <rect x={1.16 * S} y={0.04 * S} width={0.16 * S} height={0.06 * S} fill="#EF5350" />
-            <text x={1.5 * S} y={0.32 * S} fill="#e94560" fontSize={0.14 * S} fontWeight={600}>×{hotelsRemaining}</text>
+            <rect width={2.4 * S} height={0.55 * S} rx={0.08 * S} fill="#1a1a2e" stroke="#333" strokeWidth={0.02 * S} />
+            <rect x={0.12 * S} y={0.1 * S} width={0.22 * S} height={0.2 * S} rx={0.03 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
+            <rect x={0.12 * S} y={0.06 * S} width={0.22 * S} height={0.07 * S} rx={0.015 * S} fill="#66BB6A" />
+            <rect x={0.14 * S} y={0.04 * S} width={0.05 * S} height={0.05 * S} fill="#81C784" />
+            <rect x={0.27 * S} y={0.04 * S} width={0.05 * S} height={0.05 * S} fill="#81C784" />
+            <text x={0.5 * S} y={0.35 * S} fill="#4ecca3" fontSize={0.16 * S} fontWeight={600}>×{housesRemaining}</text>
+            <rect x={1.2 * S} y={0.1 * S} width={0.28 * S} height={0.2 * S} rx={0.03 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
+            <rect x={1.26 * S} y={0.05 * S} width={0.16 * S} height={0.08 * S} fill="#EF5350" />
+            <text x={1.65 * S} y={0.35 * S} fill="#e94560" fontSize={0.16 * S} fontWeight={600}>×{hotelsRemaining}</text>
           </g>
 
           {/* Player tokens */}

@@ -2,12 +2,12 @@ export const PLAYER_COLORS = ['#E53935', '#43A047', '#1E88E5', '#FB8C00', '#8E24
 export const PLAYER_NAMES = ['Red', 'Green', 'Blue', 'Orange', 'Purple', 'Cyan', 'Yellow', 'Brown'];
 
 export const GROUP_COLORS: Record<number, string> = {
-  0: '#8B4513',
-  1: '#87CEEB',
-  2: '#FF69B4',
-  3: '#FF8C00',
-  4: '#FF0000',
-  5: '#FFD700',
-  6: '#006400',
-  7: '#00008B',
+  0: '#A0522D',
+  1: '#B0D4E8',
+  2: '#E88DB0',
+  3: '#E08A30',
+  4: '#C62828',
+  5: '#D4A820',
+  6: '#2E7D32',
+  7: '#1A237E',
 };
