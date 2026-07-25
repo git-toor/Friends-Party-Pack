@@ -7,6 +7,7 @@ interface PropertyCardData {
   price: number;
   houses: number;
   mortgaged: boolean;
+  monopoly?: boolean;
 }
 
 interface PropertyCardProps {
@@ -25,11 +26,14 @@ export function PropertyCard({ card, selected, disabled, size = 'medium' }: Prop
   const color = card.group !== undefined ? (GROUP_COLORS[card.group] || '#888') : '#888';
   const isMortgaged = card.mortgaged;
 
+  const hasMonopoly = card.monopoly === true;
+
   return (
     <div style={{
       width: w, height: h, borderRadius: 8, overflow: 'hidden',
-      background: '#1a1a2e', border: selected ? `2px solid #e94560` : `1px solid #333`,
-      boxShadow: selected ? '0 0 12px rgba(233,69,96,0.5)' : '0 2px 6px rgba(0,0,0,0.3)',
+      background: '#1a1a2e',
+      border: selected ? `2px solid #e94560` : hasMonopoly ? `2px solid ${color}` : `1px solid #333`,
+      boxShadow: selected ? '0 0 12px rgba(233,69,96,0.5)' : hasMonopoly ? `0 0 10px ${color}80` : '0 2px 6px rgba(0,0,0,0.3)',
       display: 'flex', flexDirection: 'column', cursor: disabled ? 'default' : 'pointer',
       opacity: isMortgaged ? 0.5 : 1,
       filter: isMortgaged ? 'grayscale(100%)' : 'none',

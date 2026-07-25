@@ -9,6 +9,7 @@ import { sounds } from './sounds.js';
 import { PLAYER_NAMES } from './constants.js';
 import AuctionModal from './AuctionModal.js';
 import BazaarModal from './BazaarModal.js';
+import GameLog from './GameLog.js';
 
 interface GameEvent {
   type: string;
@@ -138,7 +139,9 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     .filter(([_, p]) => p.owner === playerIndex && gs.players[playerIndex] && !gs.players[playerIndex].bankrupt)
     .map(([spaceId, p]) => {
       const space = SPACE_DATA.find(s => s.spaceId === spaceId);
-      return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, groupName: space?.groupName ?? '', price: space?.price ?? 0, houseCost: space?.houseCost ?? 0, mortgageValue: space?.mortgageValue ?? 0, houses: p.houses, mortgaged: p.mortgaged };
+      const groupName = space?.groupName ?? '';
+      const monopoly = gs.players[playerIndex]?.monopolies.includes(groupName) ?? false;
+      return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, group: space?.group, price: space?.price ?? 0, houseCost: space?.houseCost ?? 0, mortgageValue: space?.mortgageValue ?? 0, houses: p.houses, mortgaged: p.mortgaged, monopoly };
     }), [gs.properties, playerIndex, gs.players]);
 
   const selectedPropInfo = selectedPropForPopup ? myPropertyCards.find(c => c.spaceId === selectedPropForPopup) ?? null : null;
@@ -429,6 +432,8 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
       </div>
 
       <Dice ref={diceRef} />
+
+      <GameLog events={gs.eventLog} playerNames={playerNames} currentPlayer={gs.currentPlayer} />
 
       <div style={{ position: 'relative', zIndex: 20, overflow: 'visible', background: 'rgba(22,33,62,0.4)', flexShrink: 0 }}>
         <PropertyFan cards={myPropertyCards} selectedCardIndex={selectedFanCard} onSelectCard={handleFanCardTap} disabled={!isMyTurn} />
