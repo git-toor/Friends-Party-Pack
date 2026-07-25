@@ -942,7 +942,10 @@ export function bid(state: GameState, playerIndex: number, payload?: { amount?: 
   if (state.players[playerIndex].money < amount) return { state, valid: false, error: 'Not enough money' };
   ix.currentBid = amount;
   ix.currentBidder = playerIndex;
-  const nextPlayer = ((playerIndex + 1) % state.players.length);
+  let nextPlayer = ((playerIndex + 1) % state.players.length);
+  while (nextPlayer === ix.declinedBy || ix.passedPlayers.includes(nextPlayer)) {
+    nextPlayer = (nextPlayer + 1) % state.players.length;
+  }
   ix.activePlayer = nextPlayer;
   const events: GameEvent[] = [{ type: 'CARD_EFFECT' as GameEvent['type'], playerIndex, amount }];
   events[0].type = 'AUCTION_BID' as GameEvent['type'];
@@ -958,8 +961,8 @@ export function pass(state: GameState, playerIndex: number): GameResult {
   if (playerIndex !== ix.activePlayer) return { state, valid: false, error: 'Not your turn to pass' };
   ix.passedPlayers.push(playerIndex);
   const total = state.players.length;
-  const activePlayers = total - ix.passedPlayers.length - 1; // -1 for declinedBy
-  if (activePlayers <= 0 || ix.currentBidder === null) {
+  const activeCount = total - new Set([...ix.passedPlayers, ix.declinedBy]).size;
+  if (activeCount <= 0 || ix.currentBidder === null) {
     if (ix.currentBidder !== null) {
       state.players[ix.currentBidder].money -= ix.currentBid;
       state.players[ix.currentBidder].stats.totalMoneySpent += ix.currentBid;
