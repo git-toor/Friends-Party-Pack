@@ -4,19 +4,18 @@ import { MonopolyBoard } from './MonopolyBoard.js';
 import { Dice, type DiceHandle } from './Dice.js';
 import { OpponentBar } from './OpponentBar.js';
 import { PropertyFan } from './PropertyFan.js';
-import type { PropertyCardData } from './PropertyCard.js';
+import { PropertyCard } from './PropertyCard.js';
 import { sounds } from './sounds.js';
 import { PLAYER_NAMES } from './constants.js';
+import AuctionModal from './AuctionModal.js';
+import BazaarModal from './BazaarModal.js';
 
 interface GameEvent {
-  type: 'PLAYER_MOVED' | 'PASSED_GO' | 'BOUGHT_PROPERTY' | 'PAID_RENT' | 'PAID_TAX'
-    | 'WENT_TO_JAIL' | 'BANKRUPT' | 'PLAYER_WON' | 'ROLLED_DOUBLES' | 'THREE_DOUBLES'
-    | 'TURN_ENDED' | 'DREW_CARD' | 'CARD_EFFECT' | 'BUNGALOW_BUILT' | 'VILLA_BUILT'
-    | 'BUNGALOW_SOLD' | 'VILLA_SOLD' | 'GHOOS_PAID' | 'SIFARISH_USED';
+  type: string;
   playerIndex: number;
   amount?: number; toPlayer?: number; propertyIndex?: number;
   from?: number; to?: number;
-  cardType?: 'kismat' | 'jugaad'; cardIndex?: number; cardText?: string;
+  cardType?: string; cardIndex?: number; cardText?: string;
 }
 
 interface PlayerState { money: number; position: number; inJail: boolean; jailTurns: number; jailFreeCards: number; bankrupt: boolean; monopolies: string[]; }
@@ -30,6 +29,7 @@ interface MonopolyClientState {
   lastAction: string | null; landedIndex: number | null;
   winner: number | null; validActions: string[];
   housesRemaining: number; hotelsRemaining: number;
+  interaction: any | null;
   eventLog: any[];
 }
 
@@ -44,53 +44,67 @@ const EMPTY_STATE: MonopolyClientState = {
   players: [], properties: {}, currentPlayer: 0, phase: 'waiting_for_roll',
   dice: null, diceTotal: null, doublesCount: 0, rolledBy: null,
   lastAction: null, landedIndex: null, winner: null,
-  validActions: [], housesRemaining: 32, hotelsRemaining: 12, eventLog: [],
+  validActions: [], housesRemaining: 32, hotelsRemaining: 12,
+  interaction: null, eventLog: [],
 };
 
-const SPACE_DATA: { index: number; name: string; spaceId: string; group?: number; price?: number }[] = [
+const SPACE_DATA: { index: number; name: string; spaceId: string; group?: number; price?: number; houseCost?: number; mortgageValue?: number; groupName?: string }[] = [
   { index: 0, name: 'GO', spaceId: 'go' },
-  { index: 1, name: 'Chandni Chowk', spaceId: 'chandni_chowk', group: 0, price: 60 },
+  { index: 1, name: 'Chandni Chowk', spaceId: 'chandni_chowk', group: 0, price: 60, houseCost: 50, mortgageValue: 30, groupName: 'brown' },
   { index: 2, name: 'Jugaad', spaceId: 'jugaad_1' },
-  { index: 3, name: 'Hazratganj', spaceId: 'hazratganj', group: 0, price: 60 },
+  { index: 3, name: 'Hazratganj', spaceId: 'hazratganj', group: 0, price: 60, houseCost: 50, mortgageValue: 30, groupName: 'brown' },
   { index: 4, name: 'Income Tax', spaceId: 'income_tax' },
-  { index: 5, name: 'Vande Bharat Exp', spaceId: 'vande_bharat', price: 200 },
-  { index: 6, name: 'Ghat Road', spaceId: 'ghat_road', group: 1, price: 100 },
+  { index: 5, name: 'Vande Bharat Exp', spaceId: 'vande_bharat', price: 200, mortgageValue: 100 },
+  { index: 6, name: 'Ghat Road', spaceId: 'ghat_road', group: 1, price: 100, houseCost: 50, mortgageValue: 50, groupName: 'light_blue' },
   { index: 7, name: 'Kismat', spaceId: 'kismat_1' },
-  { index: 8, name: 'MI Road', spaceId: 'mi_road', group: 1, price: 100 },
-  { index: 9, name: 'Law Garden', spaceId: 'law_garden', group: 1, price: 120 },
+  { index: 8, name: 'MI Road', spaceId: 'mi_road', group: 1, price: 100, houseCost: 50, mortgageValue: 50, groupName: 'light_blue' },
+  { index: 9, name: 'Law Garden', spaceId: 'law_garden', group: 1, price: 120, houseCost: 50, mortgageValue: 60, groupName: 'light_blue' },
   { index: 10, name: 'Jail', spaceId: 'jail' },
-  { index: 11, name: 'Mall Road', spaceId: 'mall_road', group: 2, price: 140 },
-  { index: 12, name: 'Water Supply', spaceId: 'water_supply', price: 150 },
-  { index: 13, name: 'Bapu Bazaar', spaceId: 'bapu_bazaar', group: 2, price: 140 },
-  { index: 14, name: 'Lake Pichola', spaceId: 'lake_pichola', group: 2, price: 160 },
-  { index: 15, name: 'Rajdhani Exp', spaceId: 'rajdhani', price: 200 },
-  { index: 16, name: 'Calangute Bch', spaceId: 'calangute', group: 3, price: 180 },
+  { index: 11, name: 'Mall Road', spaceId: 'mall_road', group: 2, price: 140, houseCost: 100, mortgageValue: 70, groupName: 'pink' },
+  { index: 12, name: 'Water Supply', spaceId: 'water_supply', price: 150, mortgageValue: 75 },
+  { index: 13, name: 'Bapu Bazaar', spaceId: 'bapu_bazaar', group: 2, price: 140, houseCost: 100, mortgageValue: 70, groupName: 'pink' },
+  { index: 14, name: 'Lake Pichola', spaceId: 'lake_pichola', group: 2, price: 160, houseCost: 100, mortgageValue: 80, groupName: 'pink' },
+  { index: 15, name: 'Rajdhani Exp', spaceId: 'rajdhani', price: 200, mortgageValue: 100 },
+  { index: 16, name: 'Calangute Bch', spaceId: 'calangute', group: 3, price: 180, houseCost: 100, mortgageValue: 90, groupName: 'orange' },
   { index: 17, name: 'Jugaad', spaceId: 'jugaad_2' },
-  { index: 18, name: 'White Town', spaceId: 'white_town', group: 3, price: 180 },
-  { index: 19, name: 'Rock Beach', spaceId: 'rock_beach', group: 3, price: 200 },
+  { index: 18, name: 'White Town', spaceId: 'white_town', group: 3, price: 180, houseCost: 100, mortgageValue: 90, groupName: 'orange' },
+  { index: 19, name: 'Rock Beach', spaceId: 'rock_beach', group: 3, price: 200, houseCost: 100, mortgageValue: 100, groupName: 'orange' },
   { index: 20, name: 'Free Parking', spaceId: 'free_parking' },
-  { index: 21, name: 'MG Road', spaceId: 'mg_road', group: 4, price: 220 },
+  { index: 21, name: 'MG Road', spaceId: 'mg_road', group: 4, price: 220, houseCost: 150, mortgageValue: 110, groupName: 'red' },
   { index: 22, name: 'Kismat', spaceId: 'kismat_2' },
-  { index: 23, name: 'Marina Beach', spaceId: 'marina_beach', group: 4, price: 220 },
-  { index: 24, name: 'Banjara Hills', spaceId: 'banjara_hills', group: 4, price: 240 },
-  { index: 25, name: 'Shatabdi Exp', spaceId: 'shatabdi', price: 200 },
-  { index: 26, name: 'Park Street', spaceId: 'park_street', group: 5, price: 260 },
-  { index: 27, name: 'FC Road', spaceId: 'fc_road', group: 5, price: 260 },
-  { index: 28, name: 'Electricity Bd', spaceId: 'electricity_board', price: 150 },
-  { index: 29, name: 'SG Highway', spaceId: 'sg_highway', group: 5, price: 280 },
+  { index: 23, name: 'Marina Beach', spaceId: 'marina_beach', group: 4, price: 220, houseCost: 150, mortgageValue: 110, groupName: 'red' },
+  { index: 24, name: 'Banjara Hills', spaceId: 'banjara_hills', group: 4, price: 240, houseCost: 150, mortgageValue: 120, groupName: 'red' },
+  { index: 25, name: 'Shatabdi Exp', spaceId: 'shatabdi', price: 200, mortgageValue: 100 },
+  { index: 26, name: 'Park Street', spaceId: 'park_street', group: 5, price: 260, houseCost: 150, mortgageValue: 130, groupName: 'yellow' },
+  { index: 27, name: 'FC Road', spaceId: 'fc_road', group: 5, price: 260, houseCost: 150, mortgageValue: 130, groupName: 'yellow' },
+  { index: 28, name: 'Electricity Bd', spaceId: 'electricity_board', price: 150, mortgageValue: 75 },
+  { index: 29, name: 'SG Highway', spaceId: 'sg_highway', group: 5, price: 280, houseCost: 150, mortgageValue: 140, groupName: 'yellow' },
   { index: 30, name: 'Go To Jail', spaceId: 'go_to_jail' },
-  { index: 31, name: 'Bandra West', spaceId: 'bandra_west', group: 6, price: 300 },
-  { index: 32, name: 'Connaught Pl', spaceId: 'connaught_place', group: 6, price: 300 },
+  { index: 31, name: 'Bandra West', spaceId: 'bandra_west', group: 6, price: 300, houseCost: 200, mortgageValue: 150, groupName: 'green' },
+  { index: 32, name: 'Connaught Pl', spaceId: 'connaught_place', group: 6, price: 300, houseCost: 200, mortgageValue: 150, groupName: 'green' },
   { index: 33, name: 'Jugaad', spaceId: 'jugaad_3' },
-  { index: 34, name: 'Cyber Hub', spaceId: 'cyber_hub', group: 6, price: 320 },
-  { index: 35, name: 'Tejas Exp', spaceId: 'tejas', price: 200 },
+  { index: 34, name: 'Cyber Hub', spaceId: 'cyber_hub', group: 6, price: 320, houseCost: 200, mortgageValue: 160, groupName: 'green' },
+  { index: 35, name: 'Tejas Exp', spaceId: 'tejas', price: 200, mortgageValue: 100 },
   { index: 36, name: 'Kismat', spaceId: 'kismat_3' },
-  { index: 37, name: 'Marine Drive', spaceId: 'marine_drive', group: 7, price: 350 },
+  { index: 37, name: 'Marine Drive', spaceId: 'marine_drive', group: 7, price: 350, houseCost: 200, mortgageValue: 175, groupName: 'dark_blue' },
   { index: 38, name: 'Luxury Tax', spaceId: 'luxury_tax' },
-  { index: 39, name: 'Altamount Rd', spaceId: 'altamount_road', group: 7, price: 400 },
+  { index: 39, name: 'Altamount Rd', spaceId: 'altamount_road', group: 7, price: 400, houseCost: 200, mortgageValue: 200, groupName: 'dark_blue' },
 ];
 
 function getSpaceInfo(index: number) { return SPACE_DATA.find(s => s.index === index); }
+function getSpaceByPropId(propId: string) { return SPACE_DATA.find(s => s.spaceId === propId); }
+
+const GROUP_COLORS: Record<string, string> = {
+  brown: '#8B4513', light_blue: '#87CEEB', pink: '#FF69B4', orange: '#FF8C00',
+  red: '#FF0000', yellow: '#FFD700', green: '#006400', dark_blue: '#00008B',
+  '0': '#8B4513', '1': '#87CEEB', '2': '#FF69B4', '3': '#FF8C00',
+  '4': '#FF0000', '5': '#FFD700', '6': '#006400', '7': '#00008B',
+};
+
+const GROUP_NAMES: Record<string, string> = {
+  brown: 'Brown', light_blue: 'Light Blue', pink: 'Pink', orange: 'Orange',
+  red: 'Red', yellow: 'Yellow', green: 'Green', dark_blue: 'Dark Blue',
+};
 
 export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerName = 'You', playerId = '', sessionId, players, gameStatePush, diceEvent }: MonopolyGameProps) {
   const [gs, setGs] = useState<MonopolyClientState>(EMPTY_STATE);
@@ -102,29 +116,32 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   const [showBankrupt, setShowBankrupt] = useState(false);
   const [showCard, setShowCard] = useState<{ type: string; text: string } | null>(null);
   const [selectedFanCard, setSelectedFanCard] = useState<number | null>(null);
-  const [buildingMenu, setBuildingMenu] = useState<number | null>(null);
+  const [selectedPropForPopup, setSelectedPropForPopup] = useState<string | null>(null);
+  const [showBazaar, setShowBazaar] = useState(false);
   const rollingRef = useRef(false);
   const diceRef = useRef<DiceHandle>(null);
 
   const playerNames = useMemo(() => players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {}, [players]);
 
   const isMyTurn = playerIndex === gs.currentPlayer;
-  const canRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null && !rollingRef.current;
+  const isAuctionActive = gs.interaction?.type === 'auction';
+  const isTradeActive = gs.interaction?.type === 'trade';
+  const canRoll = isMyTurn && gs.phase === 'waiting_for_roll' && gs.winner === null && !rollingRef.current && !isAuctionActive;
   const canBuy = isMyTurn && gs.phase === 'waiting_for_action' && gs.validActions.includes('BUY_PROPERTY');
   const canDecline = isMyTurn && gs.phase === 'waiting_for_action' && gs.validActions.includes('DECLINE_PROPERTY');
   const canEndTurn = isMyTurn && gs.phase === 'turn_end' && gs.validActions.includes('END_TURN');
   const canPayGhoos = isMyTurn && gs.validActions.includes('PAY_GHOOS');
   const canUseSifarish = isMyTurn && gs.validActions.includes('USE_SIFARISH_CARD');
+  const canBazaar = isMyTurn && !isAuctionActive && !isTradeActive && gs.winner === null;
 
-  // ─── Property cards for fan ──
   const myPropertyCards = useMemo(() => Object.entries(gs.properties)
     .filter(([_, p]) => p.owner === playerIndex && gs.players[playerIndex] && !gs.players[playerIndex].bankrupt)
     .map(([spaceId, p]) => {
       const space = SPACE_DATA.find(s => s.spaceId === spaceId);
-      return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, group: (space as any)?.group, price: space?.price ?? 0, houses: p.houses, mortgaged: p.mortgaged };
+      return { index: space?.index ?? -1, spaceId, name: space?.name ?? spaceId, groupName: space?.groupName ?? '', price: space?.price ?? 0, houseCost: space?.houseCost ?? 0, mortgageValue: space?.mortgageValue ?? 0, houses: p.houses, mortgaged: p.mortgaged };
     }), [gs.properties, playerIndex, gs.players]);
 
-  const selectedProp = buildingMenu !== null ? myPropertyCards[buildingMenu] : null;
+  const selectedPropInfo = selectedPropForPopup ? myPropertyCards.find(c => c.spaceId === selectedPropForPopup) ?? null : null;
 
   const updateState = useCallback((newState: any) => {
     if (!newState || (newState._sv !== undefined && newState._sv <= svRef.current)) return;
@@ -138,7 +155,7 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
       lastAction: newState.lastAction ?? null, landedIndex: newState.landedIndex ?? null,
       winner: newState.winner ?? null, validActions: newState.validActions || [],
       housesRemaining: newState.housesRemaining ?? 32, hotelsRemaining: newState.hotelsRemaining ?? 12,
-      eventLog: newState.eventLog || [],
+      interaction: newState.interaction ?? null, eventLog: newState.eventLog || [],
     });
   }, []);
 
@@ -154,6 +171,11 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     if (ev.type === 'VILLA_BUILT') { setEventMsg(`💒 Built villa`); setTimeout(() => setEventMsg(null), 2000); }
     if (ev.type === 'GHOOS_PAID') { setEventMsg(`💸 ${name} paid Ghoos ₹50`); setTimeout(() => setEventMsg(null), 2000); }
     if (ev.type === 'SIFARISH_USED') { setEventMsg(`🤝 ${name} used Sifarish`); setTimeout(() => setEventMsg(null), 2000); }
+    if (ev.type === 'PROPERTY_MORTGAGED') { setEventMsg(`🔒 ${name} mortgaged property`); setTimeout(() => setEventMsg(null), 2000); }
+    if (ev.type === 'PROPERTY_UNMORTGAGED') { setEventMsg(`🔓 ${name} unmortgaged property`); setTimeout(() => setEventMsg(null), 2000); }
+    if (ev.type === 'AUCTION_WON') { setEventMsg(`🔨 ${name} won auction for ₹${ev.amount}`); setTimeout(() => setEventMsg(null), 3000); }
+    if (ev.type === 'TRADE_ACCEPTED') { setEventMsg(`🤝 Trade accepted!`); setTimeout(() => setEventMsg(null), 3000); }
+    if (ev.type === 'TRADE_REJECTED') { setEventMsg(`❌ Trade rejected`); setTimeout(() => setEventMsg(null), 2000); }
   }, [playerNames]);
 
   const fetchState = useCallback(async () => {
@@ -172,7 +194,6 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     return () => clearInterval(interval);
   }, [sessionId, fetchState]);
 
-  // gameStatePush handler
   useEffect(() => {
     if (!gameStatePush) return;
     const prev = prevPlayersRef.current;
@@ -190,7 +211,6 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     updateState(gameStatePush);
   }, [gameStatePush, handleGameEvent, updateState]);
 
-  // Remote dice
   useEffect(() => {
     if (!diceEvent || !diceRef.current || diceEvent.playerIndex === playerIndex) return;
     if (diceEvent.action === 'CONFIRM_DICE') {
@@ -199,7 +219,6 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     }
   }, [diceEvent, playerIndex]);
 
-  // Server action
   const sendAction = useCallback(async (actionType: string, payload?: any) => {
     if (!sessionId) return null;
     try {
@@ -244,28 +263,72 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     fetchState();
   }, [sessionId, fetchState]);
 
-  const handleFanCardTap = useCallback((cardIndex: number) => {
-    setSelectedFanCard(prev => prev === cardIndex ? null : cardIndex);
-    if (isMyTurn) setBuildingMenu(prev => prev === cardIndex ? null : cardIndex);
-  }, [isMyTurn]);
-
+  // ─── Unified Property Popup actions ──
   const handleBuildBungalow = useCallback(async () => {
-    if (buildingMenu === null || !myPropertyCards[buildingMenu]) return;
-    await sendAction('BUILD_BUNGALOW', { propertyId: myPropertyCards[buildingMenu].spaceId });
-    setBuildingMenu(null);
-  }, [buildingMenu, myPropertyCards, sendAction]);
+    if (!selectedPropInfo) return;
+    await sendAction('BUILD_BUNGALOW', { propertyId: selectedPropInfo.spaceId });
+  }, [selectedPropInfo, sendAction]);
 
   const handleBuildVilla = useCallback(async () => {
-    if (buildingMenu === null || !myPropertyCards[buildingMenu]) return;
-    await sendAction('BUILD_VILLA', { propertyId: myPropertyCards[buildingMenu].spaceId });
-    setBuildingMenu(null);
-  }, [buildingMenu, myPropertyCards, sendAction]);
+    if (!selectedPropInfo) return;
+    await sendAction('BUILD_VILLA', { propertyId: selectedPropInfo.spaceId });
+  }, [selectedPropInfo, sendAction]);
 
   const handleSellBungalow = useCallback(async () => {
-    if (buildingMenu === null || !myPropertyCards[buildingMenu]) return;
-    await sendAction('SELL_BUNGALOW', { propertyId: myPropertyCards[buildingMenu].spaceId });
-    setBuildingMenu(null);
-  }, [buildingMenu, myPropertyCards, sendAction]);
+    if (!selectedPropInfo) return;
+    await sendAction('SELL_BUNGALOW', { propertyId: selectedPropInfo.spaceId });
+  }, [selectedPropInfo, sendAction]);
+
+  const handleMortgage = useCallback(async () => {
+    if (!selectedPropInfo) return;
+    await sendAction('MORTGAGE', { propertyId: selectedPropInfo.spaceId });
+  }, [selectedPropInfo, sendAction]);
+
+  const handleUnmortgage = useCallback(async () => {
+    if (!selectedPropInfo) return;
+    await sendAction('UNMORTGAGE', { propertyId: selectedPropInfo.spaceId });
+  }, [selectedPropInfo, sendAction]);
+
+  // ─── Fan card interaction ──
+  const handleFanCardTap = useCallback((cardIndex: number) => {
+    setSelectedFanCard(prev => prev === cardIndex ? null : cardIndex);
+    if (isMyTurn && myPropertyCards[cardIndex]) {
+      setSelectedPropForPopup(prev => prev === myPropertyCards[cardIndex].spaceId ? null : myPropertyCards[cardIndex].spaceId);
+    }
+  }, [isMyTurn, myPropertyCards]);
+
+  // ─── Auction actions ──
+  const handleAuctionBid = useCallback(async (amount: number) => {
+    await sendAction('BID', { amount });
+  }, [sendAction]);
+
+  const handleAuctionPass = useCallback(async () => {
+    await sendAction('PASS');
+  }, [sendAction]);
+
+  // ─── Bazaar actions ──
+  const handleProposeTrade = useCallback(async (payload: any) => {
+    await sendAction('PROPOSE_TRADE', payload);
+  }, [sendAction]);
+
+  const handleAcceptTrade = useCallback(async () => {
+    await sendAction('ACCEPT_TRADE');
+    setShowBazaar(false);
+  }, [sendAction]);
+
+  const handleRejectTrade = useCallback(async () => {
+    await sendAction('REJECT_TRADE');
+    setShowBazaar(false);
+  }, [sendAction]);
+
+  // ─── Property event history ──
+  const propertyHistory = useMemo(() => {
+    if (!selectedPropInfo) return [];
+    return gs.eventLog.filter((e: any) =>
+      (e.propertyIndex !== undefined && e.propertyIndex === selectedPropInfo.index) ||
+      (e.propertyIndex === undefined && e.type === 'BOUGHT_PROPERTY' && selectedPropInfo && SPACE_DATA.some(s => s.index === e.propertyIndex && s.spaceId === selectedPropInfo.spaceId))
+    ).slice(-10);
+  }, [gs.eventLog, selectedPropInfo]);
 
   const allTokens = gs.players.filter(p => !p.bankrupt).map((p, i) => ({ playerIndex: i, position: p.position }));
   const hasPlayers = gs.players.length > 0;
@@ -288,21 +351,56 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
         {hasPlayers && <MonopolyBoard tokens={allTokens} stepAnim={stepAnim} onStepAnimDone={handleStepAnimDone} totalPlayers={gs.players.length} />}
       </div>
 
-      {/* Building menu popup */}
+      {/* Unified Property Popup */}
       <AnimatePresence>
-        {selectedProp && buildingMenu !== null && (
-          <motion.div key="build-menu" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ position: 'absolute', bottom: 220, left: '50%', transform: 'translateX(-50%)', zIndex: 50, background: '#16213e', borderRadius: 8, border: '1px solid #333', padding: '8px 12px', display: 'flex', gap: 6, fontSize: 11 }}>
-            {selectedProp.houses < 4 && gs.validActions.includes('BUILD_BUNGALOW') && (
-              <button onClick={handleBuildBungalow} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#4CAF50', color: '#fff', cursor: 'pointer', fontSize: 11 }}>🏠 Build Bungalow</button>
+        {selectedPropInfo && selectedPropForPopup && (
+          <motion.div key="prop-popup" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ position: 'absolute', bottom: 220, left: '50%', transform: 'translateX(-50%)', zIndex: 50, background: '#16213e', borderRadius: 8, border: '1px solid #333', padding: '10px 14px', minWidth: 260, maxWidth: 320, fontSize: 11 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ fontWeight: 700, fontSize: 13 }}>{selectedPropInfo.name}</div>
+              <button onClick={() => setSelectedPropForPopup(null)} style={{ padding: '2px 8px', borderRadius: 4, border: 'none', background: '#333', color: '#aaa', cursor: 'pointer', fontSize: 12 }}>✕</button>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: 10, color: '#888' }}>
+              <span>₹{selectedPropInfo.price}</span>
+              {selectedPropInfo.houseCost > 0 && <span>🏠 ₹{selectedPropInfo.houseCost}</span>}
+              {selectedPropInfo.mortgageValue > 0 && <span>🔒 ₹{selectedPropInfo.mortgageValue}</span>}
+              {selectedPropInfo.mortgaged && <span style={{ color: '#ff8c00' }}>Mortgaged</span>}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+              {gs.validActions.includes('BUILD_BUNGALOW') && selectedPropInfo.houses < 4 && (
+                <button onClick={handleBuildBungalow} style={{ padding: '5px 10px', borderRadius: 5, border: 'none', background: '#4CAF50', color: '#fff', cursor: 'pointer', fontSize: 10 }}>🏠 Build</button>
+              )}
+              {gs.validActions.includes('BUILD_VILLA') && selectedPropInfo.houses === 4 && (
+                <button onClick={handleBuildVilla} style={{ padding: '5px 10px', borderRadius: 5, border: 'none', background: '#F44336', color: '#fff', cursor: 'pointer', fontSize: 10 }}>💒 Villa</button>
+              )}
+              {gs.validActions.includes('SELL_BUNGALOW') && selectedPropInfo.houses > 0 && selectedPropInfo.houses < 5 && (
+                <button onClick={handleSellBungalow} style={{ padding: '5px 10px', borderRadius: 5, border: '1px solid #999', background: 'transparent', color: '#999', cursor: 'pointer', fontSize: 10 }}>Sell</button>
+              )}
+              {!selectedPropInfo.mortgaged && selectedPropInfo.mortgageValue > 0 && selectedPropInfo.houses === 0 && gs.validActions.includes('MORTGAGE') && (
+                <button onClick={handleMortgage} style={{ padding: '5px 10px', borderRadius: 5, border: '1px solid #ff8c00', background: 'transparent', color: '#ff8c00', cursor: 'pointer', fontSize: 10 }}>🔒 Mortgage</button>
+              )}
+              {selectedPropInfo.mortgaged && gs.validActions.includes('UNMORTGAGE') && (
+                <button onClick={handleUnmortgage} style={{ padding: '5px 10px', borderRadius: 5, border: '1px solid #4CAF50', background: 'transparent', color: '#4CAF50', cursor: 'pointer', fontSize: 10 }}>🔓 Unmortgage</button>
+              )}
+            </div>
+            {/* History */}
+            {propertyHistory.length > 0 && (
+              <div style={{ borderTop: '1px solid #333', paddingTop: 4, marginTop: 4, maxHeight: 60, overflow: 'auto' }}>
+                <div style={{ fontSize: 9, color: '#555', marginBottom: 2 }}>History</div>
+                {propertyHistory.map((e: any, i: number) => (
+                  <div key={i} style={{ fontSize: 9, color: '#777' }}>
+                    {e.type === 'BOUGHT_PROPERTY' && `Bought for ₹${e.amount}`}
+                    {e.type === 'BUNGALOW_BUILT' && `Built bungalow`}
+                    {e.type === 'VILLA_BUILT' && `Built villa`}
+                    {e.type === 'BUNGALOW_SOLD' && `Sold bungalow`}
+                    {e.type === 'VILLA_SOLD' && `Sold villa`}
+                    {e.type === 'PROPERTY_MORTGAGED' && `Mortgaged`}
+                    {e.type === 'PROPERTY_UNMORTGAGED' && `Unmortgaged`}
+                    {e.type === 'PAID_RENT' && e.propertyIndex === selectedPropInfo.index && `Rent paid ₹${e.amount}`}
+                  </div>
+                ))}
+              </div>
             )}
-            {selectedProp.houses === 4 && gs.validActions.includes('BUILD_VILLA') && (
-              <button onClick={handleBuildVilla} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#F44336', color: '#fff', cursor: 'pointer', fontSize: 11 }}>💒 Build Villa</button>
-            )}
-            {selectedProp.houses > 0 && selectedProp.houses < 5 && gs.validActions.includes('SELL_BUNGALOW') && (
-              <button onClick={handleSellBungalow} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #999', background: 'transparent', color: '#999', cursor: 'pointer', fontSize: 11 }}>Sell Bungalow</button>
-            )}
-            <button onClick={() => setBuildingMenu(null)} style={{ padding: '6px 12px', borderRadius: 6, border: 'none', background: '#333', color: '#aaa', cursor: 'pointer', fontSize: 11 }}>✕</button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -321,6 +419,9 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
         {canBuy && <button onClick={handleBuy} style={{ padding: '8px 20px', fontSize: 14, fontWeight: 700, borderRadius: 8, border: 'none', background: '#4CAF50', color: '#fff', cursor: 'pointer' }}>Buy ₹{getSpaceInfo(gs.landedIndex ?? 0)?.price || 0}</button>}
         {canDecline && <button onClick={handleDecline} style={{ padding: '8px 20px', fontSize: 14, fontWeight: 600, borderRadius: 8, border: '1px solid #999', background: 'transparent', color: '#999', cursor: 'pointer' }}>Decline</button>}
         {canEndTurn && <button onClick={handleEndTurn} style={{ padding: '8px 20px', fontSize: 14, fontWeight: 600, borderRadius: 8, border: '1px solid #e94560', background: 'transparent', color: '#e94560', cursor: 'pointer' }}>End Turn</button>}
+        {canBazaar && !gs.validActions.includes('BUY_PROPERTY') && (
+          <button onClick={() => setShowBazaar(true)} style={{ padding: '8px 16px', fontSize: 12, fontWeight: 600, borderRadius: 8, border: '1px solid #fbbf24', background: 'transparent', color: '#fbbf24', cursor: 'pointer' }}>🤝 Bazaar</button>
+        )}
         {!isMyTurn && gs.winner === null && gs.players.length > 0 && (
           <div style={{ fontSize: 11, color: '#888' }}>Waiting for {playerNames[gs.currentPlayer] || PLAYER_NAMES[gs.currentPlayer % PLAYER_NAMES.length] || `P${gs.currentPlayer}`}...</div>
         )}
@@ -333,6 +434,39 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
         <PropertyFan cards={myPropertyCards} selectedCardIndex={selectedFanCard} onSelectCard={handleFanCardTap} disabled={!isMyTurn} />
       </div>
 
+      {/* Auction Modal */}
+      <AnimatePresence>
+        {isAuctionActive && gs.interaction && (
+          <AuctionModal
+            auction={gs.interaction}
+            playerIndex={playerIndex}
+            playerNames={playerNames}
+            onBid={handleAuctionBid}
+            onPass={handleAuctionPass}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Bazaar Modal */}
+      <AnimatePresence>
+        {(showBazaar || isTradeActive) && (
+          <BazaarModal
+            playerIndex={playerIndex}
+            players={gs.players}
+            properties={gs.properties}
+            playerNames={playerNames}
+            interaction={gs.interaction}
+            onProposeTrade={handleProposeTrade}
+            onAcceptTrade={handleAcceptTrade}
+            onRejectTrade={handleRejectTrade}
+            onClose={() => {
+              if (!isTradeActive) setShowBazaar(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Card draw popup */}
       <AnimatePresence>
         {showCard && (
           <motion.div key="card" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}
