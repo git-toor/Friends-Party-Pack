@@ -18,6 +18,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from monopoly_batch_gen import generate_image, FLUX_WORKFLOW, OUTPUT_DIR, MANIFEST_FILE
 
+HAS_PIL = False
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    pass
+
 PROMPTS_FILE = Path(__file__).parent / "monopoly-board-prompts.json"
 
 
@@ -38,20 +45,39 @@ def main():
     print(f"Generating {len(tiles)} board property art -> {OUTPUT_DIR}")
     success = []
 
+    try:
+        from PIL import Image as PILImage
+        HAS_PIL = True
+    except ImportError:
+        HAS_PIL = False
+
     for tile in tiles:
         prompt = f"{style['positive']}, {tile['prompt']}"
         neg = style["negative"]
         seed = tile["seed_base"]
         out = OUTPUT_DIR / f"{tile['id']}_001.webp"
+        rotate_svg = tile.get("rotate")
 
-        if out.exists():
+        if out.exists() and (rotate_svg is None or rotate_svg == 0):
             print(f"[{tile['id']}] {tile['name']} — exists, skipping")
             success.append(tile["id"])
             continue
 
-        print(f"[{tile['id']}] {tile['name']}")
-        ok = generate_image(prompt, neg, (512, 512), seed, out, tile["id"])
+        size = tuple(tile["size"]) if "size" in tile else (512, 512)
+        print(f"[{tile['id']}] {tile['name']} ({size[0]}x{size[1]})", end="")
+        if rotate_svg:
+            print(f" + rotate {rotate_svg}° SVG CW")
+        else:
+            print()
+
+        ok = generate_image(prompt, neg, size, seed, out, tile["id"])
         if ok:
+            if rotate_svg and HAS_PIL:
+                pil_angle = (360 - rotate_svg) % 360  # SVG CW → PIL CCW
+                from PIL import Image as _Img; img = _Img.open(out).convert("RGBA")
+                rotated = img.rotate(pil_angle, expand=True, fillcolor=(0,0,0,0))
+                rotated.save(out, "WEBP", lossless=True)
+                print(f"  Rotated by {pil_angle}° PIL CCW (={rotate_svg}° SVG CW)")
             success.append(tile["id"])
         else:
             print(f"  FAILED")

@@ -2,19 +2,7 @@ import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PLAYER_COLORS } from './constants.js';
 import { Token3DOverlay } from '../../components/Token3D.js';
-
-const S = 1.0;
-
-const TILE_SPACE_IDS: string[] = [
-  'chalo_tile', 'chandni_chowk', 'jugaad_tile', 'hazratganj', 'lagaan_tile', 'vande_bharat',
-  'ghat_road', 'kismat_tile', 'mi_road', 'law_garden', 'jail_tile', 'mall_road',
-  'jal_vibhaag', 'bapu_bazaar', 'lake_pichola', 'rajdhani', 'baga_beach',
-  'jugaad_tile_2', 'white_town', 'rock_beach', 'free_parking_tile', 'mg_road', 'kismat_tile_2',
-  'marina_beach', 'banjara_hills', 'shatabdi', 'park_street', 'fc_road',
-  'bijli_vibhag', 'sg_highway', 'chalo_jail_tile', 'bandra_west', 'jor_bagh',
-  'jugaad_tile_3', 'cyber_hub', 'duronto_exp', 'kismat_tile_3', 'marine_drive', 'chanda',
-  'altamount_road',
-];
+import * as BoardLayout from './BoardLayout.js';
 
 interface TokenView {
   playerIndex: number;
@@ -49,14 +37,8 @@ interface TileInfo {
   textColor: string;
   x: number;
   y: number;
-}
-
-function getTilePos(position: number): { x: number; y: number } {
-  if (position === 0) return { x: 10 * S, y: 10 * S };
-  if (position <= 10) return { x: (10 - position) * S, y: 10 * S };
-  if (position <= 20) return { x: 0, y: (10 - (position - 10)) * S };
-  if (position <= 30) return { x: (position - 20) * S, y: 0 };
-  return { x: 10 * S, y: (position - 30) * S };
+  width: number;
+  height: number;
 }
 
 const TILE_COLORS: Record<string, string> = {
@@ -98,6 +80,28 @@ const TILE_TEXT_COLORS: Record<string, string> = {
   property_pink: '#000',
   free_parking: '#eee',
 };
+
+const TILE_PRICES: Record<number, number> = {
+  1: 60, 3: 60, 5: 200, 6: 100, 8: 100, 9: 120, 11: 140, 12: 150, 13: 140, 14: 160,
+  15: 200, 16: 180, 18: 180, 19: 200, 21: 220, 23: 220, 24: 240, 25: 200, 26: 260,
+  27: 260, 28: 150, 29: 280, 31: 300, 32: 300, 34: 320, 35: 200, 37: 350, 39: 400,
+};
+
+function getTileImage(index: number): string {
+  const perIndex: Record<number, string> = {
+    2: 'jugaad_tile_1', 17: 'jugaad_tile_2', 33: 'jugaad_tile_3',
+    7: 'kismat_tile_1', 22: 'kismat_tile_2', 36: 'kismat_tile_3',
+    4: 'lagaan_tile', 38: 'chanda',
+  };
+  const name = BOARD_DATA[index].name;
+  const map: Record<string, string> = {
+    'CHALO': 'chalo_tile', 'Jail': 'jail_tile', 'Free Parking': 'free_parking_tile',
+    'Chalo Jail': 'chalo_jail_tile',
+    'Vande Bharat': 'vande_bharat', 'Rajdhani Exp': 'rajdhani', 'Shatabdi Exp': 'shatabdi',
+    'Duronto Exp': 'duronto_exp', 'Jal Vibhaag': 'jal_vibhaag', 'Bijli Vibhag': 'bijli_vibhag',
+  };
+  return `/art/monopoly/${perIndex[index] || map[name] || name.toLowerCase().replace(/\s+/g, '_')}_001.webp`;
+}
 
 const BOARD_DATA: { index: number; name: string; shortName: string; colorKey: string }[] = [
   { index: 0, name: 'CHALO', shortName: 'CHALO', colorKey: 'go' },
@@ -153,15 +157,16 @@ function computeTokenPositions(tokens: TokenView[]): { playerIndex: number; cx: 
   for (const posStr of Object.keys(byPos)) {
     const pos = parseInt(posStr);
     const pts = byPos[pos];
-    const center = getTilePos(pos);
-    const tileCx = center.x + 0.5;
-    const tileCy = center.y + 0.5;
+    const center = BoardLayout.getTileCenter(pos);
+    const tileCx = center.cx;
+    const tileCy = center.cy;
     if (pts.length === 1) {
       positions.push({ playerIndex: pts[0].playerIndex, cx: tileCx, cy: tileCy });
     } else {
+      const r = BoardLayout.getTileRect(pos);
+      const radius = Math.min(r.width, r.height) * 0.2;
       pts.forEach((t, i) => {
         const angle = (i / pts.length) * Math.PI * 2;
-        const radius = 0.2 * S;
         positions.push({
           playerIndex: t.playerIndex,
           cx: tileCx + Math.cos(angle) * radius,
@@ -222,11 +227,11 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
         : stepAnim.from;
       const filteredTokens = tokens.filter(t => t.playerIndex !== stepAnim.playerIndex);
       const result = computeTokenPositions(filteredTokens);
-      const center = getTilePos(Math.round(currentPos));
+      const center = BoardLayout.getTileCenter(Math.round(currentPos));
       result.push({
         playerIndex: stepAnim.playerIndex,
-        cx: center.x + 0.5,
-        cy: center.y + 0.5,
+        cx: center.cx,
+        cy: center.cy,
       });
       return result;
     }
@@ -304,7 +309,7 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
 
   const tiles = useMemo(() => {
     return BOARD_DATA.map(bd => {
-      const pos = getTilePos(bd.index);
+      const r = BoardLayout.getTileRect(bd.index);
       const color = TILE_COLORS[bd.colorKey] || '#333';
       const textColor = TILE_TEXT_COLORS[bd.colorKey] || '#fff';
       const tile: TileInfo = {
@@ -313,8 +318,10 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
         shortName: bd.shortName,
         color,
         textColor,
-        x: pos.x,
-        y: pos.y,
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
       };
       return tile;
     });
@@ -340,126 +347,176 @@ export function MonopolyBoard({ tokens, playerTokens = {}, stepAnim, onStepAnimD
         transition: isPanning.current ? 'none' : 'transform 0.1s ease',
       }}>
         <div style={{ position: 'relative', width: 'min(95vw, 90vh)', height: 'min(95vw, 90vh)' }}>
-          <svg viewBox={`0 0 ${11 * S} ${11 * S}`} style={{ width: '100%', height: '100%' }}>
+          <svg viewBox="0 0 11 11" style={{ width: '100%', height: '100%' }}>
           <defs>
-            <pattern id="boardBg" patternUnits="userSpaceOnUse" width={S} height={S}>
-              <rect width={S} height={S} fill="#1a1a2e" />
-              <circle cx={0.5 * S} cy={0.5 * S} r={0.02 * S} fill="#2a2a4e" />
+            <pattern id="boardBg" patternUnits="userSpaceOnUse" width={BoardLayout.CORNER_SIZE} height={BoardLayout.CORNER_SIZE}>
+              <rect width={BoardLayout.CORNER_SIZE} height={BoardLayout.CORNER_SIZE} fill="#1a1a2e" />
+              <circle cx={0.5 * BoardLayout.CORNER_SIZE} cy={0.5 * BoardLayout.CORNER_SIZE} r={0.02 * BoardLayout.CORNER_SIZE} fill="#2a2a4e" />
             </pattern>
+
           </defs>
           {/* Board background */}
-          <rect x={0} y={0} width={11 * S} height={11 * S} fill="url(#boardBg)" rx={0.3 * S} />
+          <rect x={0} y={0} width={BoardLayout.BOARD_SIZE} height={BoardLayout.BOARD_SIZE} fill="url(#boardBg)" rx={0.3 * BoardLayout.CORNER_SIZE} />
           {/* Tiles */}
           {tiles.map(t => {
-            const isProperty = BOARD_DATA[t.index].colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax','railroad'].includes(BOARD_DATA[t.index].colorKey);
-            const isCardTile = BOARD_DATA[t.index].colorKey === 'go' || BOARD_DATA[t.index].colorKey === 'chance' || BOARD_DATA[t.index].colorKey === 'cc' || BOARD_DATA[t.index].colorKey === 'tax' || BOARD_DATA[t.index].colorKey === 'jail' || BOARD_DATA[t.index].colorKey === 'free_parking' || BOARD_DATA[t.index].colorKey === 'go_to_jail' || BOARD_DATA[t.index].colorKey === 'railroad';
-            const PAD = 0.15 * S;
-            const IS = S - 2 * PAD;
+            const colorKey = BOARD_DATA[t.index].colorKey;
+            const isProperty = colorKey && !['go','jail','free_parking','go_to_jail','chance','cc','tax','railroad','utility'].includes(colorKey);
+            const showText = isProperty || colorKey === 'railroad' || colorKey === 'utility';
+            const isCorner = t.index === 0 || t.index === 10 || t.index === 20 || t.index === 30;
+            const isFullArt = !isCorner && colorKey && ['chance', 'cc', 'tax'].includes(colorKey);
+            const isBottom = t.index >= 1 && t.index <= 9;
+            const isTop = t.index >= 21 && t.index <= 29;
+            const isLeft = t.index >= 11 && t.index <= 19;
+            const isRight = t.index >= 31 && t.index <= 39;
+            const isHoriz = isBottom || isTop;
+            const band = isHoriz ? t.height / 6 : t.width / 6;
+            const price = TILE_PRICES[t.index];
+
+            let nameR = { x: 0, y: 0, w: 0, h: 0, cx: 0, cy: 0 };
+            let artR  = { x: 0, y: 0, w: 0, h: 0, cx: 0, cy: 0 };
+            let houseR = { x: 0, y: 0, w: 0, h: 0 };
+
+            if (isBottom) {
+              houseR = { x: t.x, y: t.y, w: t.width, h: band };
+              artR  = { x: t.x, y: t.y + band, w: t.width, h: t.height - 2 * band, cx: t.x + t.width / 2, cy: t.y + t.height / 2 };
+              nameR = { x: t.x, y: t.y + t.height - band, w: t.width, h: band, cx: t.x + t.width / 2, cy: t.y + t.height - band / 2 };
+            } else if (isTop) {
+              nameR = { x: t.x, y: t.y, w: t.width, h: band, cx: t.x + t.width / 2, cy: t.y + band / 2 };
+              artR  = { x: t.x, y: t.y + band, w: t.width, h: t.height - 2 * band, cx: t.x + t.width / 2, cy: t.y + t.height / 2 };
+              houseR = { x: t.x, y: t.y + t.height - band, w: t.width, h: band };
+            } else if (isLeft) {
+              nameR = { x: t.x, y: t.y, w: band, h: t.height, cx: t.x + band / 2, cy: t.y + t.height / 2 };
+              artR  = { x: t.x + band, y: t.y, w: t.width - 2 * band, h: t.height, cx: t.x + t.width / 2, cy: t.y + t.height / 2 };
+              houseR = { x: t.x + t.width - band, y: t.y, w: band, h: t.height };
+            } else {
+              houseR = { x: t.x, y: t.y, w: band, h: t.height };
+              artR  = { x: t.x + band, y: t.y, w: t.width - 2 * band, h: t.height, cx: t.x + t.width / 2, cy: t.y + t.height / 2 };
+              nameR = { x: t.x + t.width - band, y: t.y, w: band, h: t.height, cx: t.x + t.width - band / 2, cy: t.y + t.height / 2 };
+            }
+
+            const angle = isBottom ? 0 : (isLeft ? 90 : (isTop ? 180 : -90));
+            const bandLen = isHoriz ? nameR.w : nameR.h;
+            const textAreaW = 0.8 * bandLen;
+            const markerCX = -0.4 * bandLen;
+            const textCX = 0.1 * bandLen;
+            const priceText = `₹${price}`;
+            const nameFontSize = Math.min(
+              (isHoriz ? 0.055 : 0.065) * BoardLayout.CORNER_SIZE,
+              textAreaW / (t.shortName.length * 0.6),
+              band * 0.42
+            );
+            const priceFontSize = Math.min(
+              (isHoriz ? 0.043 : 0.053) * BoardLayout.CORNER_SIZE,
+              textAreaW / (priceText.length * 0.6),
+              band * 0.35
+            );
+            const nameY = isHoriz ? -band * 0.18 : -band * 0.19;
+            const priceY = isHoriz ? band * 0.20 : band * 0.22;
+
             return (
             <g key={t.index}>
-              {/* Base fill */}
-              <rect x={t.x} y={t.y} width={S} height={S} fill={t.color} stroke="#111" strokeWidth={0.015 * S} rx={0} />
-              {/* Property tile: image centered, name|price at bottom */}
-              {isProperty && (
+              {isCorner ? (
                 <>
-                  <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
-                    x={t.x + PAD} y={t.y + PAD}
-                    width={IS} height={IS}
-                    preserveAspectRatio="xMidYMid slice"
-                    style={{ pointerEvents: 'none' }}
-                    onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
-                  <text x={t.x + PAD} y={t.y + S - 0.05 * S} textAnchor="start" fill={t.textColor} fontSize={0.07 * S} fontWeight={600}>
-                    {t.shortName}
-                  </text>
-                  <text x={t.x + S - PAD} y={t.y + S - 0.05 * S} textAnchor="end" fill={t.textColor} fontSize={0.07 * S} fontWeight={700}>
-                    ₹{t.index === 1 || t.index === 3 ? 60 : t.index === 6 || t.index === 8 ? 100 : t.index === 9 ? 120 : PROPERTY_PRICES[BOARD_DATA[t.index].colorKey] || ''}
-                  </text>
+                  <rect x={t.x} y={t.y} width={t.width} height={t.height} fill={t.color} stroke="#111" strokeWidth={0.015 * BoardLayout.CORNER_SIZE} rx={0} />
+                  <image href={getTileImage(t.index)} x={t.x} y={t.y} width={t.width} height={t.height} preserveAspectRatio="xMidYMid slice" style={{ pointerEvents: 'none' }} />
                 </>
-              )}
-              {/* Kismat/Jugaad tile: full coverage art */}
-              {isCardTile && (
-                <image href={`/art/monopoly/${TILE_SPACE_IDS[t.index]}_001.webp`}
-                  x={t.x} y={t.y} width={S} height={S}
-                  preserveAspectRatio="xMidYMid slice"
-                  style={{ pointerEvents: 'none' }}
-                  onError={e => { (e.target as SVGImageElement).style.display = 'none'; }} />
-              )}
-              {/* Railroads: name + price */}
-              {BOARD_DATA[t.index].colorKey === 'railroad' && (
+              ) : isFullArt ? (
                 <>
-                  <text x={t.x + 0.08 * S} y={t.y + S - 0.08 * S} textAnchor="start" fill="#fff" fontSize={0.07 * S} fontWeight={600}>
-                    {t.shortName}
-                  </text>
-                  <text x={t.x + S - 0.08 * S} y={t.y + S - 0.08 * S} textAnchor="end" fill="#fff" fontSize={0.07 * S} fontWeight={700}>
-                    ₹200
-                  </text>
+                  <rect x={t.x} y={t.y} width={t.width} height={t.height} fill={t.color} stroke="#111" strokeWidth={0.015 * BoardLayout.CORNER_SIZE} rx={0} />
+                  <g transform={`translate(${t.x + t.width/2}, ${t.y + t.height/2}) rotate(${angle})`}>
+                    <image href={getTileImage(t.index)} x={isHoriz ? -t.width/2 : -t.height/2} y={isHoriz ? -t.height/2 : -t.width/2} width={isHoriz ? t.width : t.height} height={isHoriz ? t.height : t.width} preserveAspectRatio="xMidYMid slice" style={{ pointerEvents: 'none' }} />
+                  </g>
                 </>
-              )}
-              {/* Corner labels */}
-              {/* Corner labels hidden — art tiles have their own text */}
-              {/* Buildings on tile — at the top (above image) */}
-              {isProperty && propertyBuildings[t.index] > 0 && (
-                <g transform={`translate(${t.x + S / 2 - propertyBuildings[t.index] * 0.06 * S}, ${t.y + 0.06 * S})`}>
-                  {propertyBuildings[t.index] <= 4 ? (
-                    Array.from({ length: propertyBuildings[t.index] }, (_, i) => (
-                      <rect key={i} x={i * 0.1 * S} y={-0.04 * S} width={0.08 * S} height={0.08 * S} rx={0.015 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
-                    ))
+              ) : (
+                <>
+                  <rect x={t.x} y={t.y} width={t.width} height={t.height} fill={t.color} stroke="#111" strokeWidth={0.015 * BoardLayout.CORNER_SIZE} rx={0} />
+                  <rect x={nameR.x} y={nameR.y} width={nameR.w} height={nameR.h} fill="#fff" fillOpacity={0.12} />
+                  {angle !== 0 && isHoriz ? (
+                    <g transform={`translate(${artR.cx}, ${artR.cy}) rotate(${angle})`}>
+                      <image href={getTileImage(t.index)} x={-artR.w / 2} y={-artR.h / 2} width={artR.w} height={artR.h} preserveAspectRatio="xMidYMid slice" style={{ pointerEvents: 'none' }} />
+                    </g>
+                  ) : !isHoriz ? (
+                    <g transform={`translate(${artR.cx}, ${artR.cy}) rotate(${angle})`}>
+                      <image href={getTileImage(t.index)} x={-artR.h / 2} y={-artR.w / 2} width={artR.h} height={artR.w} preserveAspectRatio="xMidYMid slice" style={{ pointerEvents: 'none' }} />
+                    </g>
                   ) : (
-                    <rect x={-0.06 * S} y={-0.06 * S} width={0.12 * S} height={0.1 * S} rx={0.015 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
+                    <image href={getTileImage(t.index)} x={artR.x} y={artR.y} width={artR.w} height={artR.h} preserveAspectRatio="xMidYMid slice" style={{ pointerEvents: 'none' }} />
                   )}
-                </g>
-              )}
-              {/* Owner indicator — on the left side, beside the image */}
-              {isProperty && propertyOwners[t.index] !== undefined && (
-                <circle cx={t.x + 0.06 * S} cy={t.y + S / 2} r={0.05 * S} fill={PLAYER_COLORS[propertyOwners[t.index] % PLAYER_COLORS.length]} stroke="#fff" strokeWidth={0.015 * S} />
+                  <rect x={houseR.x} y={houseR.y} width={houseR.w} height={houseR.h} fill="#000" fillOpacity={0.15} />
+                  {showText && (
+                    <g transform={`translate(${nameR.cx}, ${nameR.cy}) rotate(${angle})`}>
+                      <line x1={-0.3 * bandLen} y1={-band / 2} x2={-0.3 * bandLen} y2={band / 2} stroke="#111" strokeWidth={0.01 * BoardLayout.CORNER_SIZE} strokeOpacity={0.35} />
+                      {isProperty && propertyOwners[t.index] !== undefined && (
+                        <circle cx={markerCX} cy={0} r={0.04 * BoardLayout.CORNER_SIZE} fill={PLAYER_COLORS[propertyOwners[t.index] % PLAYER_COLORS.length]} stroke="#fff" strokeWidth={0.015 * BoardLayout.CORNER_SIZE} />
+                      )}
+                      <text x={textCX} y={nameY} textAnchor="middle" fill={t.textColor} fontSize={nameFontSize} fontWeight={700}>{t.shortName}</text>
+                      <text x={textCX} y={priceY} textAnchor="middle" fill={t.textColor} fontSize={priceFontSize} fontWeight={600}>{priceText}</text>
+                    </g>
+                  )}
+                  {isProperty && propertyBuildings[t.index] > 0 && (
+                    <g transform={`translate(${houseR.x + houseR.w / 2 - propertyBuildings[t.index] * 0.06 * houseR.w}, ${houseR.y + 0.2 * houseR.h})`}>
+                      {propertyBuildings[t.index] <= 4 ? (
+                        Array.from({ length: propertyBuildings[t.index] }, (_, i) => (
+                          <rect key={i} x={i * 0.12 * houseR.w} y={0} width={0.08 * houseR.w} height={0.6 * houseR.h} rx={0.02 * houseR.w} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * houseR.w} />
+                        ))
+                      ) : (
+                        <rect x={-0.06 * houseR.w} y={0} width={0.12 * houseR.w} height={0.7 * houseR.h} rx={0.02 * houseR.w} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * houseR.w} />
+                      )}
+                    </g>
+                  )}
+                </>
               )}
             </g>
             );
           })}
 
           {/* Center area with card decks */}
-          <rect x={S} y={S} width={9 * S} height={9 * S} fill="#16213e" rx={0.15 * S} />
+          <rect x={BoardLayout.CENTER_X} y={BoardLayout.CENTER_Y} width={BoardLayout.CENTER_WIDTH} height={BoardLayout.CENTER_HEIGHT} fill="#16213e" rx={0.15 * BoardLayout.CORNER_SIZE} />
+          <rect x={BoardLayout.CENTER_X + 0.1 * BoardLayout.CORNER_SIZE} y={BoardLayout.CENTER_Y + 0.1 * BoardLayout.CORNER_SIZE} width={BoardLayout.CENTER_WIDTH - 0.2 * BoardLayout.CORNER_SIZE} height={BoardLayout.CENTER_HEIGHT - 0.2 * BoardLayout.CORNER_SIZE} fill="none" stroke="#2a2a4e" strokeWidth={0.03 * BoardLayout.CORNER_SIZE} rx={0.1 * BoardLayout.CORNER_SIZE} />
 
           {/* Kismat deck */}
-          <g transform={`translate(${2.2 * S}, ${3.5 * S})`}>
+          <g transform={`translate(${BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.30 - BoardLayout.CORNER_SIZE / 2}, ${BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.18})`}>
             <image href="/art/monopoly/kismat_back_001.webp"
-              x={0} y={0} width={S} height={1.4 * S}
+              x={0} y={0} width={BoardLayout.CORNER_SIZE} height={1.4 * BoardLayout.CORNER_SIZE}
               preserveAspectRatio="xMidYMid slice"
               style={{ pointerEvents: 'none' }} />
-            <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
-            <text x={0.825 * S} y={0.175 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{kismatRemaining}</text>
+            <rect x={0.7 * BoardLayout.CORNER_SIZE} y={0.05 * BoardLayout.CORNER_SIZE} width={0.25 * BoardLayout.CORNER_SIZE} height={0.18 * BoardLayout.CORNER_SIZE} rx={0.06 * BoardLayout.CORNER_SIZE} fill="#e94560" />
+            <text x={0.825 * BoardLayout.CORNER_SIZE} y={0.175 * BoardLayout.CORNER_SIZE} textAnchor="middle" fill="#fff" fontSize={0.12 * BoardLayout.CORNER_SIZE} fontWeight={700}>{kismatRemaining}</text>
           </g>
-          <text x={2.7 * S} y={5.3 * S} textAnchor="middle" fill="#FF8C00" fontSize={0.14 * S} fontWeight={700}>KISMAT</text>
-          <text x={2.7 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Chance)</text>
+          <text x={BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.30} y={BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.18 + 1.55 * BoardLayout.CORNER_SIZE} textAnchor="middle" fill="#FF8C00" fontSize={0.13 * BoardLayout.CORNER_SIZE} fontWeight={700}>KISMAT</text>
+          <text x={BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.30} y={BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.18 + 1.75 * BoardLayout.CORNER_SIZE} textAnchor="middle" fill="#888" fontSize={0.1 * BoardLayout.CORNER_SIZE}>(Chance)</text>
 
           {/* Jugaad deck */}
-          <g transform={`translate(${7.8 * S}, ${3.5 * S})`}>
+          <g transform={`translate(${BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.70 - BoardLayout.CORNER_SIZE / 2}, ${BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.18})`}>
             <image href="/art/monopoly/jugaad_back_001.webp"
-              x={0} y={0} width={S} height={1.4 * S}
+              x={0} y={0} width={BoardLayout.CORNER_SIZE} height={1.4 * BoardLayout.CORNER_SIZE}
               preserveAspectRatio="xMidYMid slice"
               style={{ pointerEvents: 'none' }} />
-            <rect x={0.7 * S} y={0.05 * S} width={0.25 * S} height={0.18 * S} rx={0.06 * S} fill="#e94560" />
-            <text x={0.825 * S} y={0.175 * S} textAnchor="middle" fill="#fff" fontSize={0.12 * S} fontWeight={700}>{jugaadRemaining}</text>
+            <rect x={0.7 * BoardLayout.CORNER_SIZE} y={0.05 * BoardLayout.CORNER_SIZE} width={0.25 * BoardLayout.CORNER_SIZE} height={0.18 * BoardLayout.CORNER_SIZE} rx={0.06 * BoardLayout.CORNER_SIZE} fill="#e94560" />
+            <text x={0.825 * BoardLayout.CORNER_SIZE} y={0.175 * BoardLayout.CORNER_SIZE} textAnchor="middle" fill="#fff" fontSize={0.12 * BoardLayout.CORNER_SIZE} fontWeight={700}>{jugaadRemaining}</text>
           </g>
-          <text x={8.3 * S} y={5.3 * S} textAnchor="middle" fill="#4CAF50" fontSize={0.14 * S} fontWeight={700}>JUGAAD</text>
-          <text x={8.3 * S} y={5.5 * S} textAnchor="middle" fill="#888" fontSize={0.1 * S}>(Community Chest)</text>
+          <text x={BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.70} y={BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.18 + 1.55 * BoardLayout.CORNER_SIZE} textAnchor="middle" fill="#4CAF50" fontSize={0.13 * BoardLayout.CORNER_SIZE} fontWeight={700}>JUGAAD</text>
+          <text x={BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.70} y={BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.18 + 1.75 * BoardLayout.CORNER_SIZE} textAnchor="middle" fill="#888" fontSize={0.1 * BoardLayout.CORNER_SIZE}>(Community Chest)</text>
+
+          {/* Center divider */}
+          <line x1={BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.50} y1={BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.22} x2={BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH * 0.50} y2={BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.38} stroke="#2a2a4e" strokeWidth={0.03 * BoardLayout.CORNER_SIZE} strokeLinecap="round" />
 
           {/* Building Pool */}
-          <g transform={`translate(${5.5 * S - 1.2 * S}, ${6.5 * S})`}>
-            <rect width={2.4 * S} height={0.55 * S} rx={0.08 * S} fill="#1a1a2e" stroke="#333" strokeWidth={0.02 * S} />
-            <rect x={0.12 * S} y={0.1 * S} width={0.22 * S} height={0.2 * S} rx={0.03 * S} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * S} />
-            <rect x={0.12 * S} y={0.06 * S} width={0.22 * S} height={0.07 * S} rx={0.015 * S} fill="#66BB6A" />
-            <rect x={0.14 * S} y={0.04 * S} width={0.05 * S} height={0.05 * S} fill="#81C784" />
-            <rect x={0.27 * S} y={0.04 * S} width={0.05 * S} height={0.05 * S} fill="#81C784" />
-            <text x={0.5 * S} y={0.35 * S} fill="#4ecca3" fontSize={0.16 * S} fontWeight={600}>×{housesRemaining}</text>
-            <rect x={1.2 * S} y={0.1 * S} width={0.28 * S} height={0.2 * S} rx={0.03 * S} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * S} />
-            <rect x={1.26 * S} y={0.05 * S} width={0.16 * S} height={0.08 * S} fill="#EF5350" />
-            <text x={1.65 * S} y={0.35 * S} fill="#e94560" fontSize={0.16 * S} fontWeight={600}>×{hotelsRemaining}</text>
+          <g transform={`translate(${BoardLayout.CENTER_X + BoardLayout.CENTER_WIDTH / 2 - 1.2 * BoardLayout.CORNER_SIZE}, ${BoardLayout.CENTER_Y + BoardLayout.CENTER_HEIGHT * 0.75})`}>
+            <rect width={2.4 * BoardLayout.CORNER_SIZE} height={0.55 * BoardLayout.CORNER_SIZE} rx={0.08 * BoardLayout.CORNER_SIZE} fill="#1a1a2e" stroke="#333" strokeWidth={0.02 * BoardLayout.CORNER_SIZE} />
+            <rect x={0.12 * BoardLayout.CORNER_SIZE} y={0.1 * BoardLayout.CORNER_SIZE} width={0.22 * BoardLayout.CORNER_SIZE} height={0.2 * BoardLayout.CORNER_SIZE} rx={0.03 * BoardLayout.CORNER_SIZE} fill="#4CAF50" stroke="#388E3C" strokeWidth={0.01 * BoardLayout.CORNER_SIZE} />
+            <rect x={0.12 * BoardLayout.CORNER_SIZE} y={0.06 * BoardLayout.CORNER_SIZE} width={0.22 * BoardLayout.CORNER_SIZE} height={0.07 * BoardLayout.CORNER_SIZE} rx={0.015 * BoardLayout.CORNER_SIZE} fill="#66BB6A" />
+            <rect x={0.14 * BoardLayout.CORNER_SIZE} y={0.04 * BoardLayout.CORNER_SIZE} width={0.05 * BoardLayout.CORNER_SIZE} height={0.05 * BoardLayout.CORNER_SIZE} fill="#81C784" />
+            <rect x={0.27 * BoardLayout.CORNER_SIZE} y={0.04 * BoardLayout.CORNER_SIZE} width={0.05 * BoardLayout.CORNER_SIZE} height={0.05 * BoardLayout.CORNER_SIZE} fill="#81C784" />
+            <text x={0.5 * BoardLayout.CORNER_SIZE} y={0.35 * BoardLayout.CORNER_SIZE} fill="#4ecca3" fontSize={0.16 * BoardLayout.CORNER_SIZE} fontWeight={600}>×{housesRemaining}</text>
+            <rect x={1.2 * BoardLayout.CORNER_SIZE} y={0.1 * BoardLayout.CORNER_SIZE} width={0.28 * BoardLayout.CORNER_SIZE} height={0.2 * BoardLayout.CORNER_SIZE} rx={0.03 * BoardLayout.CORNER_SIZE} fill="#F44336" stroke="#C62828" strokeWidth={0.01 * BoardLayout.CORNER_SIZE} />
+            <rect x={1.26 * BoardLayout.CORNER_SIZE} y={0.05 * BoardLayout.CORNER_SIZE} width={0.16 * BoardLayout.CORNER_SIZE} height={0.08 * BoardLayout.CORNER_SIZE} fill="#EF5350" />
+            <text x={1.65 * BoardLayout.CORNER_SIZE} y={0.35 * BoardLayout.CORNER_SIZE} fill="#e94560" fontSize={0.16 * BoardLayout.CORNER_SIZE} fontWeight={600}>×{hotelsRemaining}</text>
           </g>
 
           {/* Player tokens - 3D overlay */}
         </svg>
-        <Token3DOverlay tokenPositions={tokenPositions} playerTokens={playerTokens} boardSize={11 * S} />
+        <Token3DOverlay tokenPositions={tokenPositions} playerTokens={playerTokens} boardSize={BoardLayout.BOARD_SIZE} />
         </div>
       </div>
     </div>

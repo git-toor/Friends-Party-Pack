@@ -475,7 +475,7 @@
       "copy": 1,
       "seed": 4123,
       "workflow": "flux",
-      "prompt": "Vande Bharat on dark grey bg",
+      "prompt": "sticker icon of a modern high speed train, Vande Bharat Express, blue and white aerodynamic train, side profile, railway tracks below, railway signal post, catenary wires, gravel bed, flat vector illustration, sticker on transparent background",
       "file": "/art/monopoly/vande_bharat_001.webp"
     },
     "rajdhani_001": {
@@ -484,16 +484,16 @@
       "copy": 1,
       "seed": 4124,
       "workflow": "flux",
-      "prompt": "Rajdhani on dark grey bg",
+      "prompt": "sticker icon of a iconic red express train, Rajdhani Express, red locomotive engine pulling coaches, railway tracks, platform edge, signal post, gravel bed, flat vector illustration, sticker on transparent background",
       "file": "/art/monopoly/rajdhani_001.webp"
     },
     "shatabdi_001": {
       "card_id": "shatabdi",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 4025,
+      "seed": 4125,
       "workflow": "flux",
-      "prompt": "icon of a modern blue express train, Shatabdi Express, blue and silver train, station platform, passenger coach, landmark icon, flat vector illustration",
+      "prompt": "sticker icon of a modern blue express train, Shatabdi Express, blue and silver train, side view, railway tracks, station platform, signal post, gravel bed, flat vector illustration, sticker on transparent background",
       "file": "/art/monopoly/shatabdi_001.webp"
     },
     "baga_beach_001": {
@@ -520,7 +520,7 @@
       "copy": 1,
       "seed": 4126,
       "workflow": "flux",
-      "prompt": "icon train on dark grey background",
+      "prompt": "sticker icon of a modern red and white express train, Duronto Express, streamlined premium design, side profile, railway tracks, railway signal, catenary wires, gravel bed, flat vector illustration, sticker on transparent background",
       "file": "/art/monopoly/duronto_exp_001.webp"
     },
     "jal_vibhaag_001": {
@@ -581,82 +581,136 @@
       "card_id": "kismat_tile_2",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Custom tile variant",
+      "seed": 4144,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Kismat destiny and fate. Elegant royal Indian fortune scene: Maharaja palace interior, golden throne, ancient scroll, astrology charts, kundli patterns, mystical lamp, jewels, royal decorations. Feeling: rare, powerful, magical, important. Premium collectible board game artwork style, Indian royal aesthetic, rich details, gold and purple tones. Square composition. No text. No typography. No watermark.",
       "file": "/art/monopoly/kismat_tile_2_001.webp"
     },
     "kismat_tile_3_001": {
       "card_id": "kismat_tile_3",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Custom tile variant",
+      "seed": 4145,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Kismat fate changing your journey. Dramatic magical fortune illustration: cosmic night sky, Indian astrology, golden stars, pathway of destiny, glowing ancient symbols, lotus, temple silhouette, mystical energy. The artwork should feel like a major unexpected event, a turning point, a legendary moment. Premium fantasy board game art style, cinematic but clean, luxury Indian theme. Square tile artwork. No text. No letters. No watermark.",
       "file": "/art/monopoly/kismat_tile_3_001.webp"
     },
     "jugaad_tile_2_001": {
       "card_id": "jugaad_tile_2",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Custom tile variant",
+      "seed": 4141,
+      "workflow": "flux",
+      "prompt": "Premium Indian board game tile artwork. Theme: Jugaad smart innovation and clever shortcuts. Modern Indian innovation scene: young Indian entrepreneur workspace, creative electronics, prototype gadgets, laptop, robot parts, recycled materials, DIY inventions, startup energy, colorful Indian design elements. Mix of traditional Indian creativity with modern technology. Luxury mobile board game art style, clean Pixar-inspired environment, vibrant, friendly, detailed. Square tile artwork. No text. No typography. No watermark.",
       "file": "/art/monopoly/jugaad_tile_2_001.webp"
     },
     "jugaad_tile_3_001": {
       "card_id": "jugaad_tile_3",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Custom tile variant",
+      "seed": 4142,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Jugaad legendary desi engineering. Humorous grand invention scene: amazing improvised Indian machine, multiple creative attachments, auto rickshaw inspired invention, solar panels, tools, mechanical parts, happy street innovation atmosphere. The machine should look clever but believable, celebrating Indian creativity and resourcefulness. Premium fantasy board game illustration style, rich colors, detailed, fun, memorable. Square composition. No text. No letters. No watermark.",
       "file": "/art/monopoly/jugaad_tile_3_001.webp"
     },
     "lagaan_tile_001": {
       "card_id": "lagaan_tile",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Lagaan tile",
+      "seed": 4146,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Lagaan traditional land tax and payment. Playful Indian historical tax scene: old village revenue collector, farmer with crops, traditional Indian village, coins, ledger book, wooden desk, royal administration elements. Mood: funny, friendly, nostalgic, not serious. Premium Indian board game illustration style, colorful, detailed, family friendly. Square composition. No text. No letters. No watermark.",
       "file": "/art/monopoly/lagaan_tile_001.webp"
     },
     "jail_tile_001": {
       "card_id": "jail_tile",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Jail tile",
+      "seed": 4131,
+      "workflow": "flux",
+      "prompt": "Square Indian Monopoly corner tile artwork for Jail space, traditional Indian haveli prison gate, iron bars with Indian architectural details, lock symbol, dramatic but playful board game style, saffron and gold accents, sticker style flat vector illustration, centered composition, transparent background, no text, square 1:1 aspect ratio",
       "file": "/art/monopoly/jail_tile_001.webp"
     },
     "chalo_jail_tile_001": {
       "card_id": "chalo_jail_tile",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Chalo Jail tile",
+      "seed": 4133,
+      "workflow": "flux",
+      "prompt": "Square Indian Monopoly corner tile artwork for Go To Jail, playful Indian police station theme, police jeep, jail gate, funny desi style, colorful cartoon board game aesthetic, sticker style flat vector illustration, centered composition, transparent background, no text, square 1:1 aspect ratio",
       "file": "/art/monopoly/chalo_jail_tile_001.webp"
     },
     "free_parking_tile_001": {
       "card_id": "free_parking_tile",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "Free Parking tile",
+      "seed": 4132,
+      "workflow": "flux",
+      "prompt": "Square Indian Monopoly corner tile artwork for Free Parking, colorful Indian auto rickshaw parking area, royal courtyard parking theme, decorative plants, luxury Indian street aesthetic, sticker style flat vector illustration, centered composition, transparent background, no text, square 1:1 aspect ratio",
       "file": "/art/monopoly/free_parking_tile_001.webp"
     },
     "chalo_tile_001": {
       "card_id": "chalo_tile",
       "expansion": "monopoly_board",
       "copy": 1,
-      "seed": 0,
-      "workflow": "custom",
-      "prompt": "CHALO tile",
+      "seed": 4130,
+      "workflow": "flux",
+      "prompt": "Square Indian Monopoly corner tile artwork for GO space, traditional Indian entrance gate, rising arrow and path symbol, festive diyas, prosperity theme, golden accents, sticker style flat vector illustration, centered composition, transparent background, no text, square 1:1 aspect ratio",
       "file": "/art/monopoly/chalo_tile_001.webp"
+    },
+    "calangute_001": {
+      "card_id": "calangute",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4009,
+      "workflow": "flux",
+      "prompt": "icon of a tropical beach scene, calangute goa, palm trees, beach shack, sun lounger, ocean waves, landmark icon, flat vector illustration",
+      "file": "/art/monopoly/calangute_001.webp"
+    },
+    "connaught_place_001": {
+      "card_id": "connaught_place",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4019,
+      "workflow": "flux",
+      "prompt": "icon of a circular colonial market, connaught place delhi, white colonnaded buildings, inner circle market, central park, landmark icon, flat vector illustration",
+      "file": "/art/monopoly/connaught_place_001.webp"
+    },
+    "electricity_board_001": {
+      "card_id": "electricity_board",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4028,
+      "workflow": "flux",
+      "prompt": "icon of an electricity utility, power lines, electric pole, transformer, glowing light bulb, electrical grid, landmark icon, flat vector illustration, yellow and orange colors",
+      "file": "/art/monopoly/electricity_board_001.webp"
+    },
+    "jugaad_tile_1_001": {
+      "card_id": "jugaad_tile_1",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4140,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Jugaad creative Indian problem solving. Playful illustration of Indian street innovation: a clever local inventor's workshop with improvised machines, creative repairs, old bicycle converted into useful machine, tools, gears, colorful wires, wooden workbench, chai cup nearby. Premium tabletop board game illustration style, Indian cultural aesthetic, funny and clever mood, bright colors, high detail, clean composition. Square composition. Centered artwork. No text. No letters. No watermark. No typography.",
+      "file": "/art/monopoly/jugaad_tile_1_001.webp"
+    },
+    "kismat_tile_1_001": {
+      "card_id": "kismat_tile_1",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4143,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Kismat luck and destiny. Magical Indian fortune scene: golden fortune wheel, falling flower petals, lucky coins, lotus flowers, glowing stars, traditional Indian lucky charms, subtle astrology symbols. Mood: positive surprise, good fortune, celebration. Luxury tabletop board game illustration style, Indian fantasy aesthetic, gold accents, beautiful lighting. Square tile artwork. No text. No letters. No watermark.",
+      "file": "/art/monopoly/kismat_tile_1_001.webp"
+    },
+    "chanda_001": {
+      "card_id": "chanda",
+      "expansion": "monopoly_board",
+      "copy": 1,
+      "seed": 4147,
+      "workflow": "flux",
+      "prompt": "Premium Indian Monopoly board tile artwork. Theme: Chanda community donation and contribution. Warm community celebration scene: Indian neighborhood festival, people contributing coins, decorated donation box, diyas, flowers, community gathering, colorful decorations, spirit of helping others. Mood: positive, friendly, community focused. Premium tabletop board game artwork style, Indian festival aesthetic, bright colors, high detail. Square composition. No text. No letters. No watermark.",
+      "file": "/art/monopoly/chanda_001.webp"
     }
   }
 }
