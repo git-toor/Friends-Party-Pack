@@ -4,7 +4,6 @@ import { Button } from '../components/Button.js';
 import { QRCode } from '../components/QRCode.js';
 import { DiceAppearanceSelector } from '../components/DiceAppearance.js';
 import { AVAILABLE_TOKENS } from '../components/TokenList.js';
-import { TokenPreview } from '../components/Token3D.js';
 import { api } from '../api/client.js';
 import { useWebSocket } from '../hooks/useWebSocket.js';
 
@@ -140,35 +139,35 @@ export default function LobbyPanel() {
         {(lobby?.gameId === 'monopoly') && (
           <div style={{ width: '100%', maxWidth: 400, marginBottom: 24 }}>
             <h3 style={{ marginBottom: 8, color: '#999', fontSize: 14 }}>Choose Your Token</h3>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <div style={{ flexShrink: 0 }}>
-                <TokenPreview tokenId={players.find(p => p.id === playerId)?.token || 'elephant'} size={80} />
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                {AVAILABLE_TOKENS.map(token => {
-                  const taken = players.some(p => p.token === token.id && p.id !== playerId);
-                  const mine = players.find(p => p.id === playerId)?.token === token.id;
-                  return (
-                    <button key={token.id}
-                      onClick={() => {
-                        if (!taken && lobbyId) api.selectToken(lobbyId, playerId, token.id);
-                      }}
-                      disabled={taken}
-                      style={{
-                        width: 44, height: 44, borderRadius: 8,
-                        border: mine ? `2px solid ${token.color}` : taken ? '1px solid #333' : '1px solid #555',
-                        background: mine ? `${token.color}22` : taken ? '#1a1a2e' : '#16213e',
-                        fontSize: 20, cursor: taken ? 'not-allowed' : 'pointer',
-                        opacity: taken ? 0.3 : 1,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s ease',
-                      }}
-                      title={taken ? `${token.name} (taken)` : token.name}>
-                      <span>{token.emoji}</span>
-                    </button>
-                  );
-                })}
-              </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {AVAILABLE_TOKENS.map((token, idx) => {
+                const taken = players.some(p => p.token === token.id && p.id !== playerId);
+                const mine = players.find(p => p.id === playerId)?.token === token.id;
+                return (
+                  <button key={token.id}
+                    onClick={() => {
+                      if (!taken && lobbyId) api.selectToken(lobbyId, playerId, token.id);
+                    }}
+                    disabled={taken}
+                    style={{
+                      width: 82, height: 90, borderRadius: 8, padding: 4,
+                      border: mine ? `2px solid ${token.color}` : taken ? '1px solid #333' : '1px solid #555',
+                      background: mine ? `${token.color}22` : taken ? '#1a1a2e' : '#16213e',
+                      cursor: taken ? 'not-allowed' : 'pointer',
+                      opacity: taken ? 0.3 : 1,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      gap: 4, transition: 'all 0.15s ease',
+                    }}
+                    title={taken ? `${token.name} (taken)` : token.name}>
+                    <img src={`/images/player_${idx}.png`} alt={token.name}
+                      style={{ width: 48, height: 48, borderRadius: 6, objectFit: 'cover', display: 'block' }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <span style={{ fontSize: 10, color: mine ? '#fff' : '#aaa', fontWeight: mine ? 700 : 400 }}>
+                      {mine ? '✓ ' : ''}{token.name}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

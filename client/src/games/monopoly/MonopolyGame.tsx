@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { MonopolyBoard } from './MonopolyBoard.js';
+import { ReferenceBoard, type ReferenceBoardHandle } from './ReferenceBoard.js';
 import { Dice, type DiceHandle } from './Dice.js';
 import { OpponentBar } from './OpponentBar.js';
 import { PropertyFan } from './PropertyFan.js';
@@ -141,8 +141,18 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   const [rentPopup, setRentPopup] = useState<{ amount: number; toPlayer: number; propertyName: string } | null>(null);
   const rollingRef = useRef(false);
   const diceRef = useRef<DiceHandle>(null);
+  const boardRef = useRef<ReferenceBoardHandle>(null);
 
   const playerNames = useMemo(() => players?.reduce((acc, p) => { acc[p.index] = p.name; return acc; }, {} as Record<number, string>) || {}, [players]);
+
+  const playerModels = useMemo(() => {
+    if (!players) return [];
+    return players.map(p => {
+      const tid = p.token || `model_${p.index}`;
+      const idx = parseInt(tid.replace('model_', ''), 10);
+      return isNaN(idx) ? p.index : idx;
+    });
+  }, [players]);
 
   useEffect(() => {
     if (gs.players.length > 0) {
@@ -252,10 +262,16 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   }, [gameStatePush, handleGameEvent, updateState]);
 
   useEffect(() => {
-    if (!diceEvent || !diceRef.current || diceEvent.playerIndex === playerIndex) return;
+    if (!diceEvent || diceEvent.playerIndex === playerIndex) return;
     if (diceEvent.action === 'CONFIRM_DICE') {
       const dv = diceEvent.diceValue;
-      if (dv && Array.isArray(dv) && dv.length === 2) diceRef.current.roll(dv[0], dv[1]);
+      if (dv && Array.isArray(dv) && dv.length === 2) {
+        if (boardRef.current) {
+          boardRef.current.rollDiceForced(dv as [number, number]);
+        } else if (diceRef.current) {
+          diceRef.current.roll(dv[0], dv[1]);
+        }
+      }
     }
   }, [diceEvent, playerIndex]);
 
@@ -280,12 +296,16 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
   const handleStepAnimDone = useCallback(() => setStepAnim(null), []);
 
   const handleRoll = useCallback(async () => {
-    if (rollingRef.current || gs.phase !== 'waiting_for_roll' || !diceRef.current) return;
+    if (rollingRef.current || gs.phase !== 'waiting_for_roll') return;
     rollingRef.current = true;
     sounds.playDiceRoll();
     const rollData = await sendAction('ROLL_DICE');
     if (!rollData?.success || !rollData.rollId) { rollingRef.current = false; return; }
-    const [v1, v2] = await diceRef.current.roll();
+    const [v1, v2] = boardRef.current
+      ? await boardRef.current.rollDice()
+      : diceRef.current
+        ? await diceRef.current.roll()
+        : [Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)];
     await sendAction('CONFIRM_DICE', { rollId: rollData.rollId, values: [v1, v2] });
     rollingRef.current = false;
   }, [sendAction, gs.phase]);
@@ -382,17 +402,6 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
     ).slice(-10);
   }, [gs.eventLog, selectedPropInfo]);
 
-  const playerTokens = useMemo(() => {
-    const map: Record<number, string> = {};
-    if (players) {
-      for (const p of players) {
-        if (p.token) map[p.index] = p.token;
-      }
-    }
-    return map;
-  }, [players]);
-
-  const allTokens = gs.players.filter(p => !p.bankrupt).map((p, i) => ({ playerIndex: i, position: p.position }));
   const hasPlayers = gs.players.length > 0;
   const propertyBuildings = useMemo(() => {
     const map: Record<number, number> = {};
@@ -488,7 +497,7 @@ export default function MonopolyGame({ playerCount = 2, playerIndex = 0, playerN
       </AnimatePresence>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, position: 'relative', paddingTop: 8 }}>
-        {hasPlayers && <MonopolyBoard tokens={allTokens} playerTokens={playerTokens} stepAnim={stepAnim} onStepAnimDone={handleStepAnimDone} totalPlayers={gs.players.length} kismatRemaining={gs.kismatRemaining} jugaadRemaining={gs.jugaadRemaining} housesRemaining={gs.housesRemaining} hotelsRemaining={gs.hotelsRemaining} propertyBuildings={propertyBuildings} propertyOwners={propertyOwners} />}
+        {hasPlayers && <ReferenceBoard ref={boardRef} players={gs.players} propertyOwners={propertyOwners} propertyBuildings={propertyBuildings} stepAnim={stepAnim} playerCount={gs.players.length} playerModels={playerModels} onStepAnimDone={handleStepAnimDone} />}
       </div>
 
       {/* Unified Property Popup */}

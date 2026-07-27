@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monopoly 3D Board</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+#game-container { position: relative; width: 100%; height: 100%; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="game-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<script src="/js/three.js"></script>
+<script src="/js/orbit_controls.js"></script>
+<script src="/js/board.js"></script>
+<script src="/js/player.js"></script>
+<script src="/js/property_manager.js"></script>
+<script src="/js/board_controller.js"></script>
+<script src="/js/game_controller.js"></script>
+<script>
+(function() {
+  var container = document.getElementById('game-container');
+  var gameController = null;
+  var diceData = null;
+
+  // ─── Dice constants ───
+  var BOARD_SIZE = 11 * 7.273;
+  var DICE_SIZE = 2.1;
+  var DICE_SPAWN_Y = 20;
+  var DICE_FLOOR_Y = 0;
+  var SETTLE_THRESHOLD = 0.15;
+  var SETTLE_FRAMES = 40;
+
+  // Face value mapping: index 0-5 → pip count 1-6
+  // Standard die: 1↔6, 2↔5, 3↔4 opposite pairs
+  var FACE_VALUES = [1, 6, 2, 5, 3, 4];
+
+  // Local normals for a box: +x, -x, +y, -y, +z, -z
+  var FACE_NORMALS = [
+    new THREE.Vector3(1, 0, 0), new THREE.Vector3(-1, 0, 0),
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0),
+    new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, -1),
+  ];
+
+  // CANNON.js availability
+  var useCannon = typeof CANNON !== 'undefined';
+
+  // ─── Dice config (from React) ───
+  var diceConfig = {
+    dice0: { bg: '#ff69b4', fg: '#ffffff' },
+    dice1: { bg: '#7fc9ff', fg: '#ffffff' },
+  };
+
+  function createPipTexture(pipCount, bgColor, pipColor) {
+    var size = 128;
+    var c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = pipColor;
+
+    var r = size * 0.1;
+    var positions = [];
+    if (pipCount === 1) positions.push([size/2, size/2]);
+    else if (pipCount === 2) positions.push([size*0.25, size*0.25], [size*0.75, size*0.75]);
+    else if (pipCount === 3) positions.push([size*0.25, size*0.25], [size/2, size/2], [size*0.75, size*0.75]);
+    else if (pipCount === 4) positions.push([size*0.25, size*0.25], [size*0.75, size*0.25], [size*0.25, size*0.75], [size*0.75, size*0.75]);
+    else if (pipCount === 5) positions.push([size*0.25, size*0.25], [size*0.75, size*0.25], [size/2, size/2], [size*0.25, size*0.75], [size*0.75, size*0.75]);
+    else if (pipCount === 6) positions.push([size*0.25, size*0.2], [size*0.75, size*0.2], [size*0.25, size/2], [size*0.75, size/2], [size*0.25, size*0.8], [size*0.75, size*0.8]);
+
+    for (var i = 0; i < positions.length; i++) {
+      ctx.beginPath();
+      ctx.arc(positions[i][0], positions[i][1], r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return new THREE.CanvasTexture(c);
+  }
+
+  function getMaterialProps(textureType, materialType) {
+    var props = { roughness: 0.5, metalness: 0.0 };
+    if (materialType === 'metal') { props.metalness = 0.7; props.roughness = 0.3; }
+    else if (materialType === 'wood') { props.roughness = 0.9; props.metalness = 0.0; }
+    else if (materialType === 'glass') { props.roughness = 0.1; props.metalness = 0.0; }
+    return props;
+  }
+
+  function createDiceMeshes(scene, config) {
+    var meshes = [];
+    for (var d = 0; d < 2; d++) {
+      var dieKey = 'dice' + d;
+      var cfg = config && config[dieKey] ? config[dieKey] : { bg: '#ffffff', fg: '#222222', texture: 'none', material: 'none' };
+      var matProps = getMaterialProps(cfg.texture, cfg.material);
+      var materials = [];
+      for (var i = 0; i < 6; i++) {
+        var tex = createPipTexture(FACE_VALUES[i], cfg.bg || '#ffffff', cfg.fg || '#222222');
+        materials.push(new THREE.MeshStandardMaterial({
+          map: tex,
+          roughness: matProps.roughness,
+          metalness: matProps.metalness,
+        }));
+      }
+      var geo = new THREE.BoxGeometry(DICE_SIZE, DICE_SIZE, DICE_SIZE);
+      var mesh = new THREE.Mesh(geo, materials);
+      mesh.castShadow = true;
+      mesh.visible = false;
+      scene.add(mesh);
+      meshes.push(mesh);
+    }
+    return meshes;
+  }
+
+  function getDieValue(mesh) {
+    var up = new THREE.Vector3(0, 1, 0);
+    var bestDot = -Infinity;
+    var bestIdx = 0;
+    for (var i = 0; i < 6; i++) {
+      var dot = FACE_NORMALS[i].clone().applyQuaternion(mesh.quaternion).dot(up);
+      if (dot > bestDot) { bestDot = dot; bestIdx = i; }
+    }
+    return FACE_VALUES[bestIdx];
+  }
+
+  function setDieToValue(mesh, value) {
+    var faceIdx = FACE_VALUES.indexOf(value);
+    if (faceIdx === -1) return;
+    var faceQuats = [
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2),
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2),
+      new THREE.Quaternion(),
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI),
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2),
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2),
+    ];
+    mesh.quaternion.copy(faceQuats[faceIdx]);
+    // Adjust Y so lowest corner sits at floor level
+    var h = DICE_SIZE / 2;
+    var px = mesh.position.x, py = mesh.position.y, pz = mesh.position.z;
+    var qx = mesh.quaternion.x, qy = mesh.quaternion.y, qz = mesh.quaternion.z, qw = mesh.quaternion.w;
+    var minY = py - h;
+    for (var sx = -1; sx <= 1; sx += 2) {
+      for (var sy = -1; sy <= 1; sy += 2) {
+        for (var sz = -1; sz <= 1; sz += 2) {
+          var lx = sx * h, ly = sy * h, lz = sz * h;
+          var ix =  qw * lx + qy * lz - qz * ly;
+          var iy =  qw * ly + qz * lx - qx * lz;
+          var iz =  qw * lz + qx * ly - qy * lx;
+          var iw = -qx * lx - qy * ly - qz * lz;
+          var wy = iy * qw + iw * -qy + iz * -qx - ix * -qz;
+          var cornerY = py + wy;
+          if (cornerY < minY) minY = cornerY;
+        }
+      }
+    }
+    if (minY < 0) mesh.position.y += -minY;
+  }
+
+  // ─── CANNON.js physics ───
+  var cannonWorld = null;
+  var floorBody = null;
+  var wallBodies = [];
+
+  function initCannonWorld() {
+    if (typeof CANNON === 'undefined') return false;
+    cannonWorld = new CANNON.World();
+    cannonWorld.gravity.set(0, -50, 0);
+    cannonWorld.broadphase = new CANNON.NaiveBroadphase();
+    cannonWorld.solver.iterations = 15;
+
+    var defaultMat = new CANNON.Material('default');
+    var contactMat = new CANNON.ContactMaterial(defaultMat, defaultMat, {
+      friction: 0.3,
+      restitution: 0.02,
+    });
+    cannonWorld.addContactMaterial(contactMat);
+
+    // Floor: thin box at y=0 (top face at y=0, bottom at y=-1)
+    floorBody = new CANNON.Body({ mass: 0, material: defaultMat });
+    floorBody.addShape(new CANNON.Box(new CANNON.Vec3(BOARD_SIZE * 2, 0.5, BOARD_SIZE * 2)));
+    floorBody.position.set(BOARD_SIZE / 2, -0.5, BOARD_SIZE / 2);
+    cannonWorld.addBody(floorBody);
+
+    // Walls: boxes whose inner faces are flush with board edges
+    var hw = BOARD_SIZE;
+    var wt = 3;
+    var wy = 10;
+    // Left wall: occupies [-3, 0], right face at x=0  → dice at x<DICE_SIZE/2 hit it
+    var leftWall = new CANNON.Body({ mass: 0, material: defaultMat });
+    leftWall.addShape(new CANNON.Box(new CANNON.Vec3(wt/2, wy/2, hw/2 + wt)));
+    leftWall.position.set(-wt/2, wy/2, hw/2);
+    cannonWorld.addBody(leftWall);
+    wallBodies.push(leftWall);
+    // Right wall: occupies [80, 83], left face at x=80
+    var rightWall = new CANNON.Body({ mass: 0, material: defaultMat });
+    rightWall.addShape(new CANNON.Box(new CANNON.Vec3(wt/2, wy/2, hw/2 + wt)));
+    rightWall.position.set(hw + wt/2, wy/2, hw/2);
+    cannonWorld.addBody(rightWall);
+    wallBodies.push(rightWall);
+    // Front wall: occupies [-3, 0], back face at z=0
+    var frontWall = new CANNON.Body({ mass: 0, material: defaultMat });
+    frontWall.addShape(new CANNON.Box(new CANNON.Vec3(hw/2 + wt, wy/2, wt/2)));
+    frontWall.position.set(hw/2, wy/2, -wt/2);
+    cannonWorld.addBody(frontWall);
+    wallBodies.push(frontWall);
+    // Back wall: occupies [80, 83], front face at z=80
+    var backWall = new CANNON.Body({ mass: 0, material: defaultMat });
+    backWall.addShape(new CANNON.Box(new CANNON.Vec3(hw/2 + wt, wy/2, wt/2)));
+    backWall.position.set(hw/2, wy/2, hw + wt/2);
+    cannonWorld.addBody(backWall);
+    wallBodies.push(backWall);
+
+    return true;
+  }
+
+  function initDiceBodies() {
+    if (!cannonWorld || !diceData) return;
+    diceData.bodies = [];
+    var defaultMat = new CANNON.Material('default');
+    var margin = DICE_SIZE + 1;
+
+    // Pick a random edge to throw from: 0=left, 1=right, 2=bottom, 3=top
+    var edge = Math.floor(Math.random() * 4);
+    for (var d = 0; d < 2; d++) {
+      var body = new CANNON.Body({ mass: 2, material: defaultMat, linearDamping: 0.08, angularDamping: 0.04 });
+      body.addShape(new CANNON.Box(new CANNON.Vec3(DICE_SIZE/2, DICE_SIZE/2, DICE_SIZE/2)));
+
+      var startX, startZ, velX, velZ;
+      switch (edge) {
+        case 0: // thrown from left edge toward right
+          startX = margin;
+          startZ = margin + Math.random() * (BOARD_SIZE - 2 * margin);
+          velX = 33 + Math.random() * 19;
+          velZ = (Math.random() - 0.5) * 6;
+          break;
+        case 1: // thrown from right edge toward left
+          startX = BOARD_SIZE - margin;
+          startZ = margin + Math.random() * (BOARD_SIZE - 2 * margin);
+          velX = -(33 + Math.random() * 19);
+          velZ = (Math.random() - 0.5) * 6;
+          break;
+        case 2: // thrown from bottom (z=0) edge toward top
+          startX = margin + Math.random() * (BOARD_SIZE - 2 * margin);
+          startZ = margin;
+          velZ = 33 + Math.random() * 19;
+          velX = (Math.random() - 0.5) * 6;
+          break;
+        case 3: // thrown from top (z=BOARD_SIZE) edge toward bottom
+          startX = margin + Math.random() * (BOARD_SIZE - 2 * margin);
+          startZ = BOARD_SIZE - margin;
+          velZ = -(33 + Math.random() * 19);
+          velX = (Math.random() - 0.5) * 6;
+          break;
+      }
+
+      body.position.set(startX, DICE_SIZE/2 + 1 + Math.random() * 2, startZ);
+      body.velocity.set(velX, 2 + Math.random() * 3, velZ);
+      body.angularVelocity.set(
+        (Math.random() - 0.5) * 35,
+        (Math.random() - 0.5) * 35,
+        (Math.random() - 0.5) * 35
+      );
+      var axis = new CANNON.Vec3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+      axis.normalize();
+      body.quaternion.setFromAxisAngle(axis, Math.random() * Math.PI * 2);
+      body.userData = { settleCount: 0 };
+      cannonWorld.addBody(body);
+      diceData.bodies.push(body);
+    }
+  }
+
+  function removeDiceBodies() {
+    if (!cannonWorld || !diceData || !diceData.bodies) return;
+    for (var d = 0; d < diceData.bodies.length; d++) {
+      cannonWorld.removeBody(diceData.bodies[d]);
+    }
+    diceData.bodies = [];
+  }
+
+  function stepDiceCannon() {
+    if (!cannonWorld || !diceData || !diceData.rolling) return false;
+    cannonWorld.step(1 / 60);
+
+    // Sync Three.js meshes from CANNON bodies
+    var allSettled = true;
+    for (var d = 0; d < diceData.bodies.length; d++) {
+      var body = diceData.bodies[d];
+      var mesh = diceData.meshes[d];
+      mesh.position.copy(body.position);
+      mesh.quaternion.copy(body.quaternion);
+
+      var speed = body.velocity.norm() + body.angularVelocity.norm();
+      if (speed < SETTLE_THRESHOLD) {
+        body.userData.settleCount = (body.userData.settleCount || 0) + 1;
+      } else {
+        body.userData.settleCount = 0;
+      }
+      if ((body.userData.settleCount || 0) < SETTLE_FRAMES) {
+        allSettled = false;
+      }
+    }
+    return allSettled;
+  }
+
+  function getTileCenter(tileId) {
+    var pos = Board.tileIdToPos(tileId);
+    return {
+      x: (pos[1] + 0.5) * BoardController.SQUARE_SIZE,
+      z: (pos[0] + 0.5) * BoardController.SQUARE_SIZE
+    };
+  }
+
+  function createCardPile(scene, x, z, backUrl, frontUrl, accentColor) {
+    var loader = new THREE.TextureLoader();
+    var backTex = loader.load(backUrl);
+    var frontTex = loader.load(frontUrl);
+    var whiteMat = new THREE.MeshStandardMaterial({ color: '#f5f0e8', roughness: 0.95, metalness: 0 });
+    var backMat = new THREE.MeshStandardMaterial({ map: backTex, roughness: 0.95, metalness: 0 });
+    // Stack of cards — same (x,z), increasing y, slightly offset to show stack from side
+    var cw = 7.2, cd = 9.6;
+    for (var i = 0; i < 6; i++) {
+      var materials = [
+        whiteMat, whiteMat,
+        backMat, backMat,
+        whiteMat, whiteMat,
+      ];
+      var card = new THREE.Mesh(new THREE.BoxGeometry(cw, 0.15, cd), materials);
+      card.position.set(x + 0.1 * i, 0.1 + 0.15 * i, z - 0.06 * i);
+      scene.add(card);
+    }
+    // Top card shows the card front
+    var frontMat = new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.95, metalness: 0, side: THREE.DoubleSide });
+    var frontCard = new THREE.Mesh(new THREE.PlaneGeometry(cw - 0.2, cd - 0.2), frontMat);
+    frontCard.position.set(x + 0.06 * 6, 1.1, z - 0.04 * 6);
+    frontCard.rotation.x = -Math.PI / 2;
+    scene.add(frontCard);
+  }
+
+  function initBoard() {
+    var cannonOk = initCannonWorld();
+
+    gameController = new GameController({
+      containerEl: container,
+      assetsUrl: '/3d_assets',
+      onBoardPainted: function() {
+        var scene = gameController.boardController.scene;
+        diceData = {
+          meshes: createDiceMeshes(scene, diceConfig),
+          bodies: [],
+          rolling: false,
+          resolveRoll: null,
+          forcedValues: null,
+        };
+
+        // Card piles in center of board
+        try {
+          var ctrl = gameController.boardController;
+          // Lighten board material
+          if (ctrl.materials && ctrl.materials.boardMaterial) {
+            ctrl.materials.boardMaterial.color.setHex(0xc8c8c8);
+          }
+          if (ctrl.materials && ctrl.materials.tileMaterial) {
+            for (var r = 0; r < ctrl.materials.tileMaterial.length; r++) {
+              for (var c = 0; c < ctrl.materials.tileMaterial[r].length; c++) {
+                ctrl.materials.tileMaterial[r][c].color.setHex(0xc8c8c8);
+              }
+            }
+          }
+          createCardPile(scene, 28, 40, '/art/monopoly/jugaad_back_001.webp', '/art/monopoly/jugaad_advance_go_001.webp', '#4CAF50');
+          createCardPile(scene, 52, 40, '/art/monopoly/kismat_back_001.webp', '/art/monopoly/kismat_advance_go_001.webp', '#FF8C00');
+        } catch(e) { console.error('[CardPile] Error:', e); }
+
+        parent.postMessage({ type: 'boardReady' }, '*');
+      }
+    });
+
+    // Hook into animation loop for dice physics
+    var origOnAnimationFrame = gameController.boardController.onAnimationFrame.bind(gameController.boardController);
+    gameController.boardController.onAnimationFrame = function() {
+      origOnAnimationFrame();
+
+      if (diceData && diceData.rolling) {
+        if (diceData.animType === 'appear') {
+          diceData.animFrame++;
+          var t = diceData.animFrame / 30;
+          var ease = 1 - Math.pow(1 - Math.min(t, 1), 2);
+          for (var d = 0; d < diceData.meshes.length; d++) {
+            var startY = DICE_SIZE / 2 + 4;
+            var endY = DICE_SIZE / 2;
+            diceData.meshes[d].position.y = startY + (endY - startY) * ease;
+            diceData.meshes[d].scale.setScalar(0.01 + 0.99 * Math.min(t, 1));
+          }
+          if (t >= 1) {
+            diceData.rolling = false;
+            diceData.animType = null;
+            if (diceData.resolveRoll) {
+              diceData.resolveRoll(diceData.forcedValues);
+              diceData.resolveRoll = null;
+            }
+          }
+        } else {
+          var settled = stepDiceCannon();
+          if (settled) {
+            diceData.rolling = false;
+            diceData.animType = null;
+            var values = diceData.forcedValues;
+            if (values) {
+              for (var d = 0; d < diceData.meshes.length; d++) {
+                setDieToValue(diceData.meshes[d], values[d]);
+              }
+              diceData.forcedValues = null;
+            } else {
+              values = diceData.meshes.map(function(m) { return getDieValue(m); });
+            }
+            if (diceData.resolveRoll) {
+              diceData.resolveRoll(values);
+              diceData.resolveRoll = null;
+            }
+          }
+        }
+      }
+    };
+
+  }
+
+  window.addEventListener('message', function(event) {
+    if (!event.data || !event.data.type) return;
+    var msg = event.data;
+
+    switch (msg.type) {
+      case 'addPlayers':
+        if (gameController) {
+          gameController.addPlayer(msg.count, msg.positions, msg.tokens || {}).then(function() {
+            parent.postMessage({ type: 'playersAdded' }, '*');
+          });
+        }
+        break;
+
+      case 'movePlayer':
+        if (gameController) {
+          gameController.movePlayer(msg.playerIndex, msg.tileId);
+        }
+        break;
+
+      case 'addPropertyMark':
+        if (gameController) {
+          gameController.addProperty(2, msg.tileId, msg.playerIndex);
+        }
+        break;
+
+      case 'addHouse':
+        if (gameController) {
+          gameController.addProperty(0, msg.tileId);
+        }
+        break;
+
+      case 'addHotel':
+        if (gameController) {
+          gameController.addProperty(1, msg.tileId);
+        }
+        break;
+
+      case 'rollDice':
+        if (diceData && !diceData.rolling) {
+          if (!useCannon) {
+            parent.postMessage({
+              type: 'diceResult',
+              values: [Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)],
+              id: msg.id
+            }, '*');
+            break;
+          }
+          diceData.rolling = true;
+          diceData.forcedValues = null;
+          removeDiceBodies();
+          for (var d = 0; d < diceData.meshes.length; d++) {
+            diceData.meshes[d].visible = true;
+          }
+          initDiceBodies();
+          diceData.resolveRoll = function(values) {
+            parent.postMessage({
+              type: 'diceResult',
+              values: values,
+              id: msg.id
+            }, '*');
+          };
+        }
+        break;
+
+      case 'rollDiceForced':
+        if (diceData && !diceData.rolling) {
+          if (!useCannon) {
+            parent.postMessage({ type: 'diceResult', values: msg.values, id: msg.id }, '*');
+            break;
+          }
+          diceData.rolling = true;
+          diceData.forcedValues = msg.values;
+          diceData.animType = 'appear';
+          diceData.animFrame = 0;
+          removeDiceBodies();
+          for (var d = 0; d < diceData.meshes.length; d++) {
+            var margin = DICE_SIZE * 2;
+            diceData.meshes[d].position.set(
+              margin + Math.random() * (BOARD_SIZE - 2 * margin),
+              DICE_SIZE / 2 + 4 + Math.random() * 2,
+              margin + Math.random() * (BOARD_SIZE - 2 * margin)
+            );
+            setDieToValue(diceData.meshes[d], msg.values[d]);
+            diceData.meshes[d].visible = true;
+            diceData.meshes[d].scale.set(0.01, 0.01, 0.01);
+          }
+          diceData.resolveRoll = function(values) {
+            parent.postMessage({
+              type: 'diceResult',
+              values: msg.values,
+              id: msg.id
+            }, '*');
+          };
+        }
+        break;
+
+      case 'setDiceConfig':
+        if (msg.config) {
+          diceConfig = msg.config;
+          if (diceData && diceData.meshes) {
+            // Rebuild dice meshes with new config
+            var scene = gameController.boardController.scene;
+            for (var d = 0; d < diceData.meshes.length; d++) {
+              scene.remove(diceData.meshes[d]);
+            }
+            diceData.meshes = createDiceMeshes(scene, diceConfig);
+          }
+        }
+        break;
+
+      case 'resize':
+        if (gameController) {
+          gameController.resizeBoard();
+        }
+        break;
+    }
+  });
+
+  try { initBoard(); } catch(e) { console.error('[Board] Init error:', e); }
+
+  window.addEventListener('resize', function() {
+    if (gameController) {
+      gameController.resizeBoard();
+    }
+  });
+})();
+</script>
+</body>
+</html>
